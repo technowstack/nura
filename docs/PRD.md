@@ -30,7 +30,7 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 |---|---|---|
 | Nama aplikasi | Nura | Kandidat. Perlu cek Play Store dan DJKI |
 | Nama paket Dart (`pubspec.yaml`) | `nura` | Disepakati |
-| Application ID Android | `com.technowstack.nura` | Usulan, perlu konfirmasi. Tidak bisa diubah setelah rilis |
+| Application ID Android | `com.technowstack.nura` | Disepakati (2026-11-09). Tidak bisa diubah setelah rilis. Diterapkan di kode pada fase Fondasi |
 
 ## 5. Cakupan Rilis Pertama (v1)
 
@@ -165,7 +165,7 @@ Tanggal target belum ditetapkan.
 
 ## 12. Pertanyaan Terbuka
 
-1. **Application ID Android.** Usulan `com.technowstack.nura`.
+1. ~~**Application ID Android.**~~ Diputuskan: `com.technowstack.nura` (lihat bagian 4).
 2. **Nama aplikasi.** Nura masih perlu dicek di Play Store dan DJKI.
 3. **Penyedia API audio.** Kandidat: equran.id. Perlu cek syarat penggunaan.
 4. **Sumber data meta** (info surah, juz, kota) dan transliterasi.
