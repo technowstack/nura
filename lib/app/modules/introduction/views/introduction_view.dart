@@ -62,7 +62,7 @@ class IntroductionView extends GetView<IntroductionController> {
                 color:  Get.isDarkMode ? appPurpleDark  : appWhite
               ),),
               style: ElevatedButton.styleFrom(
-                  primary: Get.isDarkMode ? appWhite :  appPurple,
+                  backgroundColor: Get.isDarkMode ? appWhite :  appPurple,
                   padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(50))),

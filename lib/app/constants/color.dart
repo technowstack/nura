@@ -17,8 +17,8 @@ ThemeData themeLight = ThemeData(
   scaffoldBackgroundColor: Colors.white,
   appBarTheme: AppBarTheme(backgroundColor: appPurple, elevation: 0),
   textTheme: TextTheme(
-    bodyText1: TextStyle(color: appPurpleDark),
-    bodyText2: TextStyle(color: appPurpleDark),
+    bodyLarge: TextStyle(color: appPurpleDark),
+    bodyMedium: TextStyle(color: appPurpleDark),
   ),
   listTileTheme: ListTileThemeData(
     textColor: appPurpleDark,
@@ -33,8 +33,8 @@ ThemeData themeDark = ThemeData(
   scaffoldBackgroundColor: appPurpleDark,
   appBarTheme: AppBarTheme(backgroundColor: appPurpleDark, elevation: 4),
   textTheme: TextTheme(
-    bodyText1: TextStyle(color: appWhite),
-    bodyText2: TextStyle(color: appWhite),
+    bodyLarge: TextStyle(color: appWhite),
+    bodyMedium: TextStyle(color: appWhite),
   ),
   listTileTheme: ListTileThemeData(
     textColor: appWhite,
