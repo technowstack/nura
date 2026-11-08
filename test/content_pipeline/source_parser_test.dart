@@ -48,17 +48,62 @@ void main() {
     expect(slugs, {'malik', 'darimi'});
   });
 
-  test('throws SourceFormatException when ayah count mismatches number_of_ayah', () {
-    final raw = jsonDecode(File(fixturePath('quran/1.json')).readAsStringSync())
+  test('orders ayah keys numerically even when JSON key order is scrambled', () {
+    final raw = jsonDecode(File(fixturePath('quran/100.json')).readAsStringSync())
         as Map<String, dynamic>;
-    (raw['1']['text'] as Map<String, dynamic>).remove('7');
-    expect(() => parseQuranFile(jsonEncode(raw)), throwsA(isA<SourceFormatException>()));
+    final surah = raw['100'] as Map<String, dynamic>;
+    Map<String, dynamic> scramble(Map<String, dynamic> m) {
+      // String order puts "10" before "2"; reversed insertion defeats map order.
+      final keys = m.keys.toList()..sort();
+      return {for (final k in keys.reversed) k: m[k]};
+    }
+
+    surah['text'] = scramble(surah['text'] as Map<String, dynamic>);
+    final id = (surah['translations'] as Map<String, dynamic>)['id'] as Map<String, dynamic>;
+    id['text'] = scramble(id['text'] as Map<String, dynamic>);
+    final kemenag = ((surah['tafsir'] as Map<String, dynamic>)['id']
+        as Map<String, dynamic>)['kemenag'] as Map<String, dynamic>;
+    kemenag['text'] = scramble(kemenag['text'] as Map<String, dynamic>);
+
+    final s = parseQuranFile(jsonEncode(raw));
+    expect(s.ayahs.map((a) => a.number), List.generate(s.ayahCount, (i) => i + 1));
   });
 
-  test('throws SourceFormatException when translation lacks an ayah key', () {
-    final raw = jsonDecode(File(fixturePath('quran/1.json')).readAsStringSync())
-        as Map<String, dynamic>;
+  Map<String, dynamic> loadSurah1() =>
+      jsonDecode(File(fixturePath('quran/1.json')).readAsStringSync())
+          as Map<String, dynamic>;
+
+  Matcher formatError(String file, String messagePart) => throwsA(
+        isA<SourceFormatException>()
+            .having((e) => e.file, 'file', file)
+            .having((e) => e.message, 'message', contains(messagePart))
+            .having((e) => e.message, 'message', isNot(contains('invalid quran json'))),
+      );
+
+  test('throws count mismatch error when an ayah key is removed from text', () {
+    final raw = loadSurah1();
+    (raw['1']['text'] as Map<String, dynamic>).remove('7');
+    expect(
+      () => parseQuranFile(jsonEncode(raw), file: 'quran/1.json'),
+      formatError('quran/1.json', 'ayah count 6 != number_of_ayah 7'),
+    );
+  });
+
+  test('throws missing-key error when translation lacks an ayah key', () {
+    final raw = loadSurah1();
     (raw['1']['translations']['id']['text'] as Map<String, dynamic>).remove('3');
-    expect(() => parseQuranFile(jsonEncode(raw)), throwsA(isA<SourceFormatException>()));
+    expect(
+      () => parseQuranFile(jsonEncode(raw), file: 'quran/1.json'),
+      formatError('quran/1.json', 'ayah 3 missing translation or tafsir'),
+    );
+  });
+
+  test('throws missing-key error when tafsir lacks an ayah key', () {
+    final raw = loadSurah1();
+    (raw['1']['tafsir']['id']['kemenag']['text'] as Map<String, dynamic>).remove('5');
+    expect(
+      () => parseQuranFile(jsonEncode(raw), file: 'quran/1.json'),
+      formatError('quran/1.json', 'ayah 5 missing translation or tafsir'),
+    );
   });
 }
