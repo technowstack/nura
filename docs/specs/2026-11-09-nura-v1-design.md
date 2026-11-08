@@ -1,6 +1,6 @@
 # Spec Desain: Nura v1
 
-Status: Draft untuk review
+Status: Disetujui
 Tanggal: 2026-11-09
 Dokumen terkait: `docs/PRD.md`, `AGENTS.md`, `docs/STATUS.md`
 Branch: `rebuild/nura`
