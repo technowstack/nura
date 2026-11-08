@@ -1,19 +1,14 @@
-import 'package:alquran/app/constants/color.dart';
 import 'package:flutter/material.dart';
-
 import 'package:get/get.dart';
 
-import 'app/routes/app_pages.dart';
+import 'app/modules/home/home_view.dart';
 
-void main() {
-  runApp(
-    GetMaterialApp(
-      theme: themeLight,
-      darkTheme: themeDark,
-      debugShowCheckedModeBanner: false,
-      title: "Application",
-      initialRoute: Routes.HOME,
-      getPages: AppPages.routes,
-    ),
-  );
+void main() => runApp(const NuraApp());
+
+class NuraApp extends StatelessWidget {
+  const NuraApp({super.key});
+
+  @override
+  Widget build(BuildContext context) =>
+      const GetMaterialApp(title: 'Nura', home: HomeView());
 }
