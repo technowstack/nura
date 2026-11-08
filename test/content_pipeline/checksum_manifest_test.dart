@@ -13,7 +13,7 @@ void main() {
   Directory tempCopy() {
     final tmp = Directory.systemTemp.createTempSync('nura_fixture_');
     addTearDown(() => tmp.deleteSync(recursive: true));
-    final root = fixtureDir('').absolute.path;
+    final root = fixtureDir('').absolute.path.replaceFirst(RegExp(r'/$'), '');
     for (final f in fixtureDir('').listSync(recursive: true).whereType<File>()) {
       final rel = f.absolute.path.substring(root.length + 1);
       final dest = File('${tmp.path}/$rel')..createSync(recursive: true);
