@@ -1,6 +1,6 @@
 # PRD: Nura (Aplikasi Islami Offline-First)
 
-Status dokumen: Draft v0.2
+Status dokumen: Draft v0.3 (selaras dengan `docs/specs/2026-11-09-nura-v1-design.md`)
 Terakhir diperbarui: 2026-11-09
 
 ## 1. Ringkasan
@@ -57,13 +57,17 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 - Pencarian dalam satu kitab atau di semua kitab.
 
 ### 5.4 Jadwal Sholat
-- Jadwal lima waktu, plus imsak dan terbit, berdasarkan lokasi GPS atau kota yang dipilih.
-- Perhitungan dilakukan offline dari koordinat.
+- Jadwal lima waktu, plus imsak, terbit, dan dhuha, berdasarkan lokasi GPS atau kota yang dipilih.
+- Jadwal diambil dari API per bulan (bulan berjalan dan berikutnya) lalu disimpan di perangkat, sehingga bisa dibuka offline setelah sinkron.
+- Izin sinkron jadwal **terpisah** dari sakelar audio dan ditanyakan saat onboarding.
+- Jika belum ada jadwal tersimpan dan perangkat offline, jadwal dihitung offline dari koordinat (paket `adhan`, parameter Kemenag) dan diberi label **"perkiraan"**.
 - Notifikasi pengingat per waktu sholat, bisa diatur masing-masing.
 - Penanda waktu sholat berikutnya dan hitung mundur.
 
 ### 5.5 1 Hari 1 Ayat dan 1 Hari 1 Hadis
 - Pilihan ditentukan dari tanggal secara deterministik, jadi semua pengguna melihat konten yang sama di hari yang sama.
+- 1 Hari 1 Ayat memakai **daftar kurasi** dari pemilik proyek (`data-source/meta/daily_ayah.json`). Jika file belum ada, fitur ayat harian disembunyikan.
+- 1 Hari 1 Hadis dipilih **otomatis** dari hadis dengan terjemahan tidak lebih dari 400 karakter.
 - Tampil sebagai kartu di layar depan aplikasi.
 - Widget layar depan Android menampilkan konten yang sama tanpa membuka aplikasi.
 
@@ -88,7 +92,7 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 data-source/                 JSON asli (sumber kebenaran), disimpan di repo, TIDAK dibundel ke app
   quran/1.json … 114.json
   hadith/*.json
-  meta/                      data statis tambahan: info surah, pemetaan juz, kota
+  meta/                      data statis tambahan: info surah, pemetaan juz, kota, daftar kurasi ayat harian (daily_ayah.json)
   CHECKSUMS.sha256
 
 tool/build_content_db.dart   skrip konversi JSON → SQLite (dijalankan developer)
@@ -113,22 +117,27 @@ assets/db/content.db         hasil konversi, dibundel ke app, dibuka READ-ONLY
 
 ### 7.3 Skema `content.db` (garis besar)
 
-- `surah` (number, name_arab, name_latin, meaning, ayah_count, revelation)
+- `surah` (number, name_arab, name_latin, name_id, ayah_count, revelation)
 - `ayah` (surah_number, ayah_number, arab, translation_id, tafsir_kemenag, arab_search, translation_search)
 - `juz` (number, start_surah, start_ayah, end_surah, end_ayah)
 - `hadith_book` (slug, name, hadith_count)
-- `hadith` (book_slug, number, arab, translation_id, arab_search, translation_search)
+- `hadith` (book_slug, number, arab, translation_id, arab_search, translation_search, translation_length)
 - Tabel FTS5 untuk ayat dan hadis.
+- `daily_ayah` dan `daily_hadith` (urutan konten harian, diacak dengan seed tetap saat build).
 - `meta` (key, value)
 
-Skema final ditetapkan di spec desain.
+Skema lengkap ada di spec desain (bagian 3.2).
+
+### 7.4 Paket SQLite
+
+Pakai `sqlite3` dan `sqlite3_flutter_libs` (bukan `sqflite`). Library SQLite dibundel bersama aplikasi sehingga FTS5 pasti tersedia di semua versi Android, dan skrip di `tool/` memakai mesin yang sama dengan aplikasi.
 
 ## 8. Arsitektur Aplikasi (ringkas)
 
 - Flutter, GetX untuk state, dependency injection, dan routing.
-- Lapisan: `data` (sumber SQLite dan API audio) → `repository` (antarmuka per domain) → `modules` (binding, controller, view per fitur).
+- Lapisan: `data` (sumber SQLite, API audio, dan API jadwal sholat) → `repository` (antarmuka per domain) → `modules` (binding, controller, view per fitur).
 - Tidak ada akses database atau jaringan langsung dari view atau controller. Semuanya lewat repository.
-- Fitur online dibungkus layanan tersendiri yang memeriksa sakelar dan koneksi sebelum dipakai.
+- Fitur online dibungkus layanan tersendiri (`OnlineService`) yang memeriksa sakelar dan koneksi sebelum dipakai. Audio dikendalikan sakelar "Fitur Online"; sinkron jadwal sholat dikendalikan izin tersendiri.
 - Widget Android memakai paket `home_widget` dan AppWidgetProvider native. Aplikasi menulis konten harian, lalu widget membacanya.
 
 ## 9. Kebutuhan Non-Fungsional
@@ -147,19 +156,24 @@ Skema final ditetapkan di spec desain.
 | Teks Arab, terjemahan, dan tafsir Al-Qur'an | Kementerian Agama RI | Perlu cek ketentuan tashih LPMQ untuk mushaf digital |
 | Hadis 9 kitab | github.com/gadingnst/hadith-api (MIT), data asal tafsirq.com | Lisensi MIT mencakup repo. Status lisensi teks terjemahan dari sumber asal perlu dikonfirmasi |
 | Audio murottal | API pihak ketiga (belum dipilih) | Perlu cek syarat penggunaan |
+| Jadwal sholat (API) | API pihak ketiga (kandidat myquran.com, data Kemenag; belum dipilih) | Perlu cek syarat penggunaan |
 | Info surah, juz, kota | Belum dipilih | Perlu sumber dengan lisensi jelas |
+| Daftar kurasi ayat harian | Disusun pemilik proyek | Menunggu daftar (Q9) |
 
 Rilis publik terblokir sampai status lisensi Al-Qur'an dan hadis jelas.
 
 ## 11. Rencana Rilis
 
-1. **Fondasi:** branch baru, struktur proyek bersih, nama paket, pipeline data (`data-source/`, skrip build dan verifikasi, `content.db`), `user.db`.
-2. **Al-Qur'an offline:** daftar surah, detail, tafsir, juz, bookmark, last read, pencarian.
-3. **Hadis:** daftar kitab, daftar dan detail hadis, pencarian, bookmark.
-4. **Jadwal sholat dan notifikasi.**
-5. **1 Hari 1 Ayat/Hadis:** kartu di aplikasi, lalu widget Android.
-6. **Fitur online:** sakelar, audio streaming dan unduhan.
-7. **Polish dan rilis:** onboarding, atribusi, ikon, uji di perangkat, Play Store.
+Urutan fase mengikuti spec desain bagian 11.
+
+1. **Fondasi:** hapus kode lama, paket dan Application ID, struktur proyek, `sqlite3`, skrip build dan verifikasi, `content.db`, `user.db`, tema.
+2. **Al-Qur'an offline:** daftar surah, detail, tafsir, juz, bookmark, last read, ukuran font.
+3. **Hadis:** daftar kitab, daftar dengan paging, detail, bookmark.
+4. **Pencarian:** FTS ayat dan hadis.
+5. **Jadwal sholat:** lokasi, API dan cache, fallback perhitungan, notifikasi.
+6. **1 Hari 1 Ayat/Hadis:** kartu di aplikasi, lalu widget Android.
+7. **Fitur online:** sakelar, audio streaming dan unduhan.
+8. **Polish dan rilis:** onboarding, atribusi, ikon, uji di perangkat, Play Store.
 
 Tanggal target belum ditetapkan.
 
@@ -167,8 +181,10 @@ Tanggal target belum ditetapkan.
 
 1. ~~**Application ID Android.**~~ Diputuskan: `com.technowstack.nura` (lihat bagian 4).
 2. **Nama aplikasi.** Nura masih perlu dicek di Play Store dan DJKI.
-3. **Penyedia API audio.** Kandidat: equran.id. Perlu cek syarat penggunaan.
+3. **Penyedia API audio dan jadwal sholat.** Kandidat audio: equran.id. Kandidat jadwal: myquran.com. Perlu cek syarat penggunaan keduanya.
 4. **Sumber data meta** (info surah, juz, kota) dan transliterasi.
-5. **Metode perhitungan jadwal sholat.** Perlu disesuaikan dan diverifikasi dengan jadwal Kemenag.
+5. **Parameter perhitungan offline** (cadangan jadwal sholat, termasuk ihtiyat). Perlu diverifikasi dengan jadwal Kemenag.
 6. **Ketentuan tashih LPMQ** untuk Al-Qur'an digital.
 7. **Konfirmasi lisensi teks hadis** ke pemilik repo atau sumber asal.
+8. **Verifikasi isi `data-source/` ke sumber asli** (hadis: gadingnst/hadith-api). Lihat STATUS.md Q8.
+9. **Daftar kurasi `data-source/meta/daily_ayah.json`.** Disusun pemilik proyek. Dibutuhkan untuk 1 Hari 1 Ayat (Fase 6).
