@@ -1,4 +1,4 @@
-package com.example.alquran
+package com.technowstack.nura
 
 import io.flutter.embedding.android.FlutterActivity
 
