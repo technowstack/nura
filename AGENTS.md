@@ -57,6 +57,10 @@ test/
 - Hindari `!`. Jika terpaksa, tambahkan komentar alasan.
 - Satu class publik per file.
 
+## Development setup
+
+- Linux: `sudo apt install libsqlite3-dev`. Dibutuhkan oleh `flutter test` dan skrip `tool/`, karena paket `sqlite3` memuat SQLite dari sistem di host (mencari `libsqlite3.so`).
+
 ## Perintah
 
 - `flutter analyze` harus bersih sebelum commit.
