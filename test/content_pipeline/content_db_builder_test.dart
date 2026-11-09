@@ -105,6 +105,14 @@ void main() {
     expect(count('hadith_fts_docsize'), count('hadith'));
   });
 
+  test('FTS finds a diacritized source word by its literal bare form', () {
+    // Fixture 1:2 starts with اَلْحَمْدُ; the query is typed without harakat.
+    final hits = db.select(
+      "SELECT rowid FROM ayah_fts WHERE ayah_fts MATCH 'arab:الحمد'",
+    );
+    expect(hits.map((r) => r['rowid']), contains(2));
+  });
+
   test('page_size pragma is applied', () {
     expect(db.select('PRAGMA page_size').single.values.first, 16384);
   });

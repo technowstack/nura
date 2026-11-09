@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nura/content_pipeline/content_db_builder.dart';
 import 'package:nura/content_pipeline/content_db_verifier.dart';
+import 'package:nura/content_pipeline/text_normalizer.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../support/fixtures.dart';
@@ -113,4 +114,37 @@ void main() {
     expect(r.ok, isFalse);
     expect(r.errors, contains(startsWith('ayah_fts count')));
   });
+
+  String q(String v) => v.replaceAll("'", "''");
+
+  for (final t in ['ayah', 'hadith']) {
+    test('wrong word in ${t}_fts is caught by the MATCH probe', () {
+      final db = sqlite3.open(built.path);
+      final rows = db.select('SELECT id, arab, translation_id FROM $t');
+      db.dispose();
+      final fts = '${t}_fts';
+      // Corrupt every index row, so whichever row is probed is wrong.
+      final sql = StringBuffer();
+      for (final row in rows) {
+        final id = row['id'];
+        final arab = normalizeArabicForSearch(row['arab'] as String);
+        final tr = normalizeIndonesianForSearch(
+          row['translation_id'] as String,
+        );
+        sql
+          ..write(
+            "INSERT INTO $fts($fts, rowid, arab, translation) "
+            "VALUES ('delete', $id, '${q(arab)}', '${q(tr)}'); ",
+          )
+          ..write(
+            "INSERT INTO $fts(rowid, arab, translation) "
+            "VALUES ($id, 'zzz', 'zzz'); ",
+          );
+      }
+      final r = verifyTampered(sql.toString());
+      expect(r.ok, isFalse);
+      expect(r.errors, contains(startsWith('$fts MATCH arab:"')));
+      expect(r.errors.join(), contains('does not find rowid'));
+    });
+  }
 }
