@@ -26,6 +26,7 @@ void main() {
   }
 
   setUp(() {
+    loads = 0;
     tmp = Directory.systemTemp.createTempSync('nura_inst_');
     addTearDown(() => tmp.deleteSync(recursive: true));
     target = Directory('${tmp.path}/target');
