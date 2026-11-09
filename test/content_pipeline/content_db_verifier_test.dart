@@ -107,4 +107,10 @@ void main() {
     );
     expect(r.ok, isFalse);
   });
+
+  test('missing fts row is an error', () {
+    final r = verifyTampered('DELETE FROM ayah_fts_docsize WHERE id = 1');
+    expect(r.ok, isFalse);
+    expect(r.errors, contains(startsWith('ayah_fts count')));
+  });
 }

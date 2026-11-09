@@ -38,8 +38,6 @@ CREATE TABLE ayah (
   arab                TEXT NOT NULL,
   translation_id      TEXT NOT NULL,
   tafsir_kemenag      TEXT NOT NULL,
-  arab_search         TEXT NOT NULL,
-  translation_search  TEXT NOT NULL,
   UNIQUE (surah_number, ayah_number)
 )''',
   '''
@@ -64,20 +62,18 @@ CREATE TABLE hadith (
   number              INTEGER NOT NULL,
   arab                TEXT NOT NULL,
   translation_id      TEXT NOT NULL,
-  arab_search         TEXT NOT NULL,
-  translation_search  TEXT NOT NULL,
   translation_length  INTEGER NOT NULL,
   UNIQUE (book_slug, number)
 )''',
   '''
 CREATE VIRTUAL TABLE ayah_fts USING fts5(
-  arab_search, translation_search,
-  content='ayah', content_rowid='id', tokenize='unicode61'
+  arab, translation,
+  content='', tokenize='unicode61'
 )''',
   '''
 CREATE VIRTUAL TABLE hadith_fts USING fts5(
-  arab_search, translation_search,
-  content='hadith', content_rowid='id', tokenize='unicode61'
+  arab, translation,
+  content='', tokenize='unicode61'
 )''',
   '''
 CREATE TABLE daily_ayah (

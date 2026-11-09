@@ -6,6 +6,7 @@ import 'checksum_manifest.dart';
 import 'expected_totals.dart';
 import 'hadith_source_parser.dart';
 import 'quran_source_parser.dart';
+import 'text_normalizer.dart';
 import 'verification_report.dart';
 
 export 'expected_totals.dart';
@@ -153,25 +154,53 @@ VerificationReport verifyContentDb({
       }
     }
 
-    // 5. FTS integrity. The command is an INSERT, which a read-only handle
-    // rejects, so run it on a throwaway copy; the original stays untouched.
-    final tmp = Directory.systemTemp.createTempSync('nura_fts_');
-    try {
-      final copy = database.copySync('${tmp.path}/check.db');
-      final fts = sqlite3.open(copy.path);
-      try {
-        for (final t in ['ayah_fts', 'hadith_fts']) {
-          try {
-            fts.execute("INSERT INTO $t($t) VALUES('integrity-check')");
-          } on Object catch (e) {
-            errors.add('$t integrity-check failed: $e');
-          }
+    // 5. FTS. Contentless tables cannot be read back or integrity-checked,
+    // so compare index size to the main table and probe with real words.
+    void checkFts(String table, String where, String arab, String text) {
+      final fts = '${table}_fts';
+      final id = _count(db, 'SELECT id FROM $table WHERE $where');
+      total(
+        fts,
+        _count(db, 'SELECT COUNT(*) FROM ${fts}_docsize'),
+        _count(db, 'SELECT COUNT(*) FROM $table'),
+      );
+      // A word of the probe row's normalized text must find that row's id.
+      final probes = {
+        'arab': (normalizeArabicForSearch(arab).split(' '), 'arab'),
+        'translation': (
+          normalizeIndonesianForSearch(text).split(' '),
+          'translation',
+        ),
+      };
+      for (final p in probes.values) {
+        final word = p.$1.firstWhere((w) => w.isNotEmpty, orElse: () => '');
+        if (word.isEmpty) continue;
+        final hits = db.select('SELECT rowid FROM $fts WHERE $fts MATCH ?', [
+          '${p.$2}:"$word"',
+        ]);
+        if (!hits.any((r) => r['rowid'] == id)) {
+          errors.add('$fts MATCH ${p.$2}:"$word" does not find rowid $id');
         }
-      } finally {
-        fts.dispose();
       }
-    } finally {
-      tmp.deleteSync(recursive: true);
+    }
+
+    if (surahs.isNotEmpty && surahs.first.ayahs.isNotEmpty) {
+      final a = surahs.first.ayahs.first;
+      checkFts(
+        'ayah',
+        'surah_number = ${surahs.first.number} AND ayah_number = ${a.number}',
+        a.arab,
+        a.translation,
+      );
+    }
+    if (books.isNotEmpty && books.first.hadiths.isNotEmpty) {
+      final h = books.first.hadiths.first;
+      checkFts(
+        'hadith',
+        "book_slug = '${books.first.slug}' AND number = ${h.number}",
+        h.arab,
+        h.translation,
+      );
     }
 
     // 6. meta.source_checksums.

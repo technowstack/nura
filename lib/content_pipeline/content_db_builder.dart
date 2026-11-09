@@ -18,7 +18,8 @@ List<Map<String, dynamic>>? _optionalList(Directory root, String name) {
   final f = File('${root.path}/meta/$name');
   if (!f.existsSync()) return null;
   try {
-    return (jsonDecode(f.readAsStringSync()) as List<dynamic>).cast<Map<String, dynamic>>();
+    return (jsonDecode(f.readAsStringSync()) as List<dynamic>)
+        .cast<Map<String, dynamic>>();
   } on Object catch (e) {
     throw SourceFormatException('meta/$name', 'invalid json: $e');
   }
@@ -71,21 +72,41 @@ BuildResult buildContentDb({
     meta.dispose();
 
     final insSurah = db.prepare('INSERT INTO surah VALUES (?, ?, ?, ?, ?, ?)');
-    final insAyah = db.prepare('INSERT INTO ayah VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    final insAyah = db.prepare('INSERT INTO ayah VALUES (?, ?, ?, ?, ?, ?)');
+    final insAyahFts = db.prepare(
+      'INSERT INTO ayah_fts(rowid, arab, translation) VALUES (?, ?, ?)',
+    );
     final ayahIds = <String, int>{};
     for (final s in surahs) {
       final rev = info[s.number] ?? '';
       if (rev.isEmpty) {
-        warnings.add('surah ${s.number}: no revelation in meta/surah_info.json');
+        warnings.add(
+          'surah ${s.number}: no revelation in meta/surah_info.json',
+        );
       } else if (rev != 'makkiyah' && rev != 'madaniyah') {
         warnings.add('surah ${s.number}: unexpected revelation "$rev"');
       }
-      insSurah.execute([s.number, s.nameArab, s.nameLatin, s.nameId, s.ayahCount, rev]);
+      insSurah.execute([
+        s.number,
+        s.nameArab,
+        s.nameLatin,
+        s.nameId,
+        s.ayahCount,
+        rev,
+      ]);
       for (final a in s.ayahs) {
         ayahCount++;
         ayahIds['${s.number}:${a.number}'] = ayahCount;
         insAyah.execute([
-          ayahCount, s.number, a.number, a.arab, a.translation, a.tafsir,
+          ayahCount,
+          s.number,
+          a.number,
+          a.arab,
+          a.translation,
+          a.tafsir,
+        ]);
+        insAyahFts.execute([
+          ayahCount,
           normalizeArabicForSearch(a.arab),
           normalizeIndonesianForSearch(a.translation),
         ]);
@@ -93,31 +114,54 @@ BuildResult buildContentDb({
     }
     insSurah.dispose();
     insAyah.dispose();
+    insAyahFts.dispose();
 
     final insBook = db.prepare('INSERT INTO hadith_book VALUES (?, ?, ?, ?)');
-    final insHadith = db.prepare('INSERT INTO hadith VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    final insHadith = db.prepare(
+      'INSERT INTO hadith VALUES (?, ?, ?, ?, ?, ?)',
+    );
+    final insHadithFts = db.prepare(
+      'INSERT INTO hadith_fts(rowid, arab, translation) VALUES (?, ?, ?)',
+    );
     final dailyCandidates = <int>[];
     for (final b in books) {
-      insBook.execute([b.slug, hadithBookNames[b.slug], b.hadiths.length, order.indexOf(b.slug)]);
+      insBook.execute([
+        b.slug,
+        hadithBookNames[b.slug],
+        b.hadiths.length,
+        order.indexOf(b.slug),
+      ]);
       for (final h in b.hadiths) {
         hadithCount++;
         final len = h.translation.length;
         if (len <= dailyHadithMaxLength) dailyCandidates.add(hadithCount);
         insHadith.execute([
-          hadithCount, b.slug, h.number, h.arab, h.translation,
+          hadithCount,
+          b.slug,
+          h.number,
+          h.arab,
+          h.translation,
+          len,
+        ]);
+        insHadithFts.execute([
+          hadithCount,
           normalizeArabicForSearch(h.arab),
           normalizeIndonesianForSearch(h.translation),
-          len,
         ]);
       }
     }
     insBook.dispose();
     insHadith.dispose();
+    insHadithFts.dispose();
 
     final insJuz = db.prepare('INSERT INTO juz VALUES (?, ?, ?, ?, ?)');
     for (final j in _optionalList(sourceRoot, 'juz.json') ?? const []) {
       insJuz.execute([
-        j['number'], j['start_surah'], j['start_ayah'], j['end_surah'], j['end_ayah'],
+        j['number'],
+        j['start_surah'],
+        j['start_ayah'],
+        j['end_surah'],
+        j['end_ayah'],
       ]);
     }
     insJuz.dispose();
@@ -127,7 +171,9 @@ BuildResult buildContentDb({
       for (final e in dailyAyah)
         ayahIds['${e['surah']}:${e['ayah']}'] ??
             (throw SourceFormatException(
-                'meta/daily_ayah.json', 'no such ayah ${e['surah']}:${e['ayah']}')),
+              'meta/daily_ayah.json',
+              'no such ayah ${e['surah']}:${e['ayah']}',
+            )),
     ];
     final insDa = db.prepare('INSERT INTO daily_ayah VALUES (?, ?)');
     final shuffledAyah = seededShuffle(ids, dailySeed);
@@ -143,8 +189,6 @@ BuildResult buildContentDb({
     }
     insDh.dispose();
 
-    db.execute("INSERT INTO ayah_fts(ayah_fts) VALUES('rebuild')");
-    db.execute("INSERT INTO hadith_fts(hadith_fts) VALUES('rebuild')");
     db.execute('COMMIT');
     db.execute('VACUUM');
     db.dispose();
