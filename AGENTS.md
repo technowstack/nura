@@ -14,7 +14,7 @@ Baca dokumen ini sebelum mengubah kode. Dokumen pendamping: `docs/PRD.md` (apa y
 
 1. **Jangan edit file di `data-source/`.** JSON di sana adalah sumber kebenaran. Checksum-nya tercatat di `data-source/CHECKSUMS.sha256`.
 2. **Jangan edit `assets/db/content.db` secara manual dan jangan di-commit.** Database dihasilkan oleh `tool/prepare_content.sh` (`tool/build_content_db.dart` lalu `tool/verify_content_db.dart --full`).
-3. **Jangan mengubah kolom teks asli** (`arab`, `translation_id`, `tafsir_kemenag`) saat konversi: tanpa trim, normalisasi Unicode, atau perubahan spasi. Normalisasi untuk pencarian hanya di kolom `*_search` dan indeks FTS.
+3. **Jangan mengubah kolom teks asli** (`arab`, `translation_id`, `tafsir_kemenag`) saat konversi: tanpa trim, normalisasi Unicode, atau perubahan spasi. Normalisasi untuk pencarian hanya di indeks FTS (`ayah_fts`, `hadith_fts`).
 4. **Jangan menulis ke `content.db` dari aplikasi.** Buka dalam mode read-only. Data pengguna hanya di `user.db`.
 5. **Jangan menambah pemanggilan jaringan di luar layanan fitur online.** Setiap akses jaringan harus lewat layanan itu, yang memeriksa sakelar dan koneksi terlebih dulu.
 6. **Jangan mengarang data.** Kalau data tidak ada di sumber, catat sebagai pertanyaan di STATUS.md.

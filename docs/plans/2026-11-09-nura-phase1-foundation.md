@@ -37,7 +37,7 @@
 lib/
   main.dart                                   (ganti total)
   content_pipeline/                           Dart murni, dipakai tool/ dan test/
-    text_normalizer.dart                      normalisasi kolom *_search
+    text_normalizer.dart                      normalisasi teks untuk indeks FTS
     source_models.dart                        SourceSurah, SourceAyah, SourceHadithBook, SourceHadith
     quran_source_parser.dart
     hadith_source_parser.dart
@@ -172,7 +172,7 @@ Expected: FAIL, fungsi belum ada.
 
 - [ ] **Step 3: Implementasi**
 
-Arab: hapus rentang U+064B–U+065F, U+0670, U+06D6–U+06ED, U+0640; ganti أ إ آ ٱ → ا, ى → ي, ة → ه; padatkan whitespace; trim. Indonesia: `toLowerCase()`, ganti karakter yang bukan huruf/angka/spasi dengan spasi (pakai `RegExp(r'[^\p{L}\p{N}\s]', unicode: true)`), padatkan, trim. Normalisasi ini hanya untuk kolom `*_search`.
+Arab: hapus rentang U+064B–U+065F, U+0670, U+06D6–U+06ED, U+0640; ganti أ إ آ ٱ → ا, ى → ي, ة → ه; padatkan whitespace; trim. Indonesia: `toLowerCase()`, ganti karakter yang bukan huruf/angka/spasi dengan spasi (pakai `RegExp(r'[^\p{L}\p{N}\s]', unicode: true)`), padatkan, trim. Normalisasi ini hanya untuk indeks FTS (`ayah_fts`, `hadith_fts`).
 
 - [ ] **Step 4: Jalankan, pastikan lulus**
 
@@ -367,9 +367,9 @@ test('raw text stored byte-identical, including trailing spaces and ZWNJ', () {
   expect(r['arab'], 'نص تجريبي  ');
   expect(r['translation_id'], 'teks‌ uji  dengan  spasi  ');
 });
-test('search columns are normalized', () { /* arab_search == normalizeArabicForSearch(arab) */ });
+test('FTS finds rows by normalized words, rowid equals table id', () { /* kata Arab tanpa harakat dan kata Indonesia huruf kecil menemukan baris yang benar */ });
 test('FTS finds an ayah by indonesian word', () {
-  expect(db.select("SELECT rowid FROM ayah_fts WHERE ayah_fts MATCH 'translation_search:pengasih'"), isNotEmpty);
+  expect(db.select("SELECT rowid FROM ayah_fts WHERE ayah_fts MATCH 'translation:pengasih'"), isNotEmpty);
 });
 test('meta has schema_version, data_version, built_at, source_checksums', () {});
 test('missing surah_info entry yields empty revelation and a warning', () {});
