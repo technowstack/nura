@@ -463,8 +463,8 @@ git commit -m "feat: verify content.db row by row against source"
 ### Task 7: Skrip CLI dan `content.db` dari data penuh
 
 **Files:**
-- Create: `tool/build_content_db.dart`, `tool/verify_content_db.dart`, `assets/db/content.db`
-- Modify: `pubspec.yaml` (daftarkan `assets/db/content.db`), `docs/STATUS.md`
+- Create: `tool/build_content_db.dart`, `tool/verify_content_db.dart`, `tool/prepare_content.sh`
+- Modify: `pubspec.yaml` (daftarkan `assets/db/content.db`), `.gitignore` (`assets/db/content.db`), `docs/STATUS.md`
 - Test: `test/tool/cli_test.dart`
 
 **Interfaces:**
@@ -498,21 +498,23 @@ Run: `dart run tool/build_content_db.dart --data-version 2026.11.1`
 Run: `dart run tool/verify_content_db.dart --full`
 Expected: verify exit 0. Warning `revelation empty` untuk 114 surah diperbolehkan (surah_info belum ada). Catat ukuran `assets/db/content.db`.
 
-Jika ukuran > 100 MB (batas GitHub), BERHENTI dan laporkan ke pemilik proyek sebelum commit.
+`content.db` TIDAK di-commit (ada di `.gitignore`); `tool/prepare_content.sh` membuatnya dari `data-source/` dan menjalankan `verify --full`. Catat ukuran file.
 
 - [ ] **Step 5: Daftarkan aset dan jalankan semua test**
 
-Tambahkan `assets/db/content.db` ke `flutter.assets`. Run: `flutter analyze && flutter test`. Expected: bersih dan PASS.
+Tambahkan `assets/db/content.db` ke `flutter.assets` dan ke `.gitignore`. Jalankan `tool/prepare_content.sh`, lalu `flutter analyze && flutter test`. Expected: bersih dan PASS. Test memakai fixture, bukan `content.db` penuh, tetapi `flutter test` butuh file aset ada (lihat STATUS).
 
 - [ ] **Step 6: Perbarui STATUS.md** (ukuran content.db, data_version, hasil verifikasi, jumlah warning).
 
 - [ ] **Step 7: Commit (dua commit)**
 
 ```bash
-git add tool test/tool pubspec.yaml pubspec.lock
+git add tool test/tool
 git commit -m "feat: add build and verify scripts for content.db"
-git add assets/db/content.db docs/STATUS.md
-git commit -m "data: build content.db 2026.11.1 from data-source"
+git add tool/prepare_content.sh .gitignore pubspec.yaml
+git commit -m "build: add prepare_content script and register content.db asset"
+git add docs
+git commit -m "docs: update docs for generated content.db"
 ```
 
 ---

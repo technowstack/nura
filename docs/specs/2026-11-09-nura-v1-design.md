@@ -89,8 +89,6 @@ CREATE TABLE ayah (
   arab                TEXT NOT NULL,         -- text[ayat], apa adanya
   translation_id      TEXT NOT NULL,         -- translations.id.text[ayat], apa adanya
   tafsir_kemenag      TEXT NOT NULL,         -- tafsir.id.kemenag.text[ayat], apa adanya
-  arab_search         TEXT NOT NULL,         -- tanpa harakat dan tanda waqaf
-  translation_search  TEXT NOT NULL,         -- huruf kecil, tanpa tanda baca
   UNIQUE (surah_number, ayah_number)
 );
 
@@ -115,20 +113,20 @@ CREATE TABLE hadith (
   number              INTEGER NOT NULL,      -- field number
   arab                TEXT NOT NULL,         -- field arab, apa adanya
   translation_id      TEXT NOT NULL,         -- field id, apa adanya
-  arab_search         TEXT NOT NULL,
-  translation_search  TEXT NOT NULL,
   translation_length  INTEGER NOT NULL,      -- jumlah karakter translation_id
   UNIQUE (book_slug, number)
 );
 
+-- FTS5 contentless: hanya berisi teks hasil normalisasi, rowid = id tabel utama.
+-- Kolom tidak bisa di-SELECT; cari lewat MATCH, ambil rowid, lalu baca tabel utama.
 CREATE VIRTUAL TABLE ayah_fts USING fts5(
-  arab_search, translation_search,
-  content='ayah', content_rowid='id', tokenize='unicode61'
+  arab, translation,
+  content='', tokenize='unicode61'
 );
 
 CREATE VIRTUAL TABLE hadith_fts USING fts5(
-  arab_search, translation_search,
-  content='hadith', content_rowid='id', tokenize='unicode61'
+  arab, translation,
+  content='', tokenize='unicode61'
 );
 
 CREATE TABLE daily_ayah (
@@ -148,10 +146,12 @@ Nama tampilan kitab hadis ditulis di skrip build sebagai konstanta, karena tidak
 
 - Kolom teks asli diisi dengan string hasil decode JSON tanpa trim, normalisasi Unicode, atau penggantian karakter.
 - Field angka bertipe string di JSON Quran (`number`, `number_of_ayah`, kunci ayat) diubah ke `INTEGER`. Verifikasi membandingkan `toString()` hasilnya dengan string asli.
-- `arab_search`: hapus harakat (U+064B–U+065F, U+0670), tanda waqaf dan tanda Al-Qur'an (U+06D6–U+06ED), dan tatweel (U+0640). Normalisasi alif (أ إ آ ٱ → ا), ى → ي, ة → ه.
-- `translation_search`: huruf kecil, tanda baca diganti spasi, spasi beruntun dipadatkan.
+- Teks Arab untuk indeks `*_fts`: hapus harakat (U+064B–U+065F, U+0670), tanda waqaf dan tanda Al-Qur'an (U+06D6–U+06ED), dan tatweel (U+0640). Normalisasi alif (أ إ آ ٱ → ا), ى → ي, ة → ه.
+- Teks terjemahan untuk indeks `*_fts`: huruf kecil, tanda baca diganti spasi, spasi beruntun dipadatkan.
 - `daily_ayah`: dibaca dari `meta/daily_ayah.json` (daftar pasangan surah dan ayat), diacak dengan seed tetap `20261109`. Jika file belum ada, tabel kosong dan fitur disembunyikan di aplikasi.
 - `daily_hadith`: semua hadis dengan `translation_length` ≤ 400 karakter, diurutkan berdasarkan `(sort_order kitab, number)`, lalu diacak dengan seed tetap yang sama. Batas 400 adalah konstanta di skrip dan bisa diubah.
+- Builder mengisi `ayah_fts` dan `hadith_fts` baris demi baris dengan `rowid` = `id` tabel utama, dan memasang `PRAGMA page_size = 16384` sebelum membuat tabel (file terkecil dari 4096/8192/16384).
+- `content.db` dihasilkan lokal oleh `tool/prepare_content.sh` dan tidak di-commit.
 - Build bersifat deterministik: input yang sama menghasilkan isi tabel yang sama.
 
 ### 3.4 Verifikasi (`verify_content_db.dart`)
@@ -162,7 +162,7 @@ Gagal (exit code bukan 0) jika salah satu syarat tidak terpenuhi:
 2. Jumlah baris: 114 surah, 6.236 ayat, 30 juz (jika `juz.json` ada), 9 kitab, 38.102 hadis, dan jumlah per kitab sama dengan panjang array JSON-nya.
 3. Setiap ayat: `arab`, `translation_id`, dan `tafsir_kemenag` identik (perbandingan string penuh) dengan JSON sumber. Hal yang sama untuk setiap hadis.
 4. `ayah_count` setiap surah sama dengan jumlah baris `ayah`-nya.
-5. Isi FTS sinkron dengan tabelnya (`INSERT INTO ayah_fts(ayah_fts) VALUES('integrity-check')`).
+5. FTS: jumlah baris indeks (`ayah_fts_docsize`, `hadith_fts_docsize`) sama dengan tabel utama, dan query `MATCH` dengan kata hasil normalisasi dari baris sampel nyata menemukan `rowid` baris tersebut. (`integrity-check` tidak membandingkan isi untuk tabel contentless, jadi tidak dipakai.)
 6. `meta.source_checksums` sama dengan isi `CHECKSUMS.sha256`.
 
 Test `test/tool/` menjalankan verifikasi pada subset data sebagai fixture, termasuk kasus yang harus gagal (satu karakter diubah).

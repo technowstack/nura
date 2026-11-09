@@ -107,8 +107,8 @@ assets/db/content.db         hasil konversi, dibundel ke app, dibuka READ-ONLY
 
 1. JSON di `data-source/` adalah sumber kebenaran dan tidak boleh diedit. Setiap file punya checksum SHA-256 di `CHECKSUMS.sha256`.
 2. Kolom teks asli (`arab`, `translation`, `tafsir`) disalin byte demi byte tanpa normalisasi, trim, atau perubahan encoding.
-3. Kebutuhan pencarian dilayani kolom terpisah (`*_search`, misalnya Arab tanpa harakat dan teks huruf kecil) dan indeks FTS5. Kolom asli tidak pernah diubah.
-4. Verifikasi otomatis wajib lulus sebelum `content.db` di-commit:
+3. Kebutuhan pencarian dilayani indeks FTS5 contentless yang berisi teks hasil normalisasi (Arab tanpa harakat, teks huruf kecil tanpa tanda baca). Kolom asli tidak pernah diubah.
+4. Verifikasi otomatis wajib lulus setiap kali `content.db` dibuat (`tool/prepare_content.sh`; file ini tidak di-commit):
    - Jumlah: 114 surah, 6.236 ayat, 9 kitab, 38.102 hadis, dan jumlah per kitab sesuai.
    - Setiap baris dibandingkan dengan JSON sumber. Satu karakter beda berarti gagal.
    - Checksum JSON sumber cocok dengan `CHECKSUMS.sha256`.
@@ -118,11 +118,11 @@ assets/db/content.db         hasil konversi, dibundel ke app, dibuka READ-ONLY
 ### 7.3 Skema `content.db` (garis besar)
 
 - `surah` (number, name_arab, name_latin, name_id, ayah_count, revelation)
-- `ayah` (surah_number, ayah_number, arab, translation_id, tafsir_kemenag, arab_search, translation_search)
+- `ayah` (surah_number, ayah_number, arab, translation_id, tafsir_kemenag)
 - `juz` (number, start_surah, start_ayah, end_surah, end_ayah)
 - `hadith_book` (slug, name, hadith_count)
-- `hadith` (book_slug, number, arab, translation_id, arab_search, translation_search, translation_length)
-- Tabel FTS5 untuk ayat dan hadis.
+- `hadith` (book_slug, number, arab, translation_id, translation_length)
+- Tabel FTS5 contentless (`ayah_fts`, `hadith_fts`, rowid = id tabel utama) untuk ayat dan hadis.
 - `daily_ayah` dan `daily_hadith` (urutan konten harian, diacak dengan seed tetap saat build).
 - `meta` (key, value)
 
