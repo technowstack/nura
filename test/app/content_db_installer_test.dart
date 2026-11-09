@@ -13,6 +13,7 @@ void main() {
   late Directory target;
   late Uint8List v1;
   late Uint8List v2;
+  var loads = 0;
 
   Uint8List build(String version) {
     final out = File('${tmp.path}/$version.db');
@@ -34,7 +35,6 @@ void main() {
     v2 = build('test-2');
   });
 
-  var loads = 0;
   ContentDbInstaller installer(Uint8List bytes) => ContentDbInstaller(
     loadAsset: (key) async {
       loads++;
