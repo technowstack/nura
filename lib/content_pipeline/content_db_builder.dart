@@ -57,6 +57,7 @@ BuildResult buildContentDb({
   var ayahCount = 0;
   var hadithCount = 0;
   try {
+    db.execute('PRAGMA page_size = 16384');
     db.execute('BEGIN');
     contentSchemaDdl.forEach(db.execute);
 

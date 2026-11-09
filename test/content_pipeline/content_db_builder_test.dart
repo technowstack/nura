@@ -105,6 +105,10 @@ void main() {
     expect(count('hadith_fts_docsize'), count('hadith'));
   });
 
+  test('page_size pragma is applied', () {
+    expect(db.select('PRAGMA page_size').single.values.first, 16384);
+  });
+
   test('meta has schema_version, data_version, built_at, source_checksums', () {
     final m = {
       for (final r in db.select('SELECT key, value FROM meta'))
