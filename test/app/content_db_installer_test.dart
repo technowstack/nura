@@ -33,8 +33,10 @@ void main() {
     v2 = build('test-2');
   });
 
+  var loads = 0;
   ContentDbInstaller installer(Uint8List bytes) => ContentDbInstaller(
     loadAsset: (key) async {
+      loads++;
       expect(key, contentDbAssetKey);
       return bytes;
     },
@@ -57,7 +59,9 @@ void main() {
     final f = await installer(v1).ensureInstalled();
     final before = f.lastModifiedSync();
     await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(loads, 1);
     await installer(v1).ensureInstalled();
+    expect(loads, 2);
     expect(f.lastModifiedSync(), before);
     expect(File('${f.path}.tmp').existsSync(), isFalse);
   });
@@ -81,5 +85,24 @@ void main() {
     File('${target.path}/content.db').writeAsStringSync('junk' * 100);
     final f = await installer(v1).ensureInstalled();
     expect(versionOf(f), 'test-1');
+  });
+
+  test('junk asset keeps existing valid content.db', () async {
+    final f = await installer(v1).ensureInstalled();
+    await expectLater(
+      installer(Uint8List.fromList(List.filled(500, 7))).ensureInstalled(),
+      throwsStateError,
+    );
+    expect(versionOf(f), 'test-1');
+    expect(File('${f.path}.tmp').existsSync(), isFalse);
+  });
+
+  test('junk asset with no existing db throws and creates nothing', () async {
+    await expectLater(
+      installer(Uint8List.fromList(List.filled(500, 7))).ensureInstalled(),
+      throwsStateError,
+    );
+    expect(File('${target.path}/content.db').existsSync(), isFalse);
+    expect(File('${target.path}/content.db.tmp').existsSync(), isFalse);
   });
 }

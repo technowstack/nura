@@ -21,10 +21,15 @@ class ContentDbInstaller {
     final tmp = File('${target.path}.tmp');
     await tmp.writeAsBytes(await loadAsset(contentDbAssetKey), flush: true);
     final assetVersion = _versionOf(tmp);
-    if (assetVersion != null && _versionOf(target) == assetVersion) {
+    if (assetVersion == null) {
+      await tmp.delete();
+      throw StateError('Bundled content.db is unreadable');
+    }
+    if (_versionOf(target) == assetVersion) {
       await tmp.delete();
       return target;
     }
+    // Write to .tmp then rename: atomic replace on POSIX/Android.
     await tmp.rename(target.path);
     return target;
   }
@@ -34,9 +39,11 @@ class ContentDbInstaller {
     if (!file.existsSync()) return null;
     try {
       final db = ContentDatabase.open(file);
-      final v = db.dataVersion;
-      db.close();
-      return v;
+      try {
+        return db.dataVersion;
+      } finally {
+        db.close();
+      }
     } catch (_) {
       return null;
     }
