@@ -117,4 +117,23 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Beranda'), findsOneWidget);
   });
+
+  for (final (setting, expected) in [
+    ('dark', ThemeMode.dark),
+    ('light', ThemeMode.light),
+    (null, ThemeMode.system),
+  ]) {
+    testWidgets('theme_mode=$setting gives $expected', (tester) async {
+      final s =
+          await tester.runAsync(() => ready(onboardingDone: 'true'))
+              as BootstrapSuccess;
+      if (setting != null) s.user.setSetting(SettingKeys.themeMode, setting);
+      await tester.pumpWidget(NuraApp(result: s, onRetry: () {}));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<GetMaterialApp>(find.byType(GetMaterialApp)).themeMode,
+        expected,
+      );
+    });
+  }
 }

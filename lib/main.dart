@@ -13,15 +13,25 @@ Future<void> main() async {
   await _start();
 }
 
+bool _starting = false;
+
 Future<void> _start() async {
-  final Directory dir = await getApplicationSupportDirectory();
-  final result = await bootstrap(
-    installer: ContentDbInstaller(
-      loadAsset: (key) async =>
-          (await rootBundle.load(key)).buffer.asUint8List(),
-      targetDir: dir,
-    ),
-    dataDir: dir,
-  );
-  runApp(NuraApp(result: result, onRetry: _start));
+  if (_starting) return;
+  _starting = true;
+  try {
+    final Directory dir = await getApplicationSupportDirectory();
+    final result = await bootstrap(
+      installer: ContentDbInstaller(
+        loadAsset: (key) async =>
+            (await rootBundle.load(key)).buffer.asUint8List(),
+        targetDir: dir,
+      ),
+      dataDir: dir,
+    );
+    runApp(NuraApp(result: result, onRetry: _start));
+  } catch (e) {
+    runApp(NuraApp(result: BootstrapFailure(e), onRetry: _start));
+  } finally {
+    _starting = false;
+  }
 }
