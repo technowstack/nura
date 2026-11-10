@@ -25,7 +25,7 @@
 
 1. **Urutan kunci ayat di JSON Quran.** Kunci `text` berupa string `"1"`, `"2"`, … `"10"`. Ayat harus diurutkan secara numerik, bukan urutan map atau urutan string ("10" sebelum "2"). Diuji di Task 3.
 2. **Whitespace dan karakter tak terlihat di teks.** Spasi di akhir, spasi ganda, dan karakter seperti ZWNJ (U+200C) harus tersimpan persis. Diuji di Task 5 dan Task 6 lewat entri sintetis di fixture.
-3. **Salinan `content.db` yang usang setelah update aplikasi.** Kalau `data_version` di assets berbeda dengan salinan, salinan harus diganti. Diuji di Task 8.
+3. **Salinan `content.db` yang usang setelah update aplikasi.** Kalau `content.version` di assets berbeda dengan salinan, salinan harus diganti. Diuji di Task 8.
 4. **Penyalinan yang terputus.** Kalau aplikasi mati di tengah penyalinan, file setengah jadi tidak boleh dianggap valid. Salin ke file sementara lalu `rename`. Diuji di Task 8.
 5. **Peluncuran kedua.** Membuka `user.db` yang sudah ada tidak boleh menjalankan ulang migrasi atau menghapus data. Diuji di Task 9.
 
@@ -538,11 +538,11 @@ Gunakan `content.db` hasil build fixture (Task 5) sebagai byte aset palsu.
 
 ```dart
 test('installs when target missing', () async {});
-test('does not recopy when data_version matches', () async {
+test('does not recopy when content.version matches', () async {
   // install, catat lastModified, install lagi, lastModified sama, loader dipanggil 1x untuk cek versi
 });
-test('recopies when asset data_version differs', () async {
-  // install versi test-1, lalu loader mengembalikan db test-2, hasil data_version == 'test-2'
+test('recopies when asset content.version differs', () async {
+  // install versi test-1, lalu asset berisi versi test-2, hasil content.version terpasang == test-2
 });
 test('leftover .tmp from interrupted copy is ignored and replaced', () async {
   // buat content.db.tmp berisi sampah, tanpa content.db; ensureInstalled sukses
@@ -563,7 +563,7 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implementasi**
 
-`ensureInstalled`: (1) muat byte aset sekali dan tulis ke `content.db.tmp` (menimpa sisa `.tmp` lama); (2) buka `.tmp` read-only dan baca `meta.data_version`; (3) jika `content.db` ada, bisa dibuka, dan versinya sama, hapus `.tmp` dan kembalikan `content.db` tanpa menyentuhnya; (4) selain itu `rename` `.tmp` menjadi `content.db`. Gagal membuka `content.db` lama (korup) diperlakukan sebagai "perlu salin ulang".
+`ensureInstalled`: (1) baca asset kecil `content.version` dan bandingkan dengan file `content.version` terpasang di samping `content.db`; (2) jika sama dan `content.db` terpasang bisa dibuka, kembalikan tanpa menyentuhnya; (3) selain itu (versi beda, `content.db` hilang atau korup, atau file versi terpasang hilang) salin asset lewat `AssetCopier` ke `content.db.tmp` (menimpa sisa `.tmp` lama), `rename` menjadi `content.db`, lalu tulis file versi terpasang paling akhir (tmp lalu rename). Sesuai spesifikasi bagian 5.4.
 
 - [ ] **Step 4: Jalankan, pastikan lulus**
 
