@@ -24,7 +24,9 @@ SourceHadithBook parseHadithFile(String slug, String jsonText) {
 
 List<SourceHadithBook> readHadithDir(Directory dir) {
   final books = [
-    for (final f in dir.listSync().whereType<File>().where((f) => f.path.endsWith('.json')))
+    for (final f in dir.listSync().whereType<File>().where(
+      (f) => f.path.endsWith('.json'),
+    ))
       parseHadithFile(
         f.uri.pathSegments.last.replaceFirst(RegExp(r'\.json$'), ''),
         f.readAsStringSync(),

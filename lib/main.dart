@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'app/app_bootstrap.dart';
 import 'app/data/sources/bundle_asset_copier.dart';
 import 'app/data/sources/content_db_installer.dart';
+import 'app/data/sources/native_asset_copier.dart';
 import 'app/nura_app.dart';
 
 Future<void> main() async {
@@ -23,7 +24,7 @@ Future<void> _start() async {
     final Directory dir = await getApplicationSupportDirectory();
     final result = await bootstrap(
       installer: ContentDbInstaller(
-        copyAsset: copyAssetFromBundle,
+        copyAsset: Platform.isAndroid ? copyAssetNatively : copyAssetFromBundle,
         loadVersion: rootBundle.loadString,
         targetDir: dir,
       ),

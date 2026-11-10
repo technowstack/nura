@@ -36,14 +36,18 @@ class ChecksumManifest {
       final d = Directory('${root.path}/$dir');
       if (!d.existsSync()) continue;
       for (final f in d.listSync(recursive: true).whereType<File>()) {
-        final rel = f.absolute.path.substring(base.length + 1).replaceAll(r'\', '/');
+        final rel = f.absolute.path
+            .substring(base.length + 1)
+            .replaceAll(r'\', '/');
         if (!entries.containsKey(rel)) problems.add('unlisted file: $rel');
       }
     }
     return problems;
   }
 
-  String toJson() => jsonEncode(Map.fromEntries(
-        entries.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
-      ));
+  String toJson() => jsonEncode(
+    Map.fromEntries(
+      entries.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    ),
+  );
 }
