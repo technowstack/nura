@@ -67,7 +67,7 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 ### 5.5 1 Hari 1 Ayat dan 1 Hari 1 Hadis
 - Pilihan ditentukan dari tanggal secara deterministik, jadi semua pengguna melihat konten yang sama di hari yang sama.
 - 1 Hari 1 Ayat memakai **daftar kurasi** dari pemilik proyek (`data-source/meta/daily_ayah.json`). Jika file belum ada, fitur ayat harian disembunyikan.
-- 1 Hari 1 Hadis dipilih **otomatis** dari hadis dengan terjemahan tidak lebih dari 400 karakter.
+- 1 Hari 1 Hadis dipilih **otomatis** dari hadis dengan terjemahan tidak lebih dari 400 UTF-16 code unit (`String.length` Dart).
 - Tampil sebagai kartu di layar depan aplikasi.
 - Widget layar depan Android menampilkan konten yang sama tanpa membuka aplikasi.
 

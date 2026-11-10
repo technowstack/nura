@@ -113,7 +113,7 @@ CREATE TABLE hadith (
   number              INTEGER NOT NULL,      -- field number
   arab                TEXT NOT NULL,         -- field arab, apa adanya
   translation_id      TEXT NOT NULL,         -- field id, apa adanya
-  translation_length  INTEGER NOT NULL,      -- jumlah karakter translation_id
+  translation_length  INTEGER NOT NULL,      -- panjang translation_id dalam UTF-16 code unit (String.length Dart)
   UNIQUE (book_slug, number)
 );
 
@@ -149,7 +149,7 @@ Nama tampilan kitab hadis ditulis di skrip build sebagai konstanta, karena tidak
 - Teks Arab untuk indeks `*_fts`: hapus harakat (U+064B–U+065F, U+0670), tanda waqaf dan tanda Al-Qur'an (U+06D6–U+06ED), dan tatweel (U+0640). Normalisasi alif (أ إ آ ٱ → ا), ى → ي, ة → ه.
 - Teks terjemahan untuk indeks `*_fts`: huruf kecil, tanda baca diganti spasi, spasi beruntun dipadatkan.
 - `daily_ayah`: dibaca dari `meta/daily_ayah.json` (daftar pasangan surah dan ayat), diacak dengan seed tetap `20261109`. Jika file belum ada, tabel kosong dan fitur disembunyikan di aplikasi.
-- `daily_hadith`: semua hadis dengan `translation_length` ≤ 400 karakter, diurutkan berdasarkan `(sort_order kitab, number)`, lalu diacak dengan seed tetap yang sama. Batas 400 adalah konstanta di skrip dan bisa diubah.
+- `daily_hadith`: semua hadis dengan `translation_length` ≤ 400 UTF-16 code unit (`String.length` Dart), diurutkan berdasarkan `(sort_order kitab, number)`, lalu diacak dengan seed tetap yang sama. Batas 400 adalah konstanta di skrip dan bisa diubah.
 - Builder mengisi `ayah_fts` dan `hadith_fts` baris demi baris dengan `rowid` = `id` tabel utama, dan memasang `PRAGMA page_size = 16384` sebelum membuat tabel (file terkecil dari 4096/8192/16384).
 - `content.db` dihasilkan lokal oleh `tool/prepare_content.sh` dan tidak di-commit.
 - Build bersifat deterministik: input yang sama menghasilkan isi tabel yang sama.
