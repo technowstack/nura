@@ -29,7 +29,7 @@ void main() {
   });
 
   ContentDbInstaller installer() => ContentDbInstaller(
-    loadAsset: (_) async => bytes,
+    copyAsset: (_, dest) async => dest.writeAsBytes(bytes),
     loadVersion: (_) async => version,
     targetDir: Directory('${tmp.path}/data'),
   );
@@ -62,7 +62,7 @@ void main() {
   test('bootstrap returns failure when installer throws', () async {
     final r = await bootstrap(
       installer: ContentDbInstaller(
-        loadAsset: (_) async => throw StateError('boom'),
+        copyAsset: (_, _) async => throw StateError('boom'),
         loadVersion: (_) async => 'x:y',
         targetDir: Directory('${tmp.path}/data'),
       ),

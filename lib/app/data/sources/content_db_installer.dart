@@ -1,12 +1,12 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'content_database.dart';
 
 const String contentDbAssetKey = 'assets/db/content.db';
 const String contentVersionAssetKey = 'assets/db/content.version';
 
-typedef AssetBytesLoader = Future<Uint8List> Function(String assetKey);
+/// Copies the bundled asset [assetKey] into [destination] (overwriting it).
+typedef AssetCopier = Future<void> Function(String assetKey, File destination);
 typedef AssetStringLoader = Future<String> Function(String assetKey);
 
 /// Copies the bundled content.db into [targetDir] when the installed copy is
@@ -14,12 +14,12 @@ typedef AssetStringLoader = Future<String> Function(String assetKey);
 /// Only the small version asset is read on a normal start.
 class ContentDbInstaller {
   ContentDbInstaller({
-    required this.loadAsset,
+    required this.copyAsset,
     required this.loadVersion,
     required this.targetDir,
   });
 
-  final AssetBytesLoader loadAsset;
+  final AssetCopier copyAsset;
   final AssetStringLoader loadVersion;
   final Directory targetDir;
 
@@ -31,7 +31,12 @@ class ContentDbInstaller {
     if (_isCurrent(target, versionFile, assetVersion)) return target;
 
     final tmp = File('${target.path}.tmp');
-    await tmp.writeAsBytes(await loadAsset(contentDbAssetKey), flush: true);
+    try {
+      await copyAsset(contentDbAssetKey, tmp);
+    } catch (_) {
+      if (tmp.existsSync()) await tmp.delete();
+      rethrow;
+    }
     final schema = _schemaOf(tmp);
     if (schema == null || schema != assetVersion.split(':').first) {
       await tmp.delete();

@@ -25,10 +25,10 @@ void main() {
 
   ContentDbInstaller installer(Uint8List bytes, String version) =>
       ContentDbInstaller(
-        loadAsset: (key) async {
+        copyAsset: (key, dest) async {
           loads++;
           expect(key, contentDbAssetKey);
-          return bytes;
+          await dest.writeAsBytes(bytes, flush: true);
         },
         loadVersion: (key) async {
           expect(key, contentVersionAssetKey);
@@ -150,5 +150,24 @@ void main() {
     expect(File('${target.path}/content.db').existsSync(), isFalse);
     expect(File('${target.path}/content.db.tmp').existsSync(), isFalse);
     expect(versionFile().existsSync(), isFalse);
+  });
+
+  test('copier failure keeps existing db and leaves no .tmp', () async {
+    final f = await installer(v1.bytes, v1.version).ensureInstalled();
+    final failing = ContentDbInstaller(
+      copyAsset: (key, dest) async {
+        await dest.writeAsBytes([1, 2, 3]);
+        throw const FileSystemException('disk full');
+      },
+      loadVersion: (_) async => v2.version,
+      targetDir: target,
+    );
+    await expectLater(
+      failing.ensureInstalled(),
+      throwsA(isA<FileSystemException>()),
+    );
+    expect(nameOf(f), 'Al-Fatihah');
+    expect(versionFile().readAsStringSync(), v1.version);
+    expect(File('${f.path}.tmp').existsSync(), isFalse);
   });
 }
