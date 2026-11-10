@@ -46,7 +46,7 @@ class MainActivity : FlutterActivity() {
                             file.delete()
                             runOnUiThread { result.error("copy_failed", e.message, null) }
                         }
-                        }
+                    }
                 } catch (e: RejectedExecutionException) {
                     result.error("shutdown", "Copy executor is shut down", null)
                 }
