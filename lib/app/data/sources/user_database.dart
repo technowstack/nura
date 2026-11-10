@@ -3,9 +3,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:sqlite3/sqlite3.dart';
 
-/// Schema version this app build expects in user.db.
-const int userSchemaVersion = 1;
-
 void _migrateToV1(Database db) {
   db.execute('''
 CREATE TABLE setting (
@@ -57,6 +54,9 @@ CREATE TABLE audio_download (
 
 /// Index i migrates the schema from version i to i + 1.
 final List<void Function(Database)> _migrations = [_migrateToV1];
+
+/// Schema version this app build expects in user.db.
+final int userSchemaVersion = _migrations.length;
 
 /// Read-write handle on user.db (settings, bookmarks, prayer cache, downloads).
 class UserDatabase {
