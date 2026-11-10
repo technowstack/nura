@@ -6,6 +6,7 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 
 class MainActivity : FlutterActivity() {
     // Single worker: a 100+ MB copy must never run on the UI thread.
@@ -25,21 +26,29 @@ class MainActivity : FlutterActivity() {
                     result.error("bad_args", "Invalid assetKey or destination", null)
                     return@setMethodCallHandler
                 }
-                copyExecutor.execute {
-                    val file = File(dest)
-                    try {
-                        assets.open("flutter_assets/$key").use { input ->
-                            FileOutputStream(file).use { out ->
-                                input.copyTo(out, BUFFER_SIZE)
-                                out.flush()
-                                out.fd.sync()
+                val file = File(dest)
+                if (!file.canonicalPath.startsWith(filesDir.parentFile.canonicalPath)) {
+                    result.error("bad_args", "Destination outside app data dir", null)
+                    return@setMethodCallHandler
+                }
+                try {
+                    copyExecutor.execute {
+                        try {
+                            assets.open("flutter_assets/$key").use { input ->
+                                FileOutputStream(file).use { out ->
+                                    input.copyTo(out, BUFFER_SIZE)
+                                    out.flush()
+                                    out.fd.sync()
+                                }
                             }
+                            runOnUiThread { result.success(null) }
+                        } catch (e: Throwable) {
+                            file.delete()
+                            runOnUiThread { result.error("copy_failed", e.message, null) }
                         }
-                        runOnUiThread { result.success(null) }
-                    } catch (e: Exception) {
-                        file.delete()
-                        runOnUiThread { result.error("copy_failed", e.message, null) }
-                    }
+                        }
+                } catch (e: RejectedExecutionException) {
+                    result.error("shutdown", "Copy executor is shut down", null)
                 }
             }
     }
