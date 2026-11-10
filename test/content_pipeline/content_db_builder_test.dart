@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nura/content_pipeline/content_db_builder.dart';
+import 'package:nura/content_pipeline/source_models.dart';
 import 'package:nura/content_pipeline/text_normalizer.dart';
 import 'package:sqlite3/sqlite3.dart';
 
@@ -194,6 +195,19 @@ void main() {
       throwsA(anything),
     );
     expect(File('${tempDir.path}/o3.db').existsSync(), isFalse);
+  });
+
+  test('missing CHECKSUMS.sha256 throws', () {
+    final src = Directory('${tempDir.path}/nosum')..createSync();
+    copyDir(fixtureDir(''), src);
+    File('${src.path}/CHECKSUMS.sha256').deleteSync();
+    expect(
+      () => buildContentDb(
+        sourceRoot: src,
+        output: File('${tempDir.path}/ns.db'),
+      ),
+      throwsA(isA<SourceFormatException>()),
+    );
   });
 
   test('unknown hadith slug throws', () {

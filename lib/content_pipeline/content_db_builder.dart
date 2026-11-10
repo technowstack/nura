@@ -47,12 +47,13 @@ BuildResult buildContentDb({
       e['number'] as int: e['revelation'] as String,
   };
   final manifestFile = File('${sourceRoot.path}/CHECKSUMS.sha256');
-  final checksums = manifestFile.existsSync()
-      ? ChecksumManifest.parse(manifestFile.readAsStringSync()).toJson()
-      : '{}';
-  final dataVersion = shortSha256(
-    manifestFile.existsSync() ? manifestFile.readAsBytesSync() : const [],
-  );
+  if (!manifestFile.existsSync()) {
+    throw SourceFormatException('CHECKSUMS.sha256', 'missing');
+  }
+  final checksums = ChecksumManifest.parse(
+    manifestFile.readAsStringSync(),
+  ).toJson();
+  final dataVersion = shortSha256(manifestFile.readAsBytesSync());
 
   final tmp = File('${output.path}.tmp');
   if (tmp.existsSync()) tmp.deleteSync();
