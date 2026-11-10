@@ -469,14 +469,14 @@ git commit -m "feat: verify content.db row by row against source"
 
 **Interfaces:**
 - Consumes: `buildContentDb`, `verifyContentDb`, `fullDatasetTotals`.
-- Produces: perintah `dart run tool/build_content_db.dart [--source data-source] [--out assets/db/content.db] --data-version <v>` dan `dart run tool/verify_content_db.dart [--source data-source] [--db assets/db/content.db] [--full]`. Exit code 0 jika sukses, 1 jika ada error. Warning dicetak tetapi tidak menggagalkan.
+- Produces: perintah `dart run tool/build_content_db.dart [--source data-source] [--out assets/db/content.db]` dan `dart run tool/verify_content_db.dart [--source data-source] [--db assets/db/content.db] [--full]`. Exit code 0 jika sukses, 1 jika ada error. Warning dicetak tetapi tidak menggagalkan.
 
 - [ ] **Step 1: Tulis test yang gagal**
 
 ```dart
 test('build then verify on fixture exits 0', () async {
   final b = await Process.run('dart', ['run', 'tool/build_content_db.dart',
-      '--source', fixtureDir('').path, '--out', out, '--data-version', 'test-1']);
+      '--source', fixtureDir('').path, '--out', out]);
   expect(b.exitCode, 0, reason: b.stderr);
   final v = await Process.run('dart', ['run', 'tool/verify_content_db.dart',
       '--source', fixtureDir('').path, '--db', out]);
@@ -494,7 +494,7 @@ Expected: FAIL.
 
 - [ ] **Step 4: Jalankan pada data penuh**
 
-Run: `dart run tool/build_content_db.dart --data-version 2026.11.1`
+Run: `dart run tool/build_content_db.dart`
 Run: `dart run tool/verify_content_db.dart --full`
 Expected: verify exit 0. Warning `revelation empty` untuk 114 surah diperbolehkan (surah_info belum ada). Catat ukuran `assets/db/content.db`.
 
@@ -689,7 +689,7 @@ Expected: bersih dan PASS.
 - [ ] **Step 5: Uji manual di emulator atau perangkat**
 
 Run: `flutter run`
-Expected: instalasi bersih membuka Onboarding; tekan Mulai menuju Beranda dengan `data_version 2026.11.1`; tutup dan buka lagi langsung ke Beranda; mode pesawat tidak berpengaruh.
+Expected: instalasi bersih membuka Onboarding; tekan Mulai menuju Beranda dengan `content.version` terpasang; tutup dan buka lagi langsung ke Beranda; mode pesawat tidak berpengaruh.
 
 - [ ] **Step 6: Perbarui STATUS.md** (Fase 1 selesai, ukuran APK debug, hasil uji manual).
 

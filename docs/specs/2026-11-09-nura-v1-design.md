@@ -57,9 +57,11 @@ data-source/
 tool/
   build_content_db.dart
   verify_content_db.dart
-  lib/                           kode bersama: parser JSON, normalisasi pencarian
+
+lib/content_pipeline/            kode bersama (Dart murni): parser JSON, normalisasi pencarian, builder
 
 assets/db/content.db
+assets/db/content.version        sidecar versi, dihasilkan bersama content.db
 ```
 
 File `meta/` ditambahkan bertahap. Sumber dan lisensi setiap file dicatat di `data-source/README.md` sebelum di-commit.
@@ -72,6 +74,8 @@ CREATE TABLE meta (
   value TEXT NOT NULL
 );
 -- kunci: schema_version, data_version, built_at, source_checksums (JSON)
+-- data_version: 16 hex pertama sha256 dari byte data-source/CHECKSUMS.sha256 (turunan, tidak diisi tangan)
+-- built_at: tetap 1970-01-01T00:00:00.000Z agar build deterministik
 
 CREATE TABLE surah (
   number       INTEGER PRIMARY KEY,      -- 1..114
@@ -152,7 +156,11 @@ Nama tampilan kitab hadis ditulis di skrip build sebagai konstanta, karena tidak
 - `daily_hadith`: semua hadis dengan `translation_length` ≤ 400 UTF-16 code unit (`String.length` Dart), diurutkan berdasarkan `(sort_order kitab, number)`, lalu diacak dengan seed tetap yang sama. Batas 400 adalah konstanta di skrip dan bisa diubah.
 - Builder mengisi `ayah_fts` dan `hadith_fts` baris demi baris dengan `rowid` = `id` tabel utama, dan memasang `PRAGMA page_size = 16384` sebelum membuat tabel (file terkecil dari 4096/8192/16384).
 - `content.db` dihasilkan lokal oleh `tool/prepare_content.sh` dan tidak di-commit.
-- Build bersifat deterministik: input yang sama menghasilkan isi tabel yang sama.
+- `meta.data_version` diturunkan dari `data-source/CHECKSUMS.sha256` (16 hex pertama sha256 byte manifest). Builder gagal jika manifest tidak ada. Tidak ada flag `--data-version`.
+- `meta.built_at` bernilai tetap `1970-01-01T00:00:00.000Z`, sehingga dua build dari input sama menghasilkan file yang identik byte demi byte.
+- Setelah `VACUUM`, builder menulis `assets/db/content.version` di samping db dengan isi `<schema_version>:<16 hex pertama sha256 file db final>` (tanpa newline akhir). File ini terdaftar sebagai asset dan di-`.gitignore` seperti `content.db`.
+- Header file SQLite mencatat versi libsqlite3 yang menulisnya, jadi build di host dengan versi libsqlite3 berbeda menghasilkan hash berbeda untuk input yang sama. Dampaknya hanya satu kali salin ulang di perangkat, tidak pernah hasil yang salah.
+- Build bersifat deterministik: input yang sama (dengan libsqlite3 yang sama) menghasilkan file yang sama.
 
 ### 3.4 Verifikasi (`verify_content_db.dart`)
 
@@ -164,6 +172,7 @@ Gagal (exit code bukan 0) jika salah satu syarat tidak terpenuhi:
 4. `ayah_count` setiap surah sama dengan jumlah baris `ayah`-nya.
 5. FTS: jumlah baris indeks (`ayah_fts_docsize`, `hadith_fts_docsize`) sama dengan tabel utama, dan query `MATCH` dengan kata hasil normalisasi dari baris sampel nyata menemukan `rowid` baris tersebut. (`integrity-check` tidak membandingkan isi untuk tabel contentless, jadi tidak dipakai.)
 6. `meta.source_checksums` sama dengan isi `CHECKSUMS.sha256`.
+7. (`--full`) `content.version` konsisten: `schema_version` sesuai `meta`, dan hash sesuai file db yang ada.
 
 Test `test/tool/` menjalankan verifikasi pada subset data sebagai fixture, termasuk kasus yang harus gagal (satu karakter diubah).
 
@@ -250,7 +259,7 @@ View  →  Controller  →  Repository  →  Source (SQLite / HTTP / platform)
 
 ```
 lib/
-  main.dart                      inisialisasi: salin content.db, buka DB, register service, runApp
+  main.dart                      inisialisasi: pasang content.db (installer), buka DB, register service, runApp
   app/
     core/
       theme/                     tema terang dan gelap, tipografi Arab
@@ -304,7 +313,9 @@ android/app/src/main/kotlin/com/technowstack/nura/
 
 ### 5.4 Inisialisasi aplikasi
 
-1. Salin `assets/db/content.db` ke folder data aplikasi jika belum ada, atau jika `meta.data_version` di assets berbeda dengan salinan.
+1. Pasang `content.db` lewat installer. Pada start normal installer hanya membaca asset kecil `content.version` dan membandingkannya dengan file `content.version` terpasang di samping `content.db`. Asset besar disalin hanya jika versi berbeda, `content.db` terpasang tidak ada atau tidak bisa dibuka, atau file versi terpasang tidak ada.
+   - Penyalinan memakai fungsi `AssetCopier`. Di Android, MethodChannel `com.technowstack.nura/asset_copy` (`MainActivity.kt`) mengalirkan `flutter_assets/<assetKey>` lewat AssetManager ke tujuan (buffer 1 MiB, di luar main thread) tanpa memuat 112 MB ke RAM. Platform lain dan test memakai `rootBundle`.
+   - Urutan: tulis ke `content.db.tmp`, `rename` ke `content.db`, dan tulis file versi terpasang paling akhir (tmp lalu rename). Jika proses terhenti di tengah, versi tidak cocok dan start berikutnya menyalin ulang.
 2. Buka `content.db` dengan mode read-only dan `user.db` dengan mode read-write (jalankan migrasi).
 3. Daftarkan source, repository, dan service sebagai singleton GetX.
 4. Tulis konten widget untuk 7 hari ke depan dan jadwalkan ulang notifikasi (tanpa menahan tampilan pertama).
@@ -361,7 +372,7 @@ android/app/src/main/kotlin/com/technowstack/nura/
 - `dayIndex = jumlah hari sejak 2026-01-01 (tanggal lokal)`.
 - Ayat hari ini: `daily_ayah` dengan `seq = dayIndex mod count`. Jika tabel kosong, kartu dan widget ayat disembunyikan atau menampilkan keterangan.
 - Hadis hari ini: `daily_hadith` dengan `seq = dayIndex mod count`.
-- Hasilnya sama untuk semua pengguna di tanggal yang sama, selama `data_version` sama.
+- Hasilnya sama untuk semua pengguna di tanggal yang sama, selama isi `content.db` sama (`content.version` sama).
 
 ### 8.2 Widget Android
 
