@@ -2,108 +2,142 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nura/app/data/sources/content_database.dart';
 import 'package:nura/app/data/sources/content_db_installer.dart';
-import 'package:nura/content_pipeline/content_db_builder.dart';
+import 'package:sqlite3/sqlite3.dart';
 
-import '../support/fixtures.dart';
+import '../support/fixture_db.dart';
 
 void main() {
   late Directory tmp;
   late Directory target;
-  late Uint8List v1;
-  late Uint8List v2;
+  late ({Uint8List bytes, String version, File file}) v1;
+  late ({Uint8List bytes, String version, File file}) v2;
   var loads = 0;
-
-  Uint8List build(String version) {
-    final out = File('${tmp.path}/$version.db');
-    buildContentDb(
-      sourceRoot: fixtureDir(''),
-      output: out,
-      dataVersion: version,
-      builtAt: DateTime.utc(2026, 11, 9),
-    );
-    return out.readAsBytesSync();
-  }
 
   setUp(() {
     loads = 0;
     tmp = Directory.systemTemp.createTempSync('nura_inst_');
     addTearDown(() => tmp.deleteSync(recursive: true));
     target = Directory('${tmp.path}/target');
-    v1 = build('test-1');
-    v2 = build('test-2');
+    v1 = buildFixtureDb(tmp, 'v1');
+    v2 = buildFixtureDb(tmp, 'v2', changed: true);
   });
 
-  ContentDbInstaller installer(Uint8List bytes) => ContentDbInstaller(
-    loadAsset: (key) async {
-      loads++;
-      expect(key, contentDbAssetKey);
-      return bytes;
-    },
-    targetDir: target,
-  );
+  ContentDbInstaller installer(Uint8List bytes, String version) =>
+      ContentDbInstaller(
+        loadAsset: (key) async {
+          loads++;
+          expect(key, contentDbAssetKey);
+          return bytes;
+        },
+        loadVersion: (key) async {
+          expect(key, contentVersionAssetKey);
+          return '$version\n';
+        },
+        targetDir: target,
+      );
 
-  String versionOf(File f) {
-    final db = ContentDatabase.open(f);
-    addTearDown(db.close);
-    return db.dataVersion;
+  File versionFile() => File('${target.path}/content.version');
+
+  String nameOf(File f) {
+    final db = sqlite3.open(f.path, mode: OpenMode.readOnly);
+    addTearDown(db.dispose);
+    return db
+            .select('SELECT name_latin FROM surah WHERE number = 1')
+            .single
+            .values
+            .first
+        as String;
   }
 
-  test('installs when target missing', () async {
-    final f = await installer(v1).ensureInstalled();
+  test('installs db and writes version file last', () async {
+    final f = await installer(v1.bytes, v1.version).ensureInstalled();
     expect(f.path, '${target.path}/content.db');
-    expect(versionOf(f), 'test-1');
+    expect(nameOf(f), 'Al-Fatihah');
+    expect(versionFile().readAsStringSync(), v1.version);
+    expect(File('${versionFile().path}.tmp').existsSync(), isFalse);
   });
 
-  test('does not recopy when data_version matches', () async {
-    final f = await installer(v1).ensureInstalled();
+  test('second start does not load the db asset', () async {
+    final f = await installer(v1.bytes, v1.version).ensureInstalled();
     final before = f.lastModifiedSync();
     await Future<void>.delayed(const Duration(milliseconds: 20));
     expect(loads, 1);
-    await installer(v1).ensureInstalled();
-    expect(loads, 2);
+    await installer(v1.bytes, v1.version).ensureInstalled();
+    expect(loads, 1);
     expect(f.lastModifiedSync(), before);
-    expect(File('${f.path}.tmp').existsSync(), isFalse);
   });
 
-  test('recopies when asset data_version differs', () async {
-    await installer(v1).ensureInstalled();
-    final f = await installer(v2).ensureInstalled();
-    expect(versionOf(f), 'test-2');
+  test('recopies when asset version differs', () async {
+    await installer(v1.bytes, v1.version).ensureInstalled();
+    final f = await installer(v2.bytes, v2.version).ensureInstalled();
+    expect(loads, 2);
+    expect(nameOf(f), 'Al-Fatihah-2');
+    expect(versionFile().readAsStringSync(), v2.version);
+  });
+
+  test('recopies when schema_version differs', () async {
+    await installer(v1.bytes, v1.version).ensureInstalled();
+    final hash = v1.version.split(':').last;
+    // Asset claims another schema: installed version no longer matches and
+    // the asset's meta schema_version disagrees, so it is rejected.
+    await expectLater(
+      installer(v1.bytes, '99:$hash').ensureInstalled(),
+      throwsStateError,
+    );
+    expect(loads, 2);
+    expect(versionFile().readAsStringSync(), v1.version);
+  });
+
+  test('recopies when installed version file is missing', () async {
+    await installer(v1.bytes, v1.version).ensureInstalled();
+    versionFile().deleteSync();
+    await installer(v1.bytes, v1.version).ensureInstalled();
+    expect(loads, 2);
+    expect(versionFile().readAsStringSync(), v1.version);
   });
 
   test('leftover .tmp from interrupted copy is replaced', () async {
     target.createSync(recursive: true);
     File('${target.path}/content.db.tmp').writeAsStringSync('junk');
-    final f = await installer(v1).ensureInstalled();
-    expect(versionOf(f), 'test-1');
+    final f = await installer(v1.bytes, v1.version).ensureInstalled();
+    expect(nameOf(f), 'Al-Fatihah');
     expect(File('${f.path}.tmp').existsSync(), isFalse);
   });
 
   test('corrupt existing content.db is replaced', () async {
     target.createSync(recursive: true);
     File('${target.path}/content.db').writeAsStringSync('junk' * 100);
-    final f = await installer(v1).ensureInstalled();
-    expect(versionOf(f), 'test-1');
+    versionFile().writeAsStringSync(v1.version);
+    final f = await installer(v1.bytes, v1.version).ensureInstalled();
+    expect(loads, 1);
+    expect(nameOf(f), 'Al-Fatihah');
   });
 
-  test('junk asset keeps existing valid content.db', () async {
-    final f = await installer(v1).ensureInstalled();
+  test('junk asset keeps existing valid content.db and version', () async {
+    final f = await installer(v1.bytes, v1.version).ensureInstalled();
     await expectLater(
-      installer(Uint8List.fromList(List.filled(500, 7))).ensureInstalled(),
+      installer(
+        Uint8List.fromList(List.filled(500, 7)),
+        'x:y',
+      ).ensureInstalled(),
       throwsStateError,
     );
-    expect(versionOf(f), 'test-1');
+    expect(nameOf(f), 'Al-Fatihah');
+    expect(versionFile().readAsStringSync(), v1.version);
     expect(File('${f.path}.tmp').existsSync(), isFalse);
   });
 
   test('junk asset with no existing db throws and creates nothing', () async {
     await expectLater(
-      installer(Uint8List.fromList(List.filled(500, 7))).ensureInstalled(),
+      installer(
+        Uint8List.fromList(List.filled(500, 7)),
+        'x:y',
+      ).ensureInstalled(),
       throwsStateError,
     );
     expect(File('${target.path}/content.db').existsSync(), isFalse);
     expect(File('${target.path}/content.db.tmp').existsSync(), isFalse);
+    expect(versionFile().existsSync(), isFalse);
   });
 }

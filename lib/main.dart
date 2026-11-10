@@ -24,6 +24,7 @@ Future<void> _start() async {
       installer: ContentDbInstaller(
         loadAsset: (key) async =>
             (await rootBundle.load(key)).buffer.asUint8List(),
+        loadVersion: rootBundle.loadString,
         targetDir: dir,
       ),
       dataDir: dir,

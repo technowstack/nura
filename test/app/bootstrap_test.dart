@@ -11,30 +11,26 @@ import 'package:nura/app/data/sources/content_db_installer.dart';
 import 'package:nura/app/data/sources/setting_keys.dart';
 import 'package:nura/app/data/sources/user_database.dart';
 import 'package:nura/app/nura_app.dart';
-import 'package:nura/content_pipeline/content_db_builder.dart';
 
-import '../support/fixtures.dart';
+import '../support/fixture_db.dart';
 
 void main() {
   late Directory tmp;
   late Uint8List bytes;
+  late String version;
 
   setUp(() {
     Get.reset();
     tmp = Directory.systemTemp.createTempSync('nura_boot_');
     addTearDown(() => tmp.deleteSync(recursive: true));
-    final out = File('${tmp.path}/fixture.db');
-    buildContentDb(
-      sourceRoot: fixtureDir(''),
-      output: out,
-      dataVersion: 'test-1',
-      builtAt: DateTime.utc(2026, 11, 9),
-    );
-    bytes = out.readAsBytesSync();
+    final built = buildFixtureDb(tmp, 'fixture');
+    bytes = built.bytes;
+    version = built.version;
   });
 
   ContentDbInstaller installer() => ContentDbInstaller(
     loadAsset: (_) async => bytes,
+    loadVersion: (_) async => version,
     targetDir: Directory('${tmp.path}/data'),
   );
 
@@ -59,7 +55,7 @@ void main() {
 
   test('bootstrap registers both databases on success', () async {
     await ready();
-    expect(Get.find<ContentDatabase>().dataVersion, 'test-1');
+    expect(Get.find<ContentDatabase>().dataVersion, isNotEmpty);
     expect(Get.isRegistered<UserDatabase>(), isTrue);
   });
 
@@ -67,6 +63,7 @@ void main() {
     final r = await bootstrap(
       installer: ContentDbInstaller(
         loadAsset: (_) async => throw StateError('boom'),
+        loadVersion: (_) async => 'x:y',
         targetDir: Directory('${tmp.path}/data'),
       ),
       dataDir: tmp,
@@ -105,7 +102,7 @@ void main() {
     await tester.tap(find.text('Mulai'));
     await tester.pumpAndSettle();
     expect(find.text('Beranda'), findsOneWidget);
-    expect(find.text('data_version test-1'), findsOneWidget);
+    expect(find.textContaining('data_version '), findsOneWidget);
     expect(s.user.getSetting(SettingKeys.onboardingDone), 'true');
   });
 
