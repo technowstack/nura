@@ -31,7 +31,7 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Belum di-push
 
 | Fitur | Status |
 |---|---|
-| Fondasi (struktur, paket, pipeline data, user.db) | Berjalan: pipeline data (parser, builder, verifier, CLI, prepare_content.sh) selesai; user.db dan struktur app belum |
+| Fondasi (struktur, paket, pipeline data, user.db) | Selesai (2026-11-10): pipeline data, `ContentDatabase`/installer, `user.db` dengan migrasi, bootstrap, DI, tema, route awal. Uji manual di perangkat asli: pemilik proyek melaporkan aplikasi berjalan (rincian per langkah belum dicatat) |
 | Al-Qur'an offline (surah, detail, tafsir, juz, bookmark, last read, cari) | Belum mulai |
 | Hadis (kitab, daftar, detail, cari, bookmark) | Belum mulai |
 | Jadwal sholat dan notifikasi | Belum mulai |
@@ -78,8 +78,9 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Belum di-push
 
 ## Langkah Berikutnya
 
-1. Lanjutkan fase Fondasi dari Task 8 (instalasi dan pembukaan `content.db` di aplikasi).
-2. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
+1. Perbaiki cek `data_version` di installer sebelum rilis: saat ini seluruh aset (112 MB) dibaca ke RAM di setiap start.
+2. Fase 2: Al-Qur'an offline (repository pertama, daftar surah, detail ayat).
+3. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
 
 ## Catatan Teknis
 
