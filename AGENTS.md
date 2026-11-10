@@ -13,7 +13,7 @@ Baca dokumen ini sebelum mengubah kode. Dokumen pendamping: `docs/PRD.md` (apa y
 ## Aturan Mutlak
 
 1. **Jangan edit file di `data-source/`.** JSON di sana adalah sumber kebenaran. Checksum-nya tercatat di `data-source/CHECKSUMS.sha256`.
-2. **Jangan edit `assets/db/content.db` secara manual dan jangan di-commit.** Database dihasilkan oleh `tool/prepare_content.sh` (`tool/build_content_db.dart` lalu `tool/verify_content_db.dart --full`).
+2. **Jangan edit `assets/db/content.db` secara manual dan jangan di-commit.** Database dihasilkan oleh `tool/prepare_content.sh` (`tool/build_content_db.dart` lalu `tool/verify_content_db.dart --full`), bersama `assets/db/content.version` yang juga di-`.gitignore`.
 3. **Jangan mengubah kolom teks asli** (`arab`, `translation_id`, `tafsir_kemenag`) saat konversi: tanpa trim, normalisasi Unicode, atau perubahan spasi. Normalisasi untuk pencarian hanya di indeks FTS (`ayah_fts`, `hadith_fts`).
 4. **Jangan menulis ke `content.db` dari aplikasi.** Buka dalam mode read-only. Data pengguna hanya di `user.db`.
 5. **Jangan menambah pemanggilan jaringan di luar layanan fitur online.** Setiap akses jaringan harus lewat layanan itu, yang memeriksa sakelar dan koneksi terlebih dulu.
@@ -55,7 +55,7 @@ test/
 - Kode, nama class, dan komentar teknis: Inggris. Teks yang dilihat pengguna: Bahasa Indonesia.
 - Tidak boleh `ignore_for_file`. Perbaiki penyebab lint.
 - Hindari `!`. Jika terpaksa, tambahkan komentar alasan.
-- Satu class publik per file.
+- Satu class publik per file, kecuali model kecil yang kohesif dan hierarki sealed boleh berbagi satu file.
 
 ## Development setup
 
@@ -72,7 +72,7 @@ test/
 
 - Kerja di branch rebuild, bukan di `main` lama.
 - Satu topik per commit: fitur, perbaikan, data, atau platform. Jangan campur.
-- Pesan commit **wajib dalam Bahasa Inggris**, format Conventional Commits: `type: summary` dalam bentuk imperatif, huruf kecil, tanpa titik di akhir. Tipe: `feat`, `fix`, `refactor`, `data`, `chore`, `docs`, `test`, `build`.
+- Pesan commit **wajib dalam Bahasa Inggris**, format Conventional Commits: `type: summary` dalam bentuk imperatif, huruf kecil, tanpa titik di akhir. Tipe: `feat`, `fix`, `perf`, `refactor`, `data`, `chore`, `docs`, `test`, `build`.
   - Contoh: `feat: load surah list from content.db`, `data: add juz mapping source`, `chore: regenerate android platform folder`.
   - Body opsional, juga dalam Bahasa Inggris, menjelaskan alasan perubahan.
 - Cek `git status` sebelum commit dan jangan ikut mengcommit file yang tidak terkait.
