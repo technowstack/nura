@@ -29,7 +29,10 @@ Future<void> _start() async {
       dataDir: dir,
     );
     runApp(NuraApp(result: result, onRetry: _start));
-  } catch (e) {
+  } catch (e, st) {
+    FlutterError.reportError(
+      FlutterErrorDetails(exception: e, stack: st, library: 'nura startup'),
+    );
     runApp(NuraApp(result: BootstrapFailure(e), onRetry: _start));
   } finally {
     _starting = false;

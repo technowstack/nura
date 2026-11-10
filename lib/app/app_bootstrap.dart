@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import 'data/sources/content_database.dart';
@@ -37,7 +38,10 @@ Future<BootstrapResult> bootstrap({
     Get.put<ContentDatabase>(content, permanent: true);
     Get.put<UserDatabase>(user, permanent: true);
     return BootstrapSuccess(content, user);
-  } catch (e) {
+  } catch (e, st) {
+    FlutterError.reportError(
+      FlutterErrorDetails(exception: e, stack: st, library: 'nura bootstrap'),
+    );
     content?.close();
     user?.close();
     return BootstrapFailure(e);
