@@ -25,13 +25,13 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Belum di-push
 | Transliterasi Latin | Belum ada | Di luar cakupan v1 kecuali sumber ditemukan |
 | Audio murottal | Lewat API opsional | Penyedia belum dipilih |
 | Jadwal sholat | Lewat API per bulan, disimpan lokal | Penyedia belum dipilih. Cadangan: perhitungan offline berlabel "perkiraan" |
-| content.db dan skrip build/verifikasi | Selesai | Skema FTS5 contentless, 112,38 MB, `verify --full` lulus. Dihasilkan lokal oleh `tool/prepare_content.sh`, tidak di-commit |
+| content.db dan skrip build/verifikasi | Selesai | Skema FTS5 contentless, 112,38 MB, `verify --full` lulus. Versi lewat sidecar `assets/db/content.version`. Dihasilkan lokal oleh `tool/prepare_content.sh`, tidak di-commit |
 
 ## Fitur v1
 
 | Fitur | Status |
 |---|---|
-| Fondasi (struktur, paket, pipeline data, user.db) | Selesai (2026-11-10): pipeline data, `ContentDatabase`/installer, `user.db` dengan migrasi, bootstrap, DI, tema, route awal. Uji manual di perangkat asli: pemilik proyek melaporkan aplikasi berjalan (rincian per langkah belum dicatat) |
+| Fondasi (struktur, paket, pipeline data, user.db) | Selesai (2026-11-10): pipeline data, `ContentDatabase`/installer, `user.db` dengan migrasi, bootstrap, DI, tema, route awal. Installer tidak lagi membaca 112 MB per start (hanya asset `content.version`), salinan memakai streaming native di Android. Uji manual di perangkat asli: pemilik proyek melaporkan aplikasi berjalan (rincian per langkah belum dicatat) |
 | Al-Qur'an offline (surah, detail, tafsir, juz, bookmark, last read, cari) | Belum mulai |
 | Hadis (kitab, daftar, detail, cari, bookmark) | Belum mulai |
 | Jadwal sholat dan notifikasi | Belum mulai |
@@ -78,14 +78,15 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Belum di-push
 
 ## Langkah Berikutnya
 
-1. Perbaiki cek `data_version` di installer sebelum rilis: saat ini seluruh aset (112 MB) dibaca ke RAM di setiap start.
-2. Fase 2: Al-Qur'an offline (repository pertama, daftar surah, detail ayat).
-3. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
+1. Cek manual di perangkat: waktu first-run dan memori untuk salinan native masih tertunda. Catat hasilnya setelah dijalankan.
+2. Merge lokal ke `main` masih tertunda. Push hanya setelah pemilik proyek memastikan repo privat.
+3. Fase 2: Al-Qur'an offline (repository pertama, daftar surah, detail ayat).
+4. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
 
 ## Catatan Teknis
 
 - Ukuran sumber: `data-source/` 82 MB (Quran 12 MB, hadis 69 MB; Bukhari 13,4 MB terbesar).
-- `content.db` (data_version 2026.11.1) dibuat lokal oleh `tool/prepare_content.sh` dan di-`.gitignore`. Clone baru wajib menjalankannya dulu: `pubspec.yaml` mendaftarkan `assets/db/content.db`, dan `flutter test`/`build` gagal ("No file or variants found for asset") jika file tidak ada.
+- `content.db` dibuat lokal oleh `tool/prepare_content.sh` dan di-`.gitignore`, begitu juga `content.version`. Nilai `content.version` (`<schema_version>:<16 hex sha256 file db>`) dan `meta.data_version` (16 hex sha256 `CHECKSUMS.sha256`) diturunkan otomatis, tidak dipatok tangan. `built_at` tetap sehingga build deterministik; host dengan versi libsqlite3 berbeda menghasilkan hash berbeda (hanya satu salin ulang di perangkat). Test: 87 lulus. Clone baru wajib menjalankannya dulu: `pubspec.yaml` mendaftarkan `assets/db/content.db`, dan `flutter test`/`build` gagal ("No file or variants found for asset") jika file tidak ada.
 - Ukuran `content.db` per `page_size`: 4096 = 124,54 MB; 8192 = 118,28 MB; 16384 = 112,38 MB (dipakai); 32768 = 109,03 MB (dicoba, tidak dipakai). Sebelum skema contentless: 187 MB. Rincian (page 4096): hadith 85,1 MB, hadith_fts 22,9 MB, ayah 13,9 MB.
 - Ukuran build (2026-11-09): APK debug 200.414.436 byte (191 MiB); AAB release 80,4 MB (flutter) / 76,7 MiB, ditandatangani dengan kunci debug (template proyek `build.gradle.kts` memakai `signingConfig debug`). Perkiraan unduhan `bundletool get-size total`: tidak tersedia (bundletool tidak terpasang).
 - Verifikasi checksum: 123 file di `data-source/` cocok semuanya dengan cadangan `../nura-data-backup/` (dibuat dari `data-source/` setelah dipindah, bukan dari assets asli).
