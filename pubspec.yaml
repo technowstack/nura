@@ -1,17 +1,20 @@
-name: alquran
-version: 1.0.0+1
+name: nura
+description: Aplikasi Islami offline-first.
 publish_to: none
-description: A new Flutter project.
+version: 0.1.0+1
+
 environment:
   sdk: ^3.9.0
 
 dependencies:
-  cupertino_icons: ^2.0.0
   flutter:
     sdk: flutter
   get: ^4.7.3
-  http: ^1.6.0
-  lottie: ^3.8.2
+  sqlite3: ^2.9.0
+  sqlite3_flutter_libs: ^0.5.0
+  path_provider: ^2.1.0
+  path: ^1.9.0
+  crypto: ^3.0.6
 
 dev_dependencies:
   flutter_lints: ^6.0.0
@@ -21,5 +24,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/lotties/
-    - assets/images/
+    - assets/db/content.db
+    - assets/db/content.version

@@ -1,19 +1,42 @@
-import 'package:alquran/app/constants/color.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 
-import 'package:get/get.dart';
+import 'app/app_bootstrap.dart';
+import 'app/data/sources/bundle_asset_copier.dart';
+import 'app/data/sources/content_db_installer.dart';
+import 'app/data/sources/native_asset_copier.dart';
+import 'app/nura_app.dart';
 
-import 'app/routes/app_pages.dart';
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await _start();
+}
 
-void main() {
-  runApp(
-    GetMaterialApp(
-      theme: themeLight,
-      darkTheme: themeDark,
-      debugShowCheckedModeBanner: false,
-      title: "Application",
-      initialRoute: Routes.HOME,
-      getPages: AppPages.routes,
-    ),
-  );
+bool _starting = false;
+
+Future<void> _start() async {
+  if (_starting) return;
+  _starting = true;
+  try {
+    final Directory dir = await getApplicationSupportDirectory();
+    final result = await bootstrap(
+      installer: ContentDbInstaller(
+        copyAsset: Platform.isAndroid ? copyAssetNatively : copyAssetFromBundle,
+        loadVersion: rootBundle.loadString,
+        targetDir: dir,
+      ),
+      dataDir: dir,
+    );
+    runApp(NuraApp(result: result, onRetry: _start));
+  } catch (e, st) {
+    FlutterError.reportError(
+      FlutterErrorDetails(exception: e, stack: st, library: 'nura startup'),
+    );
+    runApp(NuraApp(result: BootstrapFailure(e), onRetry: _start));
+  } finally {
+    _starting = false;
+  }
 }
