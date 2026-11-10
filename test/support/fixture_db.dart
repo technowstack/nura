@@ -12,6 +12,7 @@ import 'fixtures.dart';
   String name, {
   bool changed = false,
 }) {
+  // The changed copy keeps the original CHECKSUMS.sha256: unverifiable, same data_version.
   var src = fixtureDir('');
   if (changed) {
     src = Directory('${dir.path}/$name-src')..createSync(recursive: true);

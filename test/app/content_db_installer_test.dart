@@ -76,15 +76,26 @@ void main() {
     expect(versionFile().readAsStringSync(), v2.version);
   });
 
-  test('recopies when schema_version differs', () async {
+  test(
+    'rejects asset whose meta schema disagrees with content.version',
+    () async {
+      await installer(v1.bytes, v1.version).ensureInstalled();
+      final hash = v1.version.split(':').last;
+      // Asset claims another schema: installed version no longer matches and
+      // the asset's meta schema_version disagrees, so it is rejected.
+      await expectLater(
+        installer(v1.bytes, '99:$hash').ensureInstalled(),
+        throwsStateError,
+      );
+      expect(loads, 2);
+      expect(versionFile().readAsStringSync(), v1.version);
+    },
+  );
+
+  test('recopies when installed schema_version part differs', () async {
     await installer(v1.bytes, v1.version).ensureInstalled();
-    final hash = v1.version.split(':').last;
-    // Asset claims another schema: installed version no longer matches and
-    // the asset's meta schema_version disagrees, so it is rejected.
-    await expectLater(
-      installer(v1.bytes, '99:$hash').ensureInstalled(),
-      throwsStateError,
-    );
+    versionFile().writeAsStringSync('0:${v1.version.split(':').last}');
+    await installer(v1.bytes, v1.version).ensureInstalled();
     expect(loads, 2);
     expect(versionFile().readAsStringSync(), v1.version);
   });
