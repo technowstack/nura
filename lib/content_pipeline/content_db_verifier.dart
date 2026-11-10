@@ -12,8 +12,8 @@ import 'verification_report.dart';
 export 'expected_totals.dart';
 export 'verification_report.dart';
 
-int _count(Database db, String sql) =>
-    db.select(sql).single.values.first as int;
+int _count(Database db, String sql, [List<Object?> params = const []]) =>
+    db.select(sql, params).single.values.first as int;
 
 /// Checks [database] against the source JSON under [sourceRoot] (spec 3.4).
 VerificationReport verifyContentDb({
@@ -94,7 +94,8 @@ VerificationReport verifyContentDb({
       } else {
         final stored = _count(
           db,
-          'SELECT COUNT(*) FROM ayah WHERE surah_number = ${s.number}',
+          'SELECT COUNT(*) FROM ayah WHERE surah_number = ?',
+          [s.number],
         );
         if (sr['ayah_count'] != stored || stored != s.ayahCount) {
           errors.add(
@@ -156,9 +157,15 @@ VerificationReport verifyContentDb({
 
     // 5. FTS. Contentless tables cannot be read back or integrity-checked,
     // so compare index size to the main table and probe with real words.
-    void checkFts(String table, String where, String arab, String text) {
+    void checkFts(
+      String table,
+      String where,
+      List<Object?> params,
+      String arab,
+      String text,
+    ) {
       final fts = '${table}_fts';
-      final id = _count(db, 'SELECT id FROM $table WHERE $where');
+      final id = _count(db, 'SELECT id FROM $table WHERE $where', params);
       total(
         fts,
         _count(db, 'SELECT COUNT(*) FROM ${fts}_docsize'),
@@ -188,7 +195,8 @@ VerificationReport verifyContentDb({
       final a = surahs.first.ayahs.first;
       checkFts(
         'ayah',
-        'surah_number = ${surahs.first.number} AND ayah_number = ${a.number}',
+        'surah_number = ? AND ayah_number = ?',
+        [surahs.first.number, a.number],
         a.arab,
         a.translation,
       );
@@ -197,7 +205,8 @@ VerificationReport verifyContentDb({
       final h = books.first.hadiths.first;
       checkFts(
         'hadith',
-        "book_slug = '${books.first.slug}' AND number = ${h.number}",
+        'book_slug = ? AND number = ?',
+        [books.first.slug, h.number],
         h.arab,
         h.translation,
       );
