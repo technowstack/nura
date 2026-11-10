@@ -16,7 +16,7 @@ void main() {
     tempDir = Directory.systemTemp.createTempSync('nura_verify_');
     addTearDown(() => tempDir.deleteSync(recursive: true));
     built = File('${tempDir.path}/content.db');
-    buildContentDb(sourceRoot: fixtureDir(''), output: built, dataVersion: 't');
+    buildContentDb(sourceRoot: fixtureDir(''), output: built);
   });
 
   VerificationReport verifyTampered(String sql, {Directory? source}) {
@@ -147,4 +147,39 @@ void main() {
       expect(r.errors.join(), contains('does not find rowid'));
     });
   }
+
+  group('content.version', () {
+    test('matching sidecar passes', () {
+      final r = buildContentDb(
+        sourceRoot: fixtureDir(''),
+        output: File('${tempDir.path}/x.db'),
+      );
+      final v = File('${tempDir.path}/content.version')
+        ..writeAsStringSync(r.contentVersion);
+      final rep = verifyContentDb(
+        sourceRoot: fixtureDir(''),
+        database: File('${tempDir.path}/x.db'),
+        versionFile: v,
+      );
+      expect(rep.errors, isEmpty);
+    });
+
+    test('wrong or missing sidecar fails', () {
+      final v = File('${tempDir.path}/content.version')
+        ..writeAsStringSync('1:0000000000000000');
+      final bad = verifyContentDb(
+        sourceRoot: fixtureDir(''),
+        database: built,
+        versionFile: v,
+      );
+      expect(bad.errors.join(), contains('content.version'));
+      v.deleteSync();
+      final missing = verifyContentDb(
+        sourceRoot: fixtureDir(''),
+        database: built,
+        versionFile: v,
+      );
+      expect(missing.errors.join(), contains('content.version'));
+    });
+  });
 }

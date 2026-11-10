@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nura/content_pipeline/content_db_builder.dart';
 import 'package:nura/content_pipeline/text_normalizer.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import '../support/fixture_db.dart';
 import '../support/fixtures.dart';
 
 void copyDir(Directory from, Directory to) {
@@ -30,7 +32,6 @@ void main() {
     result = buildContentDb(
       sourceRoot: fixtureDir(''),
       output: out,
-      dataVersion: 'test-1',
       builtAt: DateTime.utc(2026, 11, 9),
     );
     db = sqlite3.open(out.path, mode: OpenMode.readOnly);
@@ -123,7 +124,7 @@ void main() {
         r['key']: r['value'],
     };
     expect(m['schema_version'], '1');
-    expect(m['data_version'], 'test-1');
+    expect(m['data_version'], matches(RegExp(r'^[0-9a-f]{16}$')));
     expect(m['built_at'], '2026-11-09T00:00:00.000Z');
     expect(m['source_checksums'], contains('quran/1.json'));
   });
@@ -177,7 +178,7 @@ void main() {
       '[{"number":1,"start_surah":1,"start_ayah":1,"end_surah":2,"end_ayah":141}]',
     );
     final out = File('${tempDir.path}/o2.db');
-    buildContentDb(sourceRoot: src, output: out, dataVersion: 'x');
+    buildContentDb(sourceRoot: src, output: out);
     final d = sqlite3.open(out.path, mode: OpenMode.readOnly);
     addTearDown(d.dispose);
     expect(d.select('SELECT ayah_id FROM daily_ayah').single['ayah_id'], 2);
@@ -189,7 +190,6 @@ void main() {
       () => buildContentDb(
         sourceRoot: src,
         output: File('${tempDir.path}/o3.db'),
-        dataVersion: 'x',
       ),
       throwsA(anything),
     );
@@ -201,12 +201,44 @@ void main() {
     copyDir(fixtureDir(''), src);
     File('${src.path}/hadith/unknown.json').writeAsStringSync('[]');
     expect(
-      () => buildContentDb(
-        sourceRoot: src,
-        output: File('${tempDir.path}/o.db'),
-        dataVersion: 'x',
-      ),
+      () =>
+          buildContentDb(sourceRoot: src, output: File('${tempDir.path}/o.db')),
       throwsA(anything),
+    );
+  });
+
+  test(
+    'content version is schema:hash of final db, data_version from manifest',
+    () {
+      final bytes = File('${tempDir.path}/content.db').readAsBytesSync();
+      expect(
+        result.contentVersion,
+        '1:${sha256.convert(bytes).toString().substring(0, 16)}',
+      );
+      final manifest = fixtureDir('').uri.resolve('CHECKSUMS.sha256');
+      final want = sha256
+          .convert(File.fromUri(manifest).readAsBytesSync())
+          .toString()
+          .substring(0, 16);
+      expect(
+        db
+            .select("SELECT value FROM meta WHERE key='data_version'")
+            .single
+            .values
+            .first,
+        want,
+      );
+    },
+  );
+
+  test('two builds from same input are byte-identical', () {
+    final a = buildFixtureDb(tempDir, 'a');
+    final b = buildFixtureDb(tempDir, 'b');
+    expect(b.bytes, a.bytes);
+    expect(b.version, a.version);
+    expect(
+      buildFixtureDb(tempDir, 'c', changed: true).version,
+      isNot(a.version),
     );
   });
 
@@ -215,7 +247,6 @@ void main() {
     buildContentDb(
       sourceRoot: fixtureDir(''),
       output: out2,
-      dataVersion: 'test-1',
       builtAt: DateTime.utc(2026, 11, 9),
     );
     final db2 = sqlite3.open(out2.path, mode: OpenMode.readOnly);

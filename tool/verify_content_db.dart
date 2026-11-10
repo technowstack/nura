@@ -15,6 +15,9 @@ void main(List<String> args) {
       sourceRoot: Directory(source),
       database: File(db),
       expected: args.contains('--full') ? fullDatasetTotals : null,
+      versionFile: args.contains('--full')
+          ? File('${File(db).parent.path}/content.version')
+          : null,
     );
     for (final w in report.warnings) {
       stdout.writeln('warning: $w');

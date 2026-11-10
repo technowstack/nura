@@ -10,21 +10,14 @@ String? _opt(List<String> args, String name) {
 void main(List<String> args) {
   final source = _opt(args, '--source') ?? 'data-source';
   final out = _opt(args, '--out') ?? 'assets/db/content.db';
-  final version = _opt(args, '--data-version');
-  if (version == null) {
-    stderr.writeln(
-      'usage: build_content_db.dart [--source dir] [--out file] --data-version <v>',
-    );
-    exit(1);
-  }
   final sw = Stopwatch()..start();
   try {
     final output = File(out)..parent.createSync(recursive: true);
-    final r = buildContentDb(
-      sourceRoot: Directory(source),
-      output: output,
-      dataVersion: version,
-    );
+    final r = buildContentDb(sourceRoot: Directory(source), output: output);
+    File(
+      '${output.parent.path}/content.version',
+    ).writeAsStringSync(r.contentVersion);
+    stdout.writeln('content.version=${r.contentVersion}');
     stdout.writeln(
       'surahs=${r.surahCount} ayahs=${r.ayahCount} hadiths=${r.hadithCount}',
     );

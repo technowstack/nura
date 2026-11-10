@@ -17,7 +17,6 @@ void main() {
     buildContentDb(
       sourceRoot: fixtureDir(''),
       output: file,
-      dataVersion: 'test-1',
       builtAt: DateTime.utc(2026, 11, 9),
     );
     db = ContentDatabase.open(file);
@@ -25,7 +24,7 @@ void main() {
   });
 
   test('exposes data_version from meta', () {
-    expect(db.dataVersion, 'test-1');
+    expect(db.dataVersion, matches(RegExp(r'^[0-9a-f]{16}$')));
   });
 
   test('rejects writes', () {

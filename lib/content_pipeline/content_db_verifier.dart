@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'checksum_manifest.dart';
+import 'content_schema.dart';
+import 'content_version.dart';
 import 'expected_totals.dart';
 import 'hadith_source_parser.dart';
 import 'quran_source_parser.dart';
@@ -20,6 +22,7 @@ VerificationReport verifyContentDb({
   required Directory sourceRoot,
   required File database,
   ExpectedTotals? expected,
+  File? versionFile,
 }) {
   final report = VerificationReport();
   final errors = report.errors;
@@ -223,6 +226,16 @@ VerificationReport verifyContentDb({
     }
   } finally {
     db.dispose();
+  }
+
+  // 7. content.version sidecar matches the final db file.
+  if (versionFile != null) {
+    final want = contentVersionOf(database, contentSchemaVersion);
+    if (!versionFile.existsSync()) {
+      errors.add('missing content.version');
+    } else if (versionFile.readAsStringSync().trim() != want) {
+      errors.add('content.version does not match db (expected $want)');
+    }
   }
   return report;
 }

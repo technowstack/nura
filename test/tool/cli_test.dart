@@ -22,8 +22,6 @@ void main() {
     src,
     '--out',
     out,
-    '--data-version',
-    'test-1',
   ]);
 
   test('build then verify on fixture exits 0', () async {

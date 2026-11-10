@@ -6,6 +6,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'build_result.dart';
 import 'checksum_manifest.dart';
 import 'content_schema.dart';
+import 'content_version.dart';
 import 'hadith_source_parser.dart';
 import 'quran_source_parser.dart';
 import 'seeded_shuffle.dart';
@@ -28,7 +29,6 @@ List<Map<String, dynamic>>? _optionalList(Directory root, String name) {
 BuildResult buildContentDb({
   required Directory sourceRoot,
   required File output,
-  required String dataVersion,
   DateTime? builtAt,
 }) {
   final warnings = <String>[];
@@ -50,6 +50,9 @@ BuildResult buildContentDb({
   final checksums = manifestFile.existsSync()
       ? ChecksumManifest.parse(manifestFile.readAsStringSync()).toJson()
       : '{}';
+  final dataVersion = shortSha256(
+    manifestFile.existsSync() ? manifestFile.readAsBytesSync() : const [],
+  );
 
   final tmp = File('${output.path}.tmp');
   if (tmp.existsSync()) tmp.deleteSync();
@@ -65,7 +68,8 @@ BuildResult buildContentDb({
     for (final kv in {
       'schema_version': '$contentSchemaVersion',
       'data_version': dataVersion,
-      'built_at': (builtAt ?? DateTime.now()).toUtc().toIso8601String(),
+      // Fixed default keeps the db byte-identical across builds.
+      'built_at': (builtAt ?? DateTime.utc(1970)).toUtc().toIso8601String(),
       'source_checksums': checksums,
     }.entries) {
       meta.execute([kv.key, kv.value]);
@@ -204,5 +208,6 @@ BuildResult buildContentDb({
     ayahCount: ayahCount,
     hadithCount: hadithCount,
     warnings: warnings,
+    contentVersion: contentVersionOf(output, contentSchemaVersion),
   );
 }
