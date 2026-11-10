@@ -40,4 +40,17 @@ void main() {
       ),
     );
   });
+
+  test('maps missing channel to FileSystemException', () async {
+    await expectLater(
+      copyAssetNatively('assets/db/content.db', File('/tmp/x.tmp')),
+      throwsA(
+        isA<FileSystemException>().having(
+          (e) => e.message,
+          'message',
+          contains('not available'),
+        ),
+      ),
+    );
+  });
 }

@@ -14,6 +14,11 @@ Future<void> copyAssetNatively(String assetKey, File destination) async {
       'assetKey': assetKey,
       'destination': destination.path,
     });
+  } on MissingPluginException {
+    throw FileSystemException(
+      'Native asset copy channel is not available',
+      destination.path,
+    );
   } on PlatformException catch (e) {
     throw FileSystemException(
       'Native asset copy failed: ${e.message ?? e.code}',
