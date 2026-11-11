@@ -1,7 +1,7 @@
 # PRD: Nura (Aplikasi Islami Offline-First)
 
-Status dokumen: Draft v0.3 (selaras dengan `docs/specs/2026-11-09-nura-v1-design.md`)
-Terakhir diperbarui: 2026-11-09
+Status dokumen: Draft v0.4 (selaras dengan `docs/specs/2026-11-09-nura-v1-design.md` dan putaran desain 1 di `docs/design/`)
+Terakhir diperbarui: 2026-11-11
 
 ## 1. Ringkasan
 
@@ -39,8 +39,8 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 - Detail surah: teks Arab dan terjemahan Indonesia per ayat. Tafsir Kemenag bisa dibuka atau ditutup per ayat.
 - Tab Juz: 30 juz dengan awal dan akhir masing-masing.
 - Bookmark ayat dan Last Read.
-- Pencarian di terjemahan dan teks Arab.
-- Pengaturan ukuran font Arab dan terjemahan.
+- Pencarian di terjemahan dan teks Arab. Hasil dikelompokkan per surah. Terjemahan tampil sebagai cuplikan (maksimal 3 baris) yang berpusat pada kata cocok, dan semua kata cocok disorot (aturan lengkap di spec bagian 5.5).
+- Pengaturan ukuran font Arab (20–40, default 28) dan terjemahan.
 
 ### 5.2 Al-Qur'an (online, opsional)
 - Sakelar "Fitur Online" di Pengaturan, **mati secara default**.
@@ -67,13 +67,17 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 ### 5.5 1 Hari 1 Ayat dan 1 Hari 1 Hadis
 - Pilihan ditentukan dari tanggal secara deterministik, jadi semua pengguna melihat konten yang sama di hari yang sama.
 - 1 Hari 1 Ayat memakai **daftar kurasi** dari pemilik proyek (`data-source/meta/daily_ayah.json`). Jika file belum ada, fitur ayat harian disembunyikan.
-- 1 Hari 1 Hadis dipilih **otomatis** dari hadis dengan terjemahan tidak lebih dari 400 UTF-16 code unit (`String.length` Dart).
-- Tampil sebagai kartu di layar depan aplikasi.
-- Widget layar depan Android menampilkan konten yang sama tanpa membuka aplikasi.
+- 1 Hari 1 Hadis dipilih **otomatis**. Yang ditampilkan adalah **matan** hadis, bukan hadis lengkap dengan sanad. Matan Arab dan matan terjemahan diekstrak dari teks sumber sebagai substring persis (data tidak punya field matan terpisah). Sebuah hadis hanya lolos seleksi jika matan Arab **dan** terjemahannya bisa diekstrak bersih.
+- Aturan seleksi hadis harian ditetapkan di Fase 6: ekstraksi bersih, batas panjang matan (N), dan opsi membatasi sumber ke Shahih Bukhari dan Shahih Muslim (default atau pengaturan pengguna: Q11). Sampai Fase 6, `content.db` memakai filter sementara: terjemahan tidak lebih dari 400 UTF-16 code unit (`String.length` Dart).
+- Rujukan ditampilkan sebagai `QS. <Nama Latin>: <ayat>` untuk ayat dan `HR. <Kitab> No. <nomor>` untuk hadis. Kartu hadis punya tautan "Baca selengkapnya" ke hadis lengkap dengan sanad.
+- Tampil di **tiga tempat**: kartu di layar depan aplikasi, widget layar depan Android, dan notifikasi harian.
+- **Widget** ("Ayat hari ini" dan "Hadis hari ini", ukuran 4×2 dan 4×3, terang dan gelap) dirender sebagai **gambar** dari Flutter, karena font Arab LPMQ tidak bisa dipakai di RemoteViews. Widget bersifat statis: tanpa tombol, seluruh widget satu area ketuk. Isinya label, matan Arab, terjemahan, dan rujukan. Teks yang melebihi ruang dipotong dengan elipsis.
+- **Notifikasi harian**: satu per hari, jamnya bisa diatur atau dimatikan, default 06.00 (asumsi, belum diputuskan: Q10). Isinya terjemahan dan rujukan saja, **tanpa teks Arab**, karena notifikasi tidak bisa memakai font khusus. Ketuk notifikasi membuka Beranda.
 
 ### 5.6 Umum
 - Tema terang, gelap, dan ikut sistem. Pilihan tersimpan.
-- Halaman pengenalan (onboarding) tampil sekali pada peluncuran pertama.
+- Onboarding tampil sekali pada peluncuran pertama, tiga langkah: (a) sambutan, (b) jadwal sholat: pilih kota dan beri izin sinkron online yang terpisah, (c) izin notifikasi dengan dua sakelar "Pengingat adzan" dan "Ayat & hadis harian" (langkah ini bisa dilewati). Audio murottal tidak ditanyakan di onboarding karena mati secara default; cukup disebut bahwa audio bisa diaktifkan di Pengaturan.
+- Tampilan mengikuti desain putaran 1 (`docs/design/`): Material 3, tema terang dan gelap, font Latin Plus Jakarta Sans dan font Arab LPMQ Isep Misbah.
 - Halaman "Sumber & Atribusi" yang mencantumkan semua sumber data.
 
 ## 6. Di Luar Cakupan v1
@@ -138,7 +142,7 @@ Pakai `sqlite3` dan `sqlite3_flutter_libs` (bukan `sqflite`). Library SQLite dib
 - Lapisan: `data` (sumber SQLite, API audio, dan API jadwal sholat) → `repository` (antarmuka per domain) → `modules` (binding, controller, view per fitur).
 - Tidak ada akses database atau jaringan langsung dari view atau controller. Semuanya lewat repository.
 - Fitur online dibungkus layanan tersendiri (`OnlineService`) yang memeriksa sakelar dan koneksi sebelum dipakai. Audio dikendalikan sakelar "Fitur Online"; sinkron jadwal sholat dikendalikan izin tersendiri.
-- Widget Android memakai paket `home_widget` dan AppWidgetProvider native. Aplikasi menulis konten harian, lalu widget membacanya.
+- Widget Android memakai AppWidgetProvider native yang menampilkan gambar. Gambar widget dirender oleh Flutter (font Arab LPMQ tidak bisa dipakai di RemoteViews), misalnya lewat paket `home_widget`. Aplikasi menulis gambar harian, lalu widget membacanya. Notifikasi harian memakai `flutter_local_notifications`, sama dengan pengingat sholat.
 
 ## 9. Kebutuhan Non-Fungsional
 
@@ -159,6 +163,8 @@ Pakai `sqlite3` dan `sqlite3_flutter_libs` (bukan `sqflite`). Library SQLite dib
 | Jadwal sholat (API) | API pihak ketiga (kandidat myquran.com, data Kemenag; belum dipilih) | Perlu cek syarat penggunaan |
 | Info surah, juz, kota | Belum dipilih | Perlu sumber dengan lisensi jelas |
 | Daftar kurasi ayat harian | Disusun pemilik proyek | Menunggu daftar (Q9) |
+| Font Arab LPMQ Isep Misbah (cadangan KFGQPC Uthmanic Script Hafs) | LPMQ Kemenag (lajnah.kemenag.go.id/unduhan) | Lisensi kedua font wajib dicek sebelum rilis (Q6). Catat tanggal unduh di catatan rilis |
+| Font Latin Plus Jakarta Sans | Plus Jakarta Sans | OFL |
 
 Rilis publik terblokir sampai status lisensi Al-Qur'an dan hadis jelas.
 
@@ -169,9 +175,9 @@ Urutan fase mengikuti spec desain bagian 11.
 1. **Fondasi:** hapus kode lama, paket dan Application ID, struktur proyek, `sqlite3`, skrip build dan verifikasi, `content.db`, `user.db`, tema.
 2. **Al-Qur'an offline:** daftar surah, detail, tafsir, juz, bookmark, last read, ukuran font.
 3. **Hadis:** daftar kitab, daftar dengan paging, detail, bookmark.
-4. **Pencarian:** FTS ayat dan hadis.
+4. **Pencarian:** FTS ayat dan hadis, cuplikan hasil dan sorotan kata cocok.
 5. **Jadwal sholat:** lokasi, API dan cache, fallback perhitungan, notifikasi.
-6. **1 Hari 1 Ayat/Hadis:** kartu di aplikasi, lalu widget Android.
+6. **1 Hari 1 Ayat/Hadis:** kartu di aplikasi, aturan seleksi hadis (matan), widget Android (gambar dari Flutter), dan notifikasi harian.
 7. **Fitur online:** sakelar, audio streaming dan unduhan.
 8. **Polish dan rilis:** onboarding, atribusi, ikon, uji di perangkat, Play Store.
 
@@ -184,7 +190,9 @@ Tanggal target belum ditetapkan.
 3. **Penyedia API audio dan jadwal sholat.** Kandidat audio: equran.id. Kandidat jadwal: myquran.com. Perlu cek syarat penggunaan keduanya.
 4. **Sumber data meta** (info surah, juz, kota) dan transliterasi.
 5. **Parameter perhitungan offline** (cadangan jadwal sholat, termasuk ihtiyat). Perlu diverifikasi dengan jadwal Kemenag.
-6. **Ketentuan tashih LPMQ** untuk Al-Qur'an digital.
+6. **Ketentuan tashih LPMQ** untuk Al-Qur'an digital, dan **lisensi font Arab**: LPMQ Isep Misbah (cadangan KFGQPC Uthmanic Script Hafs). Lisensi kedua font wajib dicek sebelum rilis. LPMQ diambil dari sumber resmi (lajnah.kemenag.go.id/unduhan) dan tanggal unduh dicatat di catatan rilis.
 7. **Konfirmasi lisensi teks hadis** ke pemilik repo atau sumber asal.
 8. **Verifikasi isi `data-source/` ke sumber asli** (hadis: gadingnst/hadith-api). Lihat STATUS.md Q8.
 9. **Daftar kurasi `data-source/meta/daily_ayah.json`.** Disusun pemilik proyek. Dibutuhkan untuk 1 Hari 1 Ayat (Fase 6).
+10. **Jam default notifikasi harian.** 06.00 adalah asumsi, belum diputuskan produk.
+11. **Aturan seleksi hadis harian (Fase 6).** Batas panjang matan (N), dan apakah pembatasan ke Shahih Bukhari dan Shahih Muslim menjadi default atau pengaturan pengguna.

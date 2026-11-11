@@ -1,6 +1,6 @@
 # AGENTS.md: Panduan untuk Agen Coding di Proyek Nura
 
-Baca dokumen ini sebelum mengubah kode. Dokumen pendamping: `docs/PRD.md` (apa yang dibangun) dan `docs/STATUS.md` (kondisi saat ini dan daftar kerja).
+Baca dokumen ini sebelum mengubah kode. Dokumen pendamping: `docs/PRD.md` (apa yang dibangun), `docs/STATUS.md` (kondisi saat ini dan daftar kerja), dan `docs/design/` (brief desain UI dan handoff ke Flutter: token, komponen, aturan teknis UI; baca `HANDOFF-flutter.md` sebelum mengerjakan UI).
 
 ## Ringkasan Proyek
 

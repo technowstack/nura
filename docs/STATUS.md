@@ -1,8 +1,8 @@
 # STATUS: Proyek Nura
 
-Terakhir diperbarui: 2026-11-09
+Terakhir diperbarui: 2026-11-11
 
-Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Belum di-push.
+Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Fase 1 sudah di-merge lokal ke `main` (merge commit `7b0340c`). Belum di-push.
 
 ## Ringkasan Kondisi
 
@@ -10,7 +10,7 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Belum di-push
 - Repo lama (`main`, sebelum rebuild, HEAD `933deb5`): aplikasi Quran berbasis API, sekitar 25–30% jadi. Dijadikan referensi tampilan saja.
 - Data JSON Quran dan hadis sudah dipindah ke `data-source/` dan di-track git. `CHECKSUMS.sha256` dan `README.md` sudah dibuat.
 - Working tree lama yang kotor sudah dirapikan menjadi commit terpisah di `main` (platform, kode UI lama, docs, data).
-- Tahap saat ini: perencanaan. PRD v0.3 dan spec desain v1 (`docs/specs/2026-11-09-nura-v1-design.md`, status draft untuk review) sudah ada. Rencana implementasi belum dibuat.
+- Tahap saat ini: Fase 1 (Fondasi) selesai. PRD v0.4, spec desain v1 (`docs/specs/2026-11-09-nura-v1-design.md`, disetujui), dan desain UI putaran 1 (`docs/design/`) sudah ada. Berikutnya: rencana Fase 2 (Al-Qur'an offline).
 
 ## Data
 
@@ -27,6 +27,17 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Belum di-push
 | Jadwal sholat | Lewat API per bulan, disimpan lokal | Penyedia belum dipilih. Cadangan: perhitungan offline berlabel "perkiraan" |
 | content.db dan skrip build/verifikasi | Selesai | Skema FTS5 contentless, 112,38 MB, `verify --full` lulus. Versi lewat sidecar `assets/db/content.version`. Dihasilkan lokal oleh `tool/prepare_content.sh`, tidak di-commit |
 
+## Desain UI
+
+| Item | Status | Catatan |
+|---|---|---|
+| Putaran desain 1 (Fondasi dan Fase 2) | Selesai, diserahkan 2026-11-11 | Brief: `docs/design/2026-11-09-nura-ui-design-brief.md`. Handoff ke Flutter: `docs/design/HANDOFF-flutter.md`. Token: `docs/design/tokens.json`. Di Figma (`Nura — UI v1`): 9 layar Fase 1 dan 16 layar Fase 2, masing-masing Light dan Dark |
+| Putaran desain 2 | Belum | Layar hadis (termasuk detail dengan sanad), jadwal sholat bulanan, pengaturan notifikasi lengkap, pengunduhan audio, pengaturan umum, daftar kota, ikon aplikasi final, materi Play Store |
+| Tema dari token desain | Belum | Tema saat ini masih dasar. Terapkan `ColorScheme`, `NuraColors`, `NuraTextStyles`, dan konstanta jarak/radius di `lib/app/core/theme/` dari `tokens.json` (handoff menyebut `lib/core/theme/`; struktur proyek memakai `lib/app/core/theme/`) |
+| Font Arab LPMQ dan font Latin Plus Jakarta Sans | Belum ada di repo | Lisensi font Arab dicek sebelum rilis (Q6) |
+| Placeholder di desain | Ada | Slot "[Q4]" (tempat turun, juz). Teks "~XXX MB" di layar error ruang penyimpanan: isi saat layar itu dibangun (ukuran `content.db` 112,38 MB; perhitungkan ruang `.tmp` saat pembaruan). Ikon selain `history` dan ilustrasi masih placeholder. Wordmark sementara (Q2) |
+| Berkas yang disebut handoff tetapi tidak ada di `docs/design/` | Tidak ada | `review-round1.md`, `tokens.dart`, `CLAUDE.md`, `STATUS-desain.md`, dan file Figma `Nura — UI v1.figcraft`. Di repo hanya ada brief, handoff, dan `tokens.json` |
+
 ## Fitur v1
 
 | Fitur | Status |
@@ -35,8 +46,8 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Belum di-push
 | Al-Qur'an offline (surah, detail, tafsir, juz, bookmark, last read, cari) | Belum mulai |
 | Hadis (kitab, daftar, detail, cari, bookmark) | Belum mulai |
 | Jadwal sholat dan notifikasi | Belum mulai |
-| 1 Hari 1 Ayat/Hadis (kartu) | Belum mulai |
-| Widget layar depan Android | Belum mulai |
+| 1 Hari 1 Ayat/Hadis (kartu dan notifikasi harian) | Belum mulai |
+| Widget layar depan Android (dirender sebagai gambar dari Flutter) | Belum mulai |
 | Fitur online: audio murottal | Belum mulai |
 | Onboarding, atribusi, ikon, rilis | Belum mulai |
 
@@ -59,9 +70,17 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Belum di-push
 | 2026-11-09 | Git LFS sengaja tidak dipakai: file terbesar 13,4 MB (di bawah batas 100 MB GitHub), data tidak berubah, dan data sudah ada di riwayat git sehingga LFS tidak mengecilkan repo. Menambah LFS nanti butuh migrasi yang menulis ulang riwayat |
 | 2026-11-09 | Jadwal sholat diambil dari API per bulan dan disimpan. Izin sinkron jadwal terpisah dari sakelar audio dan ditanyakan saat onboarding |
 | 2026-11-09 | Jika belum ada jadwal tersimpan dan offline, jadwal dihitung offline (`adhan`, parameter Kemenag) dan diberi label "perkiraan" |
-| 2026-11-09 | 1 Hari 1 Ayat memakai daftar kurasi (`data-source/meta/daily_ayah.json`). 1 Hari 1 Hadis dipilih otomatis dengan filter panjang terjemahan (maks. 400 karakter) |
+| 2026-11-09 | 1 Hari 1 Ayat memakai daftar kurasi (`data-source/meta/daily_ayah.json`). 1 Hari 1 Hadis dipilih otomatis dengan filter panjang terjemahan (maks. 400 karakter). Filter ini sementara dan digantikan aturan matan di Fase 6 (lihat keputusan 2026-11-11) |
 | 2026-11-09 | Paket SQLite: `sqlite3` + `sqlite3_flutter_libs` (bukan `sqflite`), agar FTS5 pasti tersedia |
 | 2026-11-09 | Sumber Quran: Kemenag. Sumber hadis: gadingnst/hadith-api (MIT, data asal tafsirq.com) |
+| 2026-11-11 | Putaran desain 1: 1 Hari 1 Ayat/Hadis tampil di tiga tempat, yaitu kartu Beranda, widget layar depan, dan notifikasi harian |
+| 2026-11-11 | Widget dirender sebagai gambar dari Flutter (font LPMQ tidak bisa dipakai di RemoteViews). Widget statis: tanpa tombol, seluruh widget satu area ketuk. Ukuran 4×2 dan 4×3, terang dan gelap |
+| 2026-11-11 | Notifikasi harian ayat/hadis: satu per hari, jam bisa diatur atau dimatikan, default 06.00 (asumsi, Q10). Isi terjemahan dan rujukan saja, tanpa teks Arab. Sakelar "Ayat & hadis harian" di onboarding langkah c, bersama "Pengingat adzan" |
+| 2026-11-11 | Hadis harian menampilkan matan hasil ekstraksi: matan Arab dan matan terjemahan sama-sama substring persis dari sumber, dan keduanya harus bisa diekstrak bersih agar hadis lolos seleksi. Aturan seleksi lengkap (batas panjang N) ditetapkan di Fase 6 dan akan mengubah `daily_hadith`, jadi butuh persetujuan pemilik proyek saat itu |
+| 2026-11-11 | Tersedia opsi membatasi hadis harian ke Shahih Bukhari dan Shahih Muslim. Default atau pengaturan pengguna diputuskan di Fase 6 (Q11) |
+| 2026-11-11 | Aturan cuplikan hasil pencarian Al-Qur'an: jendela maksimal 100 karakter berpusat pada kata cocok, dipotong ke batas kata, elipsis di sisi yang terpotong, isi cuplikan substring persis, semua kata cocok disorot, hasil dikelompokkan per surah (spec bagian 5.5) |
+| 2026-11-11 | Lisensi font Arab (LPMQ Isep Misbah, cadangan KFGQPC Uthmanic Script Hafs) wajib dicek sebelum rilis: masuk Q6 |
+| 2026-11-11 | Desain UI putaran 1 menjadi acuan tampilan (`docs/design/`): Material 3, font Latin Plus Jakarta Sans (OFL), ukuran teks Arab 20–40 (default 28) |
 
 ## Pertanyaan Terbuka
 
@@ -71,16 +90,19 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Belum di-push
 | Q3 | Penyedia API audio dan jadwal sholat, beserta syarat penggunaannya | Fitur online, jadwal sholat |
 | Q4 | Sumber data meta: info surah, juz, kota | Quran (juz), jadwal sholat |
 | Q5 | Parameter perhitungan offline (ihtiyat, dll.) untuk cadangan jadwal sholat | Jadwal sholat |
-| Q6 | Ketentuan tashih LPMQ untuk Al-Qur'an digital | Rilis |
+| Q6 | Ketentuan tashih LPMQ untuk Al-Qur'an digital, dan lisensi font Arab (LPMQ Isep Misbah; cadangan KFGQPC Uthmanic Script Hafs). LPMQ diambil dari sumber resmi (lajnah.kemenag.go.id/unduhan), catat tanggal unduh di catatan rilis | Rilis |
 | Q7 | Konfirmasi lisensi teks terjemahan hadis | Rilis |
 | Q8 | Verifikasi isi `data-source/` ke sumber asli (hadis: `gadingnst/hadith-api`). Assets asli sebelum dipindah tidak tersedia untuk dibandingkan. Tugas terpisah | Integritas data, rilis |
 | Q9 | Daftar kurasi `data-source/meta/daily_ayah.json` (disusun pemilik proyek) | 1 Hari 1 Ayat (Fase 6) |
+| Q10 | Jam default notifikasi harian: 06.00 adalah asumsi, belum diputuskan produk | Notifikasi harian (Fase 6) |
+| Q11 | Aturan seleksi hadis harian: batas panjang matan (N), dan apakah pembatasan ke Shahih Bukhari dan Shahih Muslim menjadi default atau pengaturan pengguna | 1 Hari 1 Hadis (Fase 6) |
 
 ## Langkah Berikutnya
 
 1. Cek manual di perangkat: waktu first-run dan memori untuk salinan native masih tertunda. Catat hasilnya setelah dijalankan.
-2. Merge lokal ke `main` masih tertunda. Push hanya setelah pemilik proyek memastikan repo privat.
-3. Fase 2: Al-Qur'an offline (repository pertama, daftar surah, detail ayat).
+2. Merge lokal ke `main` sudah dilakukan (merge commit `7b0340c`). Push hanya setelah pemilik proyek memastikan repo privat.
+3. Susun rencana Fase 2 (Al-Qur'an offline) dari spec dan desain putaran 1: repository pertama, daftar surah, detail ayat, dan penerapan token desain ke tema. Data meta (Q4) dicari paralel.
+4. Siapkan putaran desain 2 (hadis, jadwal sholat, pengaturan, ikon) sebelum Fase 3.
 4. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
 
 ## Catatan Teknis
