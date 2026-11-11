@@ -44,7 +44,8 @@ class QuranDetailController extends GetxController with WidgetsBindingObserver {
   final ListController listController = ListController();
   final ScrollController scrollController = ScrollController();
 
-  /// Last-read ayah within this surah; 0 means none.
+  /// Last-read ayah within this surah as stored at load; 0 means none.
+  /// Not updated while reading, so the highlight does not follow the user.
   final lastReadAyah = 0.obs;
 
   Timer? _timer;
@@ -106,7 +107,6 @@ class QuranDetailController extends GetxController with WidgetsBindingObserver {
     try {
       _user.setLastRead(AyahRef(args.surah, _pending));
       _saved = _pending;
-      lastReadAyah.value = _pending;
     } on Object catch (e) {
       debugPrint('QuranDetailController: save last read failed: $e');
     }

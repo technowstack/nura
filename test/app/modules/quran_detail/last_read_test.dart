@@ -186,6 +186,15 @@ void main() {
     expect(user.lastReadWrites.single.ayah, greaterThan(1));
   });
 
+  testWidgets('highlight stays on stored ayah while reading', (t) async {
+    user.lastRead = lr(1, 30);
+    await pump(t, const SurahArgs(1), debounce: const Duration(seconds: 3));
+    await dragUp(t);
+    await t.pump(const Duration(seconds: 3));
+    expect(user.lastReadWrites, isNotEmpty);
+    expect(Get.find<QuranDetailController>().lastReadAyah.value, 30);
+  });
+
   testWidgets('last read in another surah marks nothing', (t) async {
     user.lastRead = lr(2, 2);
     await pump(t, const SurahArgs(1));
