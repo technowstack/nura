@@ -18,7 +18,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 |---|---|---|
 | Quran (114 file, 6.236 ayat) | Ada, di `data-source/quran/` | Teks Arab, terjemahan Indonesia, tafsir Kemenag. Skema konsisten |
 | Hadis (9 kitab, 38.102 hadis) | Ada | Field: number, arab, id. 69 MB, di `data-source/hadith/` |
-| Info surah (arti, tempat turun) | Belum ada | Perlu sumber di `data-source/meta/` |
+| Info surah | Sebagian | Arti nama surah sudah ada di sumber Quran (`translations.id.name`, masuk ke kolom `name_id`). Tempat turun belum ada: perlu sumber di `data-source/meta/` (Q4) |
 | Pemetaan juz | Belum ada | Perlu sumber di `data-source/meta/` |
 | Data kota dan koordinat | Belum ada | Untuk pilihan lokasi, id kota di API jadwal, dan perhitungan offline |
 | Daftar kurasi ayat harian (`meta/daily_ayah.json`) | Belum ada | Disusun pemilik proyek (Q9). Tanpa file ini fitur ayat harian disembunyikan |
