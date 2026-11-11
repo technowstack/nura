@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -49,8 +50,8 @@ class QuranDetailController extends GetxController with WidgetsBindingObserver {
   Timer? _timer;
   int _pending = 0;
   int _saved = 0;
-  // Ignore list reports until the initial jump is done, so the
-  // pre-jump position never overwrites the stored last read.
+  // Ignore list reports until the user scrolls, so merely opening a
+  // surah never overwrites the stored last read.
   bool _tracking = false;
 
   @override
@@ -78,6 +79,13 @@ class QuranDetailController extends GetxController with WidgetsBindingObserver {
 
   void _onVisibleRange() {
     final range = listController.visibleRange;
+    // Layout notices also fire without user input (item measuring); only
+    // start tracking once the user scrolls. jumpTo leaves it idle.
+    if (!_tracking &&
+        scrollController.hasClients &&
+        scrollController.position.userScrollDirection != ScrollDirection.idle) {
+      _tracking = true;
+    }
     if (!_tracking || range == null) return;
     // Index 0 is the surah header and counts as ayah 1.
     final ayah = range.$1 < 1 ? 1 : range.$1;
@@ -115,7 +123,6 @@ class QuranDetailController extends GetxController with WidgetsBindingObserver {
           alignment: 0.0,
         );
       }
-      _tracking = true;
     });
   }
 

@@ -102,6 +102,7 @@ class FakeUserRepository implements UserRepository {
 
   @override
   void setLastRead(AyahRef ref) {
+    _check();
     lastReadWrites.add(ref);
     lastRead = LastRead(ref: ref, updatedAt: DateTime(2000));
   }
