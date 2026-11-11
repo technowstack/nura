@@ -15,6 +15,7 @@ class AyahCard extends StatelessWidget {
     required this.prefs,
     required this.onBookmark,
     required this.onCopy,
+    required this.onTafsir,
     super.key,
   });
 
@@ -26,6 +27,7 @@ class AyahCard extends StatelessWidget {
   final ReadingPrefs prefs;
   final VoidCallback onBookmark;
   final VoidCallback onCopy;
+  final VoidCallback onTafsir;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -46,6 +48,7 @@ class AyahCard extends StatelessWidget {
               bookmarked: bookmarked,
               onBookmark: onBookmark,
               onCopy: onCopy,
+              onTafsir: onTafsir,
             ),
           ],
         ),

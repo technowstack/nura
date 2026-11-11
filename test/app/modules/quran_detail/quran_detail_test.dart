@@ -135,6 +135,7 @@ void main() {
         prefs: p,
         onBookmark: () {},
         onCopy: () {},
+        onTafsir: () {},
       ),
     );
     await t.pumpWidget(card(prefs));

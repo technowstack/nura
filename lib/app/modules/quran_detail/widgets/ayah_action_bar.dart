@@ -5,12 +5,14 @@ class AyahActionBar extends StatelessWidget {
     required this.bookmarked,
     required this.onBookmark,
     required this.onCopy,
+    required this.onTafsir,
     super.key,
   });
 
   final bool bookmarked;
   final VoidCallback onBookmark;
   final VoidCallback onCopy;
+  final VoidCallback onTafsir;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -24,6 +26,11 @@ class AyahActionBar extends StatelessWidget {
           color: bookmarked ? Theme.of(context).colorScheme.primary : null,
           semanticLabel: bookmarked ? 'Hapus bookmark' : 'Tambah bookmark',
         ),
+      ),
+      IconButton(
+        onPressed: onTafsir,
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        icon: const Icon(Icons.menu_book, semanticLabel: 'Lihat tafsir'),
       ),
       IconButton(
         onPressed: onCopy,

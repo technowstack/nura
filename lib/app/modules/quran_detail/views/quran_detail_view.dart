@@ -8,6 +8,7 @@ import '../../../core/widgets/error_state.dart';
 import '../controllers/quran_detail_controller.dart';
 import '../widgets/ayah_card.dart';
 import '../widgets/surah_header_card.dart';
+import '../widgets/tafsir_sheet.dart';
 
 class QuranDetailView extends GetView<QuranDetailController> {
   const QuranDetailView({super.key});
@@ -68,6 +69,12 @@ class QuranDetailView extends GetView<QuranDetailController> {
                 prefs: prefs,
                 onBookmark: () => c.toggleBookmark(ayah.ayahNumber),
                 onCopy: () => c.copyAyah(ayah),
+                onTafsir: () => showTafsirSheet(
+                  context,
+                  ayahs: value.ayahs,
+                  initialIndex: i - 1,
+                  surahName: value.surah.nameLatin,
+                ),
               );
             },
           ),
