@@ -105,7 +105,7 @@ void main() {
     expect(find.text('Selamat datang di Nura'), findsOneWidget);
     await tester.tap(find.text('Mulai'));
     await tester.pumpAndSettle();
-    expect(find.text('Beranda'), findsOneWidget);
+    expect(find.text('Beranda'), findsNWidgets(2)); // nav label + HomeView
     expect(find.textContaining('data_version '), findsOneWidget);
     expect(s.user.getSetting(SettingKeys.onboardingDone), 'true');
   });
@@ -116,7 +116,7 @@ void main() {
             as BootstrapSuccess;
     await tester.pumpWidget(NuraApp(result: s, onRetry: () {}));
     await tester.pumpAndSettle();
-    expect(find.text('Beranda'), findsOneWidget);
+    expect(find.text('Beranda'), findsNWidgets(2)); // nav label + HomeView
   });
 
   for (final (setting, expected) in [
