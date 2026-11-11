@@ -5,3 +5,9 @@ ThemeMode themeModeFromSetting(String? value) => switch (value) {
   'dark' => ThemeMode.dark,
   _ => ThemeMode.system,
 };
+
+String themeModeToSetting(ThemeMode mode) => switch (mode) {
+  ThemeMode.light => 'light',
+  ThemeMode.dark => 'dark',
+  ThemeMode.system => 'system',
+};
