@@ -10,13 +10,13 @@ import '../controllers/quran_list_controller.dart';
 import '../widgets/juz_list_item.dart';
 import '../widgets/surah_list_item.dart';
 
-class QuranListView extends StatelessWidget {
+class QuranListView extends GetView<QuranListController> {
   const QuranListView({super.key});
 
   @override
-  Widget build(BuildContext context) => GetBuilder<QuranListController>(
-    init: QuranListController(),
-    builder: (c) => DefaultTabController(
+  Widget build(BuildContext context) {
+    final c = controller;
+    return DefaultTabController(
       length: 2,
       child: Column(
         children: [
@@ -29,8 +29,11 @@ class QuranListView extends StatelessWidget {
           Expanded(
             child: TabBarView(
               children: [
-                Obx(
-                  () => _body(
+                Obx(() {
+                  // Read inside Obx so marker changes rebuild the list.
+                  final last = c.lastReadSurah.value;
+                  final marked = c.bookmarkedSurahs.toSet();
+                  return _body(
                     c.surahs.value,
                     c.load,
                     'Daftar surah belum tersedia',
@@ -40,20 +43,17 @@ class QuranListView extends StatelessWidget {
                         final s = list[i];
                         return SurahListItem(
                           surah: s,
-                          state: c.lastReadSurah.value == s.number
+                          state: last == s.number
                               ? SurahItemState.lastRead
-                              : c.bookmarkedSurahs.contains(s.number)
+                              : marked.contains(s.number)
                               ? SurahItemState.bookmarked
                               : SurahItemState.normal,
-                          onTap: () => Get.toNamed(
-                            Routes.surah,
-                            arguments: SurahArgs(s.number),
-                          ),
+                          onTap: () => _open(c, SurahArgs(s.number)),
                         );
                       },
                     ),
-                  ),
-                ),
+                  );
+                }),
                 Obx(
                   () => _body(
                     c.juz.value,
@@ -63,12 +63,9 @@ class QuranListView extends StatelessWidget {
                       itemCount: list.length,
                       itemBuilder: (_, i) => JuzListItem(
                         juz: list[i],
-                        onTap: () => Get.toNamed(
-                          Routes.surah,
-                          arguments: SurahArgs(
-                            list[i].startSurah,
-                            list[i].startAyah,
-                          ),
+                        onTap: () => _open(
+                          c,
+                          SurahArgs(list[i].startSurah, list[i].startAyah),
                         ),
                       ),
                     ),
@@ -79,8 +76,13 @@ class QuranListView extends StatelessWidget {
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
+
+  Future<void> _open(QuranListController c, SurahArgs args) async {
+    await Get.toNamed(Routes.surah, arguments: args);
+    c.refreshMarkers();
+  }
 
   Widget _body<T>(
     UiState<List<T>> state,

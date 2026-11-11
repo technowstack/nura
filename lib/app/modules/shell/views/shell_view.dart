@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../home/home_view.dart';
+import '../../quran_list/bindings/quran_list_binding.dart';
 import '../../quran_list/views/quran_list_view.dart';
 import '../controllers/shell_controller.dart';
 import '../widgets/coming_soon_tab.dart';
@@ -14,6 +15,7 @@ class ShellView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => GetBuilder<ShellController>(
     init: ShellController(),
+    initState: (_) => QuranListBinding().dependencies(),
     builder: (c) => Scaffold(
       body: IndexedStack(
         index: c.index,

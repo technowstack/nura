@@ -11,6 +11,8 @@ import 'package:nura/app/data/models/surah.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/modules/quran_detail/surah_args.dart';
+import 'package:nura/app/modules/quran_list/bindings/quran_list_binding.dart';
+import 'package:nura/app/modules/quran_list/controllers/quran_list_controller.dart';
 import 'package:nura/app/modules/quran_list/views/quran_list_view.dart';
 import 'package:nura/app/routes/app_routes.dart';
 
@@ -42,6 +44,7 @@ void main() {
     user = FakeUserRepository();
     Get.put<QuranRepository>(quran);
     Get.put<UserRepository>(user);
+    QuranListBinding().dependencies();
   });
   tearDown(Get.reset);
 
@@ -147,6 +150,53 @@ void main() {
     expect(routeArgs, isA<SurahArgs>());
     expect((routeArgs as SurahArgs).surah, 2);
     expect((routeArgs as SurahArgs).ayah, 0);
+  });
+
+  testWidgets('markers update when observables change after first pump', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.history), findsNothing);
+    final c = Get.find<QuranListController>();
+    c.lastReadSurah.value = 2;
+    c.bookmarkedSurahs.add(1);
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.history), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+  });
+
+  testWidgets('returning from surah page refreshes markers', (tester) async {
+    await pump(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Latin2'));
+    await tester.pumpAndSettle();
+    user.lastRead = LastRead(
+      ref: const AyahRef(2, 1),
+      updatedAt: DateTime(2000),
+    );
+    user.bookmarkedSurahs = {1};
+    Get.back<void>();
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.history), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+  });
+
+  testWidgets('tapping juz row opens route with start surah and ayah', (
+    tester,
+  ) async {
+    quran.juz = const [
+      Juz(number: 2, startSurah: 2, startAyah: 142, endSurah: 2, endAyah: 252),
+    ];
+    await pump(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Juz'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Juz 2'));
+    await tester.pumpAndSettle();
+    final args = routeArgs as SurahArgs;
+    expect(args.surah, 2);
+    expect(args.ayah, 142);
   });
 
   for (final tab in ['Surah', 'Juz']) {

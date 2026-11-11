@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import '../../../core/errors.dart';
@@ -31,13 +32,19 @@ class QuranListController extends GetxController {
     Future.microtask(() {
       surahs.value = _read(_quran.listSurah);
       juz.value = _read(_quran.listJuz);
-      try {
-        bookmarkedSurahs.assignAll(_user.bookmarkedSurahNumbers());
-        lastReadSurah.value = _user.getLastRead()?.ref.surah ?? 0;
-      } on ContentUnavailable {
-        // Markers are decoration; the lists stay usable without them.
-      }
+      refreshMarkers();
     });
+  }
+
+  /// Re-reads bookmark and last-read markers (e.g. after leaving the surah page).
+  void refreshMarkers() {
+    try {
+      bookmarkedSurahs.assignAll(_user.bookmarkedSurahNumbers());
+      lastReadSurah.value = _user.getLastRead()?.ref.surah ?? 0;
+    } on ContentUnavailable catch (e) {
+      // Markers are decoration; the lists stay usable without them.
+      debugPrint('QuranListController: markers unavailable: $e');
+    }
   }
 
   UiState<List<T>> _read<T>(List<T> Function() read) {
