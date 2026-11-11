@@ -3,7 +3,7 @@
 Status: Disetujui
 Tanggal: 2026-11-09 (diperbarui 2026-11-11 dengan keputusan produk putaran desain 1)
 Dokumen terkait: `docs/PRD.md`, `AGENTS.md`, `docs/STATUS.md`, `docs/design/` (brief desain UI dan handoff ke Flutter)
-Branch: `rebuild/nura`
+Cabang: `main` (Fase 1 dikerjakan di `rebuild/nura` dan sudah di-merge). Fase berikutnya di `feat/phase-N-<nama>`.
 
 ## 1. Konteks dan Keputusan
 
@@ -24,8 +24,10 @@ Keputusan yang sudah disepakati dan menjadi dasar spec ini:
 | D9 | Widget Android: AppWidgetProvider native yang menampilkan gambar. Gambar dirender dari Flutter karena font LPMQ tidak bisa dipakai di RemoteViews. Strategi awal: gambar untuk 7 hari ke depan ditulis saat aplikasi dibuka (detail di Fase 6). |
 | D10 | Nama paket Dart `nura`, Application ID `com.technowstack.nura`. |
 | D11 | GetX untuk state, DI, dan routing. |
-| D12 | Notifikasi harian ayat/hadis: satu per hari, jam bisa diatur atau dimatikan, default 06.00 (asumsi, Q10). Isi terjemahan dan rujukan, tanpa teks Arab. |
-| D13 | Desain UI mengikuti `docs/design/` (brief putaran 1 dan `HANDOFF-flutter.md`). Nilai token bersumber dari `docs/design/tokens.json`. |
+| D12 | Notifikasi harian ayat/hadis: satu per hari, jam bisa diatur atau dimatikan, default 06.00 dan bisa diubah pengguna. Isi terjemahan dan rujukan, tanpa teks Arab. |
+| D13 | Desain UI mengikuti `docs/design/` (brief putaran 1 dan `HANDOFF-flutter.md`). Nilai token bersumber dari `docs/design/tokens.json`. Jalur kode tema tetap `lib/app/core/theme/`. |
+| D14 | Hadis harian secara default hanya dari Shahih Bukhari dan Shahih Muslim. Pengguna bisa memperluasnya ke 9 kitab di Pengaturan. |
+| D15 | `main` adalah cabang utama. Setiap fase dikerjakan di `feat/phase-N-<nama>`, lalu `merge --no-ff` ke `main` setelah review akhir. |
 
 ## 2. Tujuan dan Batasan
 
@@ -194,7 +196,8 @@ CREATE TABLE setting (
 -- theme_mode, online_enabled, prayer_sync_enabled, onboarding_done,
 -- arabic_font_scale, translation_font_scale, qari_id,
 -- notify_fajr … notify_isha, prayer_adjust_fajr … prayer_adjust_isha,
--- notifikasi harian ayat/hadis: sakelar dan jam (default 06:00); nama kunci ditetapkan di Fase 6
+-- notifikasi harian ayat/hadis: sakelar dan jam (default 06:00), dan sumber hadis harian
+-- (default Bukhari dan Muslim, bisa diperluas ke 9 kitab); nama kunci ditetapkan di Fase 6
 
 CREATE TABLE bookmark (
   id          INTEGER PRIMARY KEY,
@@ -311,7 +314,7 @@ android/app/src/main/kotlin/com/technowstack/nura/
 - **Al-Qur'an**: tab Surah, Juz, dan Bookmark beserta kolom cari, lalu Detail Surah. Tafsir dan pengaturan tampilan baca berupa bottom sheet.
 - **Hadis**: daftar kitab, lalu daftar hadis (paging 30 per halaman), lalu Detail Hadis.
 - **Sholat**: jadwal hari ini, pilihan lokasi, pengaturan notifikasi, label "perkiraan" jika sumbernya `calc`.
-- **Pengaturan**: tema, ukuran font, Fitur Online, qari, kelola unduhan audio, sinkron jadwal, Sumber & Atribusi.
+- **Pengaturan**: tema, ukuran font, Fitur Online, qari, kelola unduhan audio, sinkron jadwal, sumber hadis harian (default Bukhari dan Muslim, bisa diperluas ke 9 kitab), Sumber & Atribusi.
 - Route awal: Onboarding jika `onboarding_done` belum `true`, selain itu Beranda.
 
 ### 5.4 Inisialisasi aplikasi
@@ -394,10 +397,12 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 - Ayat hari ini: `daily_ayah` dengan `seq = dayIndex mod count`. Jika tabel kosong, kartu dan widget ayat disembunyikan atau menampilkan keterangan.
 - Hadis hari ini: `daily_hadith` dengan `seq = dayIndex mod count`.
 - Yang ditampilkan adalah **matan** hasil ekstraksi, bukan hadis lengkap. Data tidak punya field matan terpisah, jadi: matan Arab adalah substring persis dari teks Arab (contoh Shahih Bukhari No. 34: dari "مَنْ يَقُمْ" sampai akhir), dan matan terjemahan adalah substring persis dari terjemahan (teks di dalam tanda kutip setelah "bersabda:", tanpa sanad). Keduanya harus bisa diekstrak bersih agar hadis lolos seleksi, dan ekstraksinya wajib diuji terhadap teks sumber.
-- Aturan seleksi lengkap ditetapkan di Fase 6: matan Arab dan terjemahan bisa diekstrak bersih, batas panjang matan (N), dan opsi membatasi sumber ke Shahih Bukhari dan Shahih Muslim (default atau pengaturan pengguna: Q11). Sampai Fase 6, `daily_hadith` memakai filter sementara di bagian 3.3. Perubahan isi atau skema `daily_hadith` butuh persetujuan pemilik proyek.
+- Aturan seleksi lengkap ditetapkan di Fase 6: matan Arab dan terjemahan bisa diekstrak bersih, dan batas panjang matan (N).
+- Sumber hadis harian: secara default hanya Shahih Bukhari dan Shahih Muslim; pengguna bisa memperluasnya ke 9 kitab di Pengaturan. Cara memodelkannya (mis. filter per kitab saat membaca `daily_hadith`, atau urutan terpisah per setelan) ditetapkan di Fase 6 bersama perubahan skema yang butuh persetujuan pemilik proyek.
+- Sampai Fase 6, `daily_hadith` memakai filter sementara di bagian 3.3. Perubahan isi atau skema `daily_hadith` butuh persetujuan pemilik proyek.
 - Rujukan: ayat `QS. <Nama Latin>: <ayat>` (mis. "QS. Asy-Syarh: 6") dan hadis `HR. <Kitab> No. <nomor>` (mis. "HR. Shahih Bukhari No. 34"). Nama kitab dari `hadithBookNames` di `lib/content_pipeline/content_schema.dart`.
 - Kartu Hadis di Beranda lebih sederhana daripada kartu Ayat. "Baca selengkapnya" menuju hadis lengkap dengan sanad (layar detail masuk putaran desain 2).
-- Hasilnya sama untuk semua pengguna di tanggal yang sama, selama isi `content.db` sama (`content.version` sama).
+- Hasilnya sama untuk semua pengguna di tanggal yang sama, selama isi `content.db` dan setelan sumber hadis sama (`content.version` sama). Pengguna yang memperluas sumber ke 9 kitab bisa melihat hadis yang berbeda dari setelan default.
 
 ### 8.2 Widget Android
 
@@ -411,7 +416,7 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 
 ### 8.3 Notifikasi harian
 
-- Satu notifikasi per hari pada jam yang bisa diatur atau dimatikan pengguna. Default 06.00 (asumsi, belum diputuskan produk: Q10).
+- Satu notifikasi per hari pada jam yang bisa diatur atau dimatikan pengguna. Default 06.00, bisa diubah pengguna.
 - Notifikasi tidak bisa memakai font khusus, jadi isinya terjemahan dan rujukan saja, tanpa teks Arab. Tampilan collapsed dan expanded (BigText) memakai gaya notifikasi Android standar dan ikon kecil aplikasi.
 - Memakai `flutter_local_notifications`. Mekanisme penjadwalannya mengikuti bagian 7.4 (dijadwalkan ulang saat aplikasi dibuka, setelah HP restart, dan saat pengaturan berubah).
 - Ketuk notifikasi membuka Beranda dengan kartu harian.
@@ -470,7 +475,5 @@ Fase 2 dan seterusnya membutuhkan Fase 1. Fase 5 membutuhkan `cities.json`. Fase
 | Q7 | Lisensi teks terjemahan hadis | Rilis |
 | Q8 | Verifikasi data ke sumber asli | Sebelum rilis |
 | Q9 | Daftar kurasi `daily_ayah.json` (disusun pemilik proyek) | Fase 6 |
-| Q10 | Jam default notifikasi harian (06.00 adalah asumsi) | Fase 6 |
-| Q11 | Aturan seleksi hadis harian: batas panjang matan (N), dan pembatasan ke Shahih Bukhari dan Shahih Muslim sebagai default atau pengaturan pengguna | Fase 6 |
 
 Jika `surah_info.json` belum tersedia di Fase 1, kolom `revelation` diizinkan sementara bernilai `''` dan UI tidak menampilkannya. Verifikasi menandainya sebagai peringatan, bukan kegagalan, sampai file tersedia.

@@ -41,6 +41,8 @@ lib/
 test/
 ```
 
+Catatan jalur: `docs/design/HANDOFF-flutter.md` menyebut `lib/core/theme/`. Di proyek ini jalurnya `lib/app/core/theme/` (sesuai struktur di atas). `HANDOFF-flutter.md` tidak diubah; pakai jalur ini.
+
 ## Pola
 
 - View hanya menampilkan state dari controller. Controller hanya bicara dengan repository atau service. Repository yang menyentuh SQLite atau jaringan.
@@ -70,7 +72,7 @@ test/
 
 ## Git
 
-- Kerja di branch rebuild, bukan di `main` lama.
+- `main` adalah cabang utama. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<nama>`), lalu `merge --no-ff` ke `main` setelah review akhir (riwayat tidak di-squash).
 - Satu topik per commit: fitur, perbaikan, data, atau platform. Jangan campur.
 - Pesan commit **wajib dalam Bahasa Inggris**, format Conventional Commits: `type: summary` dalam bentuk imperatif, huruf kecil, tanpa titik di akhir. Tipe: `feat`, `fix`, `perf`, `refactor`, `data`, `chore`, `docs`, `test`, `build`.
   - Contoh: `feat: load surah list from content.db`, `data: add juz mapping source`, `chore: regenerate android platform folder`.

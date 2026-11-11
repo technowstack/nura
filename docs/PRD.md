@@ -65,14 +65,15 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 - Penanda waktu sholat berikutnya dan hitung mundur.
 
 ### 5.5 1 Hari 1 Ayat dan 1 Hari 1 Hadis
-- Pilihan ditentukan dari tanggal secara deterministik, jadi semua pengguna melihat konten yang sama di hari yang sama.
+- Pilihan ditentukan dari tanggal secara deterministik, jadi pengguna dengan setelan yang sama melihat konten yang sama di hari yang sama.
 - 1 Hari 1 Ayat memakai **daftar kurasi** dari pemilik proyek (`data-source/meta/daily_ayah.json`). Jika file belum ada, fitur ayat harian disembunyikan.
 - 1 Hari 1 Hadis dipilih **otomatis**. Yang ditampilkan adalah **matan** hadis, bukan hadis lengkap dengan sanad. Matan Arab dan matan terjemahan diekstrak dari teks sumber sebagai substring persis (data tidak punya field matan terpisah). Sebuah hadis hanya lolos seleksi jika matan Arab **dan** terjemahannya bisa diekstrak bersih.
-- Aturan seleksi hadis harian ditetapkan di Fase 6: ekstraksi bersih, batas panjang matan (N), dan opsi membatasi sumber ke Shahih Bukhari dan Shahih Muslim (default atau pengaturan pengguna: Q11). Sampai Fase 6, `content.db` memakai filter sementara: terjemahan tidak lebih dari 400 UTF-16 code unit (`String.length` Dart).
+- Secara default hadis harian hanya diambil dari Shahih Bukhari dan Shahih Muslim. Pengguna bisa memperluasnya ke 9 kitab di Pengaturan.
+- Aturan seleksi hadis harian ditetapkan di Fase 6: ekstraksi bersih dan batas panjang matan (N). Penerapannya mengubah `daily_hadith` dan butuh persetujuan pemilik proyek. Sampai Fase 6, `content.db` memakai filter sementara: terjemahan tidak lebih dari 400 UTF-16 code unit (`String.length` Dart).
 - Rujukan ditampilkan sebagai `QS. <Nama Latin>: <ayat>` untuk ayat dan `HR. <Kitab> No. <nomor>` untuk hadis. Kartu hadis punya tautan "Baca selengkapnya" ke hadis lengkap dengan sanad.
 - Tampil di **tiga tempat**: kartu di layar depan aplikasi, widget layar depan Android, dan notifikasi harian.
 - **Widget** ("Ayat hari ini" dan "Hadis hari ini", ukuran 4×2 dan 4×3, terang dan gelap) dirender sebagai **gambar** dari Flutter, karena font Arab LPMQ tidak bisa dipakai di RemoteViews. Widget bersifat statis: tanpa tombol, seluruh widget satu area ketuk. Isinya label, matan Arab, terjemahan, dan rujukan. Teks yang melebihi ruang dipotong dengan elipsis.
-- **Notifikasi harian**: satu per hari, jamnya bisa diatur atau dimatikan, default 06.00 (asumsi, belum diputuskan: Q10). Isinya terjemahan dan rujukan saja, **tanpa teks Arab**, karena notifikasi tidak bisa memakai font khusus. Ketuk notifikasi membuka Beranda.
+- **Notifikasi harian**: satu per hari, jamnya bisa diatur atau dimatikan, default 06.00 dan bisa diubah pengguna. Isinya terjemahan dan rujukan saja, **tanpa teks Arab**, karena notifikasi tidak bisa memakai font khusus. Ketuk notifikasi membuka Beranda.
 
 ### 5.6 Umum
 - Tema terang, gelap, dan ikut sistem. Pilihan tersimpan.
@@ -194,5 +195,5 @@ Tanggal target belum ditetapkan.
 7. **Konfirmasi lisensi teks hadis** ke pemilik repo atau sumber asal.
 8. **Verifikasi isi `data-source/` ke sumber asli** (hadis: gadingnst/hadith-api). Lihat STATUS.md Q8.
 9. **Daftar kurasi `data-source/meta/daily_ayah.json`.** Disusun pemilik proyek. Dibutuhkan untuk 1 Hari 1 Ayat (Fase 6).
-10. **Jam default notifikasi harian.** 06.00 adalah asumsi, belum diputuskan produk.
-11. **Aturan seleksi hadis harian (Fase 6).** Batas panjang matan (N), dan apakah pembatasan ke Shahih Bukhari dan Shahih Muslim menjadi default atau pengaturan pengguna.
+10. ~~**Jam default notifikasi harian.**~~ Diputuskan (2026-11-11): 06.00, bisa diubah pengguna (lihat 5.5).
+11. ~~**Sumber hadis harian.**~~ Diputuskan (2026-11-11): default hanya Shahih Bukhari dan Shahih Muslim, bisa diperluas ke 9 kitab di Pengaturan (lihat 5.5). Batas panjang matan (N) dan ekstraksi ditetapkan di Fase 6.

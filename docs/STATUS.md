@@ -2,7 +2,7 @@
 
 Terakhir diperbarui: 2026-11-11
 
-Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Fase 1 sudah di-merge lokal ke `main` (merge commit `7b0340c`). Belum di-push.
+Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<nama>`), lalu `merge --no-ff` ke `main` setelah review akhir. Fase 1 dikerjakan di `rebuild/nura` dan sudah di-merge lokal ke `main` (merge commit `7b0340c`). Belum di-push.
 
 ## Ringkasan Kondisi
 
@@ -33,10 +33,10 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Fase 1 sudah 
 |---|---|---|
 | Putaran desain 1 (Fondasi dan Fase 2) | Selesai, diserahkan 2026-11-11 | Brief: `docs/design/2026-11-09-nura-ui-design-brief.md`. Handoff ke Flutter: `docs/design/HANDOFF-flutter.md`. Token: `docs/design/tokens.json`. Di Figma (`Nura — UI v1`): 9 layar Fase 1 dan 16 layar Fase 2, masing-masing Light dan Dark |
 | Putaran desain 2 | Belum | Layar hadis (termasuk detail dengan sanad), jadwal sholat bulanan, pengaturan notifikasi lengkap, pengunduhan audio, pengaturan umum, daftar kota, ikon aplikasi final, materi Play Store |
-| Tema dari token desain | Belum | Tema saat ini masih dasar. Terapkan `ColorScheme`, `NuraColors`, `NuraTextStyles`, dan konstanta jarak/radius di `lib/app/core/theme/` dari `tokens.json` (handoff menyebut `lib/core/theme/`; struktur proyek memakai `lib/app/core/theme/`) |
+| Tema dari token desain | Belum | Tema saat ini masih dasar. Terapkan `ColorScheme`, `NuraColors`, `NuraTextStyles`, dan konstanta jarak/radius di `lib/app/core/theme/` dari `tokens.json` (jalur tetap `lib/app/core/theme/`; handoff menyebut `lib/core/theme/`, lihat catatan di AGENTS.md) |
 | Font Arab LPMQ dan font Latin Plus Jakarta Sans | Belum ada di repo | Lisensi font Arab dicek sebelum rilis (Q6) |
 | Placeholder di desain | Ada | Slot "[Q4]" (tempat turun, juz). Teks "~XXX MB" di layar error ruang penyimpanan: isi saat layar itu dibangun (ukuran `content.db` 112,38 MB; perhitungkan ruang `.tmp` saat pembaruan). Ikon selain `history` dan ilustrasi masih placeholder. Wordmark sementara (Q2) |
-| Berkas yang disebut handoff tetapi tidak ada di `docs/design/` | Tidak ada | `review-round1.md`, `tokens.dart`, `CLAUDE.md`, `STATUS-desain.md`, dan file Figma `Nura — UI v1.figcraft`. Di repo hanya ada brief, handoff, dan `tokens.json` |
+| Berkas yang disebut handoff tetapi tidak ada di `docs/design/` | Menunggu pemilik proyek | `review-round1.md`, `tokens.dart`, `CLAUDE.md`, `STATUS-desain.md`, dan file Figma `Nura — UI v1.figcraft`. Pemilik proyek menyalinnya terpisah; setelah ada, dicek dan di-commit terpisah. Sementara itu hanya brief, handoff, dan `tokens.json` yang ada di repo |
 
 ## Fitur v1
 
@@ -75,12 +75,15 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Fase 1 sudah 
 | 2026-11-09 | Sumber Quran: Kemenag. Sumber hadis: gadingnst/hadith-api (MIT, data asal tafsirq.com) |
 | 2026-11-11 | Putaran desain 1: 1 Hari 1 Ayat/Hadis tampil di tiga tempat, yaitu kartu Beranda, widget layar depan, dan notifikasi harian |
 | 2026-11-11 | Widget dirender sebagai gambar dari Flutter (font LPMQ tidak bisa dipakai di RemoteViews). Widget statis: tanpa tombol, seluruh widget satu area ketuk. Ukuran 4×2 dan 4×3, terang dan gelap |
-| 2026-11-11 | Notifikasi harian ayat/hadis: satu per hari, jam bisa diatur atau dimatikan, default 06.00 (asumsi, Q10). Isi terjemahan dan rujukan saja, tanpa teks Arab. Sakelar "Ayat & hadis harian" di onboarding langkah c, bersama "Pengingat adzan" |
+| 2026-11-11 | Notifikasi harian ayat/hadis: satu per hari, jam bisa diatur atau dimatikan, default 06.00 dan bisa diubah pengguna. Isi terjemahan dan rujukan saja, tanpa teks Arab. Sakelar "Ayat & hadis harian" di onboarding langkah c, bersama "Pengingat adzan" |
 | 2026-11-11 | Hadis harian menampilkan matan hasil ekstraksi: matan Arab dan matan terjemahan sama-sama substring persis dari sumber, dan keduanya harus bisa diekstrak bersih agar hadis lolos seleksi. Aturan seleksi lengkap (batas panjang N) ditetapkan di Fase 6 dan akan mengubah `daily_hadith`, jadi butuh persetujuan pemilik proyek saat itu |
-| 2026-11-11 | Tersedia opsi membatasi hadis harian ke Shahih Bukhari dan Shahih Muslim. Default atau pengaturan pengguna diputuskan di Fase 6 (Q11) |
+| 2026-11-11 | Hadis harian secara default hanya dari Shahih Bukhari dan Shahih Muslim. Pengguna bisa memperluasnya ke 9 kitab di Pengaturan. Batas panjang matan (N) dan ekstraksi ditetapkan di Fase 6 |
 | 2026-11-11 | Aturan cuplikan hasil pencarian Al-Qur'an: jendela maksimal 100 karakter berpusat pada kata cocok, dipotong ke batas kata, elipsis di sisi yang terpotong, isi cuplikan substring persis, semua kata cocok disorot, hasil dikelompokkan per surah (spec bagian 5.5) |
 | 2026-11-11 | Lisensi font Arab (LPMQ Isep Misbah, cadangan KFGQPC Uthmanic Script Hafs) wajib dicek sebelum rilis: masuk Q6 |
 | 2026-11-11 | Desain UI putaran 1 menjadi acuan tampilan (`docs/design/`): Material 3, font Latin Plus Jakarta Sans (OFL), ukuran teks Arab 20–40 (default 28) |
+| 2026-11-11 | Seleksi matan hadis harian ditunda ke Fase 6 dan butuh persetujuan pemilik proyek (mengubah `daily_hadith`) |
+| 2026-11-11 | Jalur kode tema tetap `lib/app/core/theme/`. `HANDOFF-flutter.md` tidak diubah; pemetaan jalur dicatat di AGENTS.md |
+| 2026-11-11 | `main` adalah cabang utama. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<nama>`), lalu `merge --no-ff` ke `main` setelah review akhir (riwayat tidak di-squash). Commit docs langsung di `main` diperbolehkan |
 
 ## Pertanyaan Terbuka
 
@@ -94,8 +97,6 @@ Branch kerja: `rebuild/nura` (dibuat dari `main`, HEAD `25e3738`). Fase 1 sudah 
 | Q7 | Konfirmasi lisensi teks terjemahan hadis | Rilis |
 | Q8 | Verifikasi isi `data-source/` ke sumber asli (hadis: `gadingnst/hadith-api`). Assets asli sebelum dipindah tidak tersedia untuk dibandingkan. Tugas terpisah | Integritas data, rilis |
 | Q9 | Daftar kurasi `data-source/meta/daily_ayah.json` (disusun pemilik proyek) | 1 Hari 1 Ayat (Fase 6) |
-| Q10 | Jam default notifikasi harian: 06.00 adalah asumsi, belum diputuskan produk | Notifikasi harian (Fase 6) |
-| Q11 | Aturan seleksi hadis harian: batas panjang matan (N), dan apakah pembatasan ke Shahih Bukhari dan Shahih Muslim menjadi default atau pengaturan pengguna | 1 Hari 1 Hadis (Fase 6) |
 
 ## Langkah Berikutnya
 
