@@ -56,6 +56,7 @@ class FakeUserRepository implements UserRepository {
 
   LastRead? lastRead;
   Set<int> bookmarkedSurahs;
+  final Map<int, Set<int>> ayahBookmarks = {};
   ReadingPrefs prefs = const ReadingPrefs(
     arabicFontSize: 28,
     showTranslation: true,
@@ -63,13 +64,19 @@ class FakeUserRepository implements UserRepository {
   ThemeMode themeMode = ThemeMode.system;
 
   @override
-  bool toggleBookmark(AyahRef ref) => bookmarkedSurahs.add(ref.surah);
+  bool toggleBookmark(AyahRef ref) {
+    bookmarkedSurahs.add(ref.surah);
+    final set = ayahBookmarks.putIfAbsent(ref.surah, () => <int>{});
+    return set.add(ref.ayah) || !set.remove(ref.ayah);
+  }
 
   @override
   List<Bookmark> listBookmarks() => const [];
 
   @override
-  Set<int> bookmarkedAyahNumbers(int surahNumber) => const {};
+  Set<int> bookmarkedAyahNumbers(int surahNumber) => {
+    ...?ayahBookmarks[surahNumber],
+  };
 
   @override
   Set<int> bookmarkedSurahNumbers() => bookmarkedSurahs;
