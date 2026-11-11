@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/app_bootstrap.dart';
 import 'package:nura/app/core/theme/theme_mode_setting.dart';
+import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/sources/content_database.dart';
 import 'package:nura/app/data/sources/content_db_installer.dart';
 import 'package:nura/app/data/sources/setting_keys.dart';
@@ -57,6 +58,7 @@ void main() {
     await ready();
     expect(Get.find<ContentDatabase>().dataVersion, isNotEmpty);
     expect(Get.isRegistered<UserDatabase>(), isTrue);
+    expect(Get.find<QuranRepository>(), isA<QuranRepository>());
   });
 
   test('bootstrap returns failure when installer throws', () async {
