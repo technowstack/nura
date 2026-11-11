@@ -14,9 +14,10 @@ Ayah _a(int n, String tafsir) => Ayah(
   tafsir: tafsir,
 );
 
-final _longTafsir = [
+final _longTafsir = _body + ' AKHIR\n ';
+final _body = [
   for (var i = 0; i < 1200; i++) 'baris $i xxxxxxxx',
-].join('\n').padRight(19245, 'z').substring(0, 19245);
+].join('\n').padRight(19230, 'z').substring(0, 19230);
 
 final _longTafsir2 = 'AWAL ${_longTafsir.substring(6)}';
 
@@ -65,7 +66,8 @@ Finder _btn(String label) =>
     find.ancestor(of: find.text(label), matching: find.byType(TextButton));
 
 void main() {
-  final ayahs = [_a(1, 'tafsir satu'), _a(2, ''), _a(3, 'a\nb  ')];
+  final ayahs = [_a(1, 'tafsir satu'), _a(2, 'tafsir dua'), _a(3, 'a\nb  ')];
+  final emptyAyahs = [_a(1, '')];
 
   testWidgets('scroll resets to top when ayah changes', (tester) async {
     await _open(tester, [_a(1, _longTafsir), _a(2, _longTafsir2)], 0);
@@ -96,16 +98,21 @@ void main() {
     tester,
   ) async {
     await _open(tester, [_a(1, _longTafsir)], 0);
-    expect(find.text(_longTafsir), findsOneWidget);
+    final textFinder = find.text(_longTafsir);
+    final widget = tester.widget<Text>(textFinder);
+    expect(widget.data, _longTafsir);
+    expect(widget.maxLines, isNull);
+    expect(widget.overflow, isNull);
+    expect(tester.getSize(textFinder).height, greaterThan(2000));
     await tester.drag(
       find.byType(SingleChildScrollView),
       const Offset(0, -200000),
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    final sheet = tester.getRect(find.byType(BottomSheet));
-    final text = tester.getRect(find.text(_longTafsir));
-    expect(text.bottom, lessThanOrEqualTo(sheet.bottom + 1));
+    final pos = tester.state<ScrollableState>(find.byType(Scrollable)).position;
+    expect(pos.pixels, pos.maxScrollExtent);
+    expect(pos.maxScrollExtent, greaterThan(0));
   });
 
   testWidgets('prev disabled at first, next disabled at last', (tester) async {
@@ -126,19 +133,17 @@ void main() {
     await tester.pump();
     expect(find.text('Latin2 · ayat 2'), findsOneWidget);
     expect(find.text('tafsir satu'), findsNothing);
+    expect(find.text('tafsir dua'), findsOneWidget);
   });
 
   testWidgets('empty tafsir shows placeholder', (tester) async {
-    await _open(tester, ayahs, 1);
+    await _open(tester, emptyAyahs, 0);
     expect(find.text('Tafsir belum tersedia untuk ayat ini'), findsOneWidget);
   });
 
   testWidgets('sheet height is at most 90% of screen', (tester) async {
     await _open(tester, [_a(1, _longTafsir)], 0);
-    expect(
-      tester.getSize(find.byType(BottomSheet)).height,
-      lessThanOrEqualTo(576),
-    );
+    expect(tester.getSize(find.byType(BottomSheet)).height, equals(576));
   });
 
   testWidgets('scrim uses scrim color at alpha 0.32', (tester) async {
