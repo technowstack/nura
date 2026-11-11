@@ -10,7 +10,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 - Repo lama (`main`, sebelum rebuild, HEAD `933deb5`): aplikasi Quran berbasis API, sekitar 25–30% jadi. Dijadikan referensi tampilan saja.
 - Data JSON Quran dan hadis sudah dipindah ke `data-source/` dan di-track git. `CHECKSUMS.sha256` dan `README.md` sudah dibuat.
 - Working tree lama yang kotor sudah dirapikan menjadi commit terpisah di `main` (platform, kode UI lama, docs, data).
-- Tahap saat ini: Fase 1 (Fondasi) selesai. PRD v0.4, spec desain v1 (`docs/specs/2026-11-09-nura-v1-design.md`, disetujui), dan desain UI putaran 1 (`docs/design/`) sudah ada. Berikutnya: rencana Fase 2 (Al-Qur'an offline).
+- Tahap saat ini: Fase 1 (Fondasi) selesai. PRD v0.4, spec desain v1 (`docs/specs/2026-11-09-nura-v1-design.md`, disetujui), dan desain UI putaran 1 (`docs/design/`) sudah ada. Fase 2 (Al-Qur'an offline) sedang dieksekusi di branch `feat/phase-2-quran`.
 
 ## Data
 
@@ -102,7 +102,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 
 1. Cek manual di perangkat: waktu first-run dan memori untuk salinan native masih tertunda. Catat hasilnya setelah dijalankan.
 2. Merge lokal ke `main` sudah dilakukan (merge commit `7b0340c`). Push hanya setelah pemilik proyek memastikan repo privat.
-3. Tinjau rencana Fase 2 (`docs/plans/2026-11-11-nura-phase2-quran.md`, branch `feat/phase-2-quran`) dan jawab 10 keputusan di bagian awalnya, terutama paket `scrollable_positioned_list` dan file font di `assets/fonts/`. Data meta (Q4) dicari paralel.
+3. Eksekusi Fase 2 (`docs/plans/2026-11-11-nura-phase2-quran.md`, branch `feat/phase-2-quran`). Keputusan plan sudah dijawab (paket scroll: `super_sliver_list`). Sediakan Plus Jakarta Sans di `assets/fonts/` untuk Task 11. Data meta (Q4) dicari paralel.
 4. Siapkan putaran desain 2 (hadis, jadwal sholat, pengaturan, ikon) sebelum Fase 3.
 4. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
 

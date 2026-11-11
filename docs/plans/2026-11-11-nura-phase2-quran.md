@@ -6,45 +6,63 @@
 
 **Architecture:** `QuranRepository` (membaca `content.db` read-only) dan `UserRepository` (membaca dan menulis `user.db`) mendaftar sebagai singleton GetX di `bootstrap()`. Setiap layar punya controller GetX dengan `UiState<T>`, dan view hanya menampilkan state. Tema dibangun dari `docs/design/tokens.json`. Bottom navigation empat tab memuat tab Al-Qur'an; tab Hadis dan Sholat masih placeholder.
 
-**Tech Stack:** Flutter, GetX, `sqlite3` (sudah ada). Paket baru hanya `scrollable_positioned_list` (Keputusan 1, menunggu persetujuan).
+**Tech Stack:** Flutter, GetX, `sqlite3` (sudah ada). Paket baru hanya `super_sliver_list` (dipilih, lihat Keputusan 1).
 
 **Spec:** `docs/specs/2026-11-09-nura-v1-design.md` (bagian 5.1–5.3, 5.6, 9, 10, 11 Fase 2). Desain: `docs/design/HANDOFF-flutter.md` dan `docs/design/2026-11-09-nura-ui-design-brief.md` (bagian 4, 5 layar 6–9 dan 11). Baca juga `AGENTS.md`.
 
-## Keputusan yang dibutuhkan dari pemilik proyek
+## Keputusan (dijawab pemilik proyek 2026-11-11)
 
-Desain dan spec diam atau ambigu pada hal berikut. Plan ini memakai asumsi di kolom kanan. Koreksi sebelum eksekusi bila berbeda.
-
-| # | Hal | Asumsi plan |
+| # | Hal | Keputusan |
 |---|---|---|
-| 1 | Scroll ke ayat dan pelacakan ayat terlihat butuh paket baru | Pakai `scrollable_positioned_list` (paket flutter.dev, kecil). Dipakai di Task 10 saja |
-| 2 | File font tidak ada di repo (Q6) | Pemilik menyediakan file LPMQ Isep Misbah dan Plus Jakarta Sans di `assets/fonts/` beserta teks lisensinya. Task 2 menunggu file itu; task lain tidak bergantung padanya |
-| 3 | Pencarian: spec menaruhnya di Fase 4, desain menaruh layarnya di halaman Fase 2 | Pencarian (SearchField dan layar 10) dikerjakan di Fase 4. Fase 2 tidak menampilkan SearchField |
-| 4 | Desain tidak menyebut aksi manual untuk Last Read | Otomatis: ayat pertama yang terlihat disimpan saat pengguna meninggalkan layar surah atau aplikasi di-pause |
-| 5 | Arti varian `SurahListItem` "Bookmarked" | Ikon bookmark bila surah punya minimal satu ayat ber-bookmark. Bila juga surah terakhir dibaca, state "Terakhir dibaca" yang menang |
-| 6 | Desain hanya punya slider ukuran Arab, sakelar terjemahan, dan pilihan tema; PRD 5.1 menyebut ukuran font terjemahan juga | Ikuti desain: ukuran terjemahan tetap. PRD dirapikan di Task 12 |
-| 7 | Aksi di `AyahActionBar` | Bookmark, tafsir, dan salin. "Bagikan" butuh `share_plus` dan ditunda. Audio disembunyikan sampai Fase 7. Format salin: teks Arab, baris kosong, terjemahan, baris kosong, `QS. <Nama Latin>: <ayat>` |
-| 8 | Navigasi tafsir | "Sebelumnya" dan "Berikutnya" bergerak dalam satu surah, nonaktif di ayat pertama dan terakhir |
-| 9 | Query berat di isolate (spec 3.5) | Fase 2 memakai query sinkron: satu surah paling banyak 286 ayat. Isolate dikerjakan di Fase 4 |
-| 10 | Data meta belum ada (Q4) | `revelation` kosong: label tempat turun disembunyikan. Tabel `juz` kosong: tab Juz menampilkan keadaan kosong. Tidak perlu kode tambahan saat `juz.json` tersedia |
+| 1 | Paket scroll ke ayat dan pelacakan ayat terlihat | **`super_sliver_list`** (0.4.1). Alasan di bawah |
+| 2 | Font | Plus Jakarta Sans (OFL) disediakan pemilik di `assets/fonts/` beserta lisensinya. LPMQ Isep Misbah menunggu Q6: sementara teks Arab memakai font fallback sistem. Task font (Task 11) tidak memblokir task lain |
+| 3 | Pencarian | Fase 4. Fase 2 menyembunyikan kolom cari |
+| 4 | Last Read | Otomatis: disimpan berkala (debounce 3 detik setelah scroll berhenti), saat meninggalkan layar surah, dan saat aplikasi di-pause |
+| 5 | Layar utama pada teks Latin 130% | Widget test layar utama dengan `TextScaler.linear(1.3)` pada 360 × 640, gagal bila ada overflow. Ada di tiap task layar |
+| 6 | Target 2,5 ayat terlihat di layar baca | Tidak ada aturan, tidak perlu tes |
+| 7 | `SurahListItem` "Bookmarked" | Ikon bookmark bila surah punya minimal satu ayat ber-bookmark. Bila juga surah terakhir dibaca, state "Terakhir dibaca" yang menang |
+| 8 | Pengaturan tampilan | Hanya ukuran Arab (20–40), sakelar terjemahan, dan tema. Ukuran terjemahan tetap. PRD dirapikan di Task 12 |
+| 9 | Aksi `AyahActionBar` | Bookmark, tafsir, dan salin. "Bagikan" ditunda (butuh `share_plus`). Audio disembunyikan sampai Fase 7. Format salin: teks Arab, baris kosong, terjemahan, baris kosong, `QS. <Nama Latin>: <ayat>` |
+| 10 | Navigasi tafsir | "Sebelumnya" dan "Berikutnya" dalam satu surah, nonaktif di ayat pertama dan terakhir |
+| 11 | Query berat di isolate | Fase 2 memakai query sinkron (satu surah paling banyak 286 ayat). Isolate di Fase 4 |
+| 12 | Data meta belum ada (Q4) | `revelation` kosong: label tempat turun disembunyikan. Tabel `juz` kosong: tab Juz menampilkan keadaan kosong |
+
+### Perbandingan paket (Keputusan 1)
+
+Data per 2026-11-11 dari pub.dev, GitHub, dan uji langsung pada Flutter proyek ini (daftar 300 item bertinggi bervariasi, satu item setinggi 940 px, layar 360 × 640).
+
+| | `scrollable_positioned_list` | `super_sliver_list` |
+|---|---|---|
+| Rilis terakhir | 0.3.8, 2023-05-08 | 0.4.1, 2024-03-26 |
+| Perawatan | Repositori `google/flutter.widgets` **diarsipkan** (commit terakhir 2024-08-08), 258 isu terbuka | Repositori aktif, tidak diarsipkan (commit terakhir 2026-10-09), 33 isu terbuka |
+| SDK | Dart `>=2.15 <4.0` | Dart `>=3.0 <4.0` |
+| Lompat ke indeks | `ItemScrollController.jumpTo(index)` | `ListController.jumpToItem(index, scrollController, alignment)` |
+| Item terlihat | `ItemPositionsListener` (daftar posisi) | `ListController.visibleRange` (`(int, int)?`) dan `ChangeNotifier` |
+| Uji pada Flutter kita | Lolos: lompat ke 250 tepat | Lolos: lompat ke 250, 17, dan 299 tepat; `visibleRange` benar |
+| Popularitas | 1.995 likes | 301 likes |
+
+Dipilih `super_sliver_list`: repositori pesaingnya sudah diarsipkan dan tidak akan menerima perbaikan, sedangkan `super_sliver_list` masih dirawat dan mendukung tinggi item bervariasi dengan taksiran tinggi yang dikoreksi saat item terbangun. Risikonya: rilis terakhir lebih dari dua tahun lalu dan komunitasnya lebih kecil. Pemakaian dibatasi di layar Baca Surah, sehingga mudah diganti bila perlu.
 
 ## Global Constraints
 
 - Branch kerja `feat/phase-2-quran`. Selesai: `merge --no-ff` ke `main` setelah review akhir. Jangan push.
 - Tidak mengubah `data-source/`, skema `content.db`, atau `lib/content_pipeline/`. `content.db` hanya dibuka read-only (AGENTS aturan 4).
 - Teks Arab, terjemahan, dan tafsir ditampilkan persis seperti di database: tanpa `trim` atau perubahan lain (aturan 3). Tidak ada teks Arab yang diketik di kode atau tes produksi. Basmalah diambil dari ayat 1:1 di database.
-- Tidak ada akses jaringan. Tidak ada paket selain `scrollable_positioned_list`.
-- Nilai tema bersumber dari `docs/design/tokens.json`. Kode tema di `lib/app/core/theme/`. Font Latin `Plus Jakarta Sans`, font Arab `LPMQ Isep Misbah`. Material 3. Target sentuh minimal 48 × 48. Status tidak hanya dibedakan lewat warna. Tata letak utuh pada Arab 40 dan teks Latin 130%.
+- Tidak ada akses jaringan. Tidak ada paket selain `super_sliver_list`.
+- Nilai tema bersumber dari `docs/design/tokens.json`. Kode tema di `lib/app/core/theme/`. Font Latin `Plus Jakarta Sans`; font Arab `LPMQ Isep Misbah` (belum terpasang, memakai fallback sistem sampai Q6). Material 3. Target sentuh minimal 48 × 48. Status tidak hanya dibedakan lewat warna.
+- **Uji Latin 130%:** setiap layar utama punya widget test dengan `TextScaler.linear(1.3)` pada layar 360 × 640 yang gagal bila `tester.takeException()` tidak null (overflow). Arab 40 diuji pada layar baca.
 - Pola AGENTS.md: view hanya menampilkan state controller; data dimuat di `onInit` atau aksi pengguna, tidak ada future di `build()`; setiap layar menangani loading, kosong, dan error; model immutable; satu class publik per file (model kecil dan hierarki sealed boleh berbagi file); tanpa `!` dan `ignore_for_file`.
 - Teks yang dilihat pengguna dalam Bahasa Indonesia. Commit dalam Bahasa Inggris (Conventional Commits). `flutter analyze` bersih dan `flutter test` lulus sebelum setiap commit.
 - `flutter test` butuh `assets/db/content.db` lokal (`tool/prepare_content.sh`). Tes memakai fixture (`buildFixtureDb` di `test/support/fixture_db.dart`, `fixtureDir('')` di `test/support/fixtures.dart`), bukan database penuh.
+- Keputusan baru yang mengubah spec, skema, atau dependency: berhenti dan tanya pemilik proyek.
 
 ## Review Focus
 
-1. **Surah tanpa Basmalah.** Al-Fatihah (1) dan At-Taubah (9) tidak menampilkan header Bismillah; surah lain menampilkannya, dengan teks dari ayat 1:1. Diuji di Task 7.
-2. **Tafsir sangat panjang.** Tafsir terpanjang 19.245 karakter dan 4.371 tafsir berisi baris baru. Sheet harus bisa digulir sampai akhir dan baris baru dipertahankan. Diuji di Task 8.
-3. **Ayat sangat panjang.** Arab terpanjang 1.218 karakter dan terjemahan terpanjang 1.670. Dengan Arab 40 dan Latin 130% tidak boleh ada overflow. Diuji di Task 7 dan 9.
-4. **Database gagal dibaca.** `ContentUnavailable` harus menjadi `ErrorState` dengan tombol "Coba lagi", bukan crash. Diuji di Task 3, 6, 7.
-5. **Bookmark dan Last Read.** Ketuk bookmark berulang tetap konsisten (unik per ayat). Pada peluncuran pertama `last_read` kosong dan tidak ada `null` yang sampai ke UI. Bookmark ke ayat yang tidak ada di database dilewati, tidak crash. Diuji di Task 4, 10, 11.
+1. **Surah tanpa Basmalah.** Al-Fatihah (1) dan At-Taubah (9) tidak menampilkan header Bismillah; surah lain menampilkannya, dengan teks dari ayat 1:1. Diuji di Task 6.
+2. **Tafsir sangat panjang.** Tafsir terpanjang 19.245 karakter dan 4.371 tafsir berisi baris baru. Sheet harus bisa digulir sampai akhir dan baris baru dipertahankan. Diuji di Task 7.
+3. **Ayat sangat panjang.** Arab terpanjang 1.218 karakter dan terjemahan terpanjang 1.670. Dengan Arab 40 dan Latin 130% pada 360 × 640 tidak boleh ada overflow. Diuji di Task 6 dan 8.
+4. **Database gagal dibaca.** `ContentUnavailable` harus menjadi `ErrorState` dengan tombol "Coba lagi", bukan crash. Diuji di Task 2, 5, 6.
+5. **Bookmark dan Last Read.** Ketuk bookmark berulang tetap konsisten (unik per ayat). Pada peluncuran pertama `last_read` kosong dan tidak ada `null` yang sampai ke UI. Penyimpanan berkala tidak menulis berulang untuk ayat yang sama. Bookmark ke ayat yang tidak ada di database dilewati, tidak crash. Diuji di Task 3, 9, 10.
 
 ---
 
@@ -71,7 +89,7 @@ lib/app/
     quran_detail/{bindings,controllers,views,widgets} baca surah, tafsir, pengaturan
     bookmarks/{controllers,views,widgets}      tab Bookmark
   routes/app_routes.dart, app_pages.dart       (ubah)
-assets/fonts/                                  (dari pemilik proyek)
+assets/fonts/                                  (dari pemilik proyek: Plus Jakarta Sans)
 test/support/fake_repositories.dart            FakeQuranRepository, FakeUserRepository
 ```
 
@@ -93,23 +111,7 @@ test/support/fake_repositories.dart            FakeQuranRepository, FakeUserRepo
 - [ ] **Step 4: Jalankan tes sampai lulus**, lalu `flutter analyze`.
 - [ ] **Step 5: Commit** `feat: apply design tokens to app theme`.
 
-### Task 2: Aset font (prasyarat dari pemilik proyek)
-
-**Files:**
-- Modify: `pubspec.yaml` (bagian `flutter.fonts`)
-- Create (oleh pemilik proyek): `assets/fonts/` berisi file `Plus Jakarta Sans` (bobot 400, 500, 600), `LPMQ Isep Misbah`, dan teks lisensi masing-masing
-- Test: `test/app/core/theme/font_assets_test.dart`
-
-**Interfaces:**
-- Produces: family `Plus Jakarta Sans` dan `LPMQ Isep Misbah` terdaftar di `pubspec.yaml`.
-
-- [ ] **Step 1: Periksa prasyarat.** Jika `assets/fonts/` belum berisi file font dan lisensi, BERHENTI dan tanyakan ke pemilik proyek. Jangan mengunduh font sendiri. Task lain tidak bergantung pada Task ini.
-- [ ] **Step 2: Tulis tes yang gagal.** Tes membaca `pubspec.yaml` dan memastikan kedua family terdaftar dan setiap file yang dideklarasikan ada di disk.
-- [ ] **Step 3: Daftarkan font** di `pubspec.yaml` dengan bobot 400, 500, 600 untuk Latin.
-- [ ] **Step 4: Jalankan** `flutter test` penuh, lalu catat sumber dan tanggal unduh font (dari pemilik proyek) di `docs/STATUS.md` bagian Catatan Teknis. Status lisensi tetap Q6.
-- [ ] **Step 5: Commit** `build: bundle app fonts`.
-
-### Task 3: Model, UiState, `QuranRepository`
+### Task 2: Model, UiState, `QuranRepository`
 
 **Files:**
 - Create: `lib/app/core/ui_state.dart`, `lib/app/core/errors.dart`, `lib/app/data/models/surah.dart`, `ayah.dart`, `juz.dart`, `lib/app/data/repositories/quran_repository.dart`, `sqlite_quran_repository.dart`
@@ -138,7 +140,7 @@ test/support/fake_repositories.dart            FakeQuranRepository, FakeUserRepo
 - [ ] **Step 4: Jalankan tes** repository dan `bootstrap_test` sampai lulus.
 - [ ] **Step 5: Commit** `feat: add quran repository over content db`.
 
-### Task 4: `UserRepository` (bookmark, last read, preferensi)
+### Task 3: `UserRepository` (bookmark, last read, preferensi)
 
 **Files:**
 - Create: `lib/app/data/models/bookmark.dart`, `last_read.dart`, `reading_prefs.dart`, `lib/app/data/repositories/user_repository.dart`, `sqlite_user_repository.dart`
@@ -159,7 +161,7 @@ test/support/fake_repositories.dart            FakeQuranRepository, FakeUserRepo
 - [ ] **Step 4: Daftarkan** `UserRepository` di `bootstrap()`, jalankan semua tes sampai lulus.
 - [ ] **Step 5: Commit** `feat: add user repository for bookmarks and reading prefs`.
 
-### Task 5: Shell navigasi dan komponen keadaan
+### Task 4: Shell navigasi dan komponen keadaan
 
 **Files:**
 - Create: `lib/app/core/widgets/empty_state.dart`, `error_state.dart`, `lib/app/modules/shell/views/shell_view.dart`, `controllers/shell_controller.dart`, `widgets/coming_soon_tab.dart`
@@ -167,15 +169,15 @@ test/support/fake_repositories.dart            FakeQuranRepository, FakeUserRepo
 - Test: `test/app/modules/shell/shell_view_test.dart`, `test/app/core/widgets/state_widgets_test.dart`
 
 **Interfaces:**
-- Produces: `EmptyState({required String title, String description = '', Widget? action})`, `ErrorState({required String title, required String description, required VoidCallback onRetry})` dengan tombol "Coba lagi". `ShellView` berisi `NavigationBar` empat tujuan berlabel `Beranda`, `Al-Qur'an`, `Hadis`, `Sholat` (ikon dan label, bukan warna saja) dan `IndexedStack`: tab Beranda memakai `HomeView` yang ada, tab Hadis dan Sholat memakai `ComingSoonTab` (`EmptyState` berjudul "Segera hadir"), tab Al-Qur'an sementara `SizedBox.shrink()` (diganti di Task 6).
+- Produces: `EmptyState({required String title, String description = '', Widget? action})`, `ErrorState({required String title, required String description, required VoidCallback onRetry})` dengan tombol "Coba lagi". `ShellView` berisi `NavigationBar` empat tujuan berlabel `Beranda`, `Al-Qur'an`, `Hadis`, `Sholat` (ikon dan label, bukan warna saja) dan `IndexedStack`: tab Beranda memakai `HomeView` yang ada, tab Hadis dan Sholat memakai `ComingSoonTab` (`EmptyState` berjudul "Segera hadir"), tab Al-Qur'an sementara `SizedBox.shrink()` (diganti di Task 5).
 
-- [ ] **Step 1: Tulis tes yang gagal:** `NavigationBar` punya empat label; mengetuk "Hadis" menampilkan "Segera hadir"; `ErrorState` menampilkan judul dan deskripsi, dan mengetuk "Coba lagi" memanggil `onRetry`; `EmptyState` tanpa deskripsi tidak merender teks kosong.
+- [ ] **Step 1: Tulis tes yang gagal:** `NavigationBar` punya empat label; mengetuk "Hadis" menampilkan "Segera hadir"; `ErrorState` menampilkan judul dan deskripsi, dan mengetuk "Coba lagi" memanggil `onRetry`; `EmptyState` tanpa deskripsi tidak merender teks kosong; **uji Latin 130%:** `ShellView` pada `TextScaler.linear(1.3)` di 360 × 640 tanpa exception.
 - [ ] **Step 2: Jalankan** kedua tes. Harapan: GAGAL.
 - [ ] **Step 3: Implementasi** sesuai Interfaces. Target sentuh ≥ 48. Warna dan jarak dari tema dan `NuraSpace`.
 - [ ] **Step 4: Jalankan** `flutter test` penuh (tes Fase 1 yang menunggu `HomeView` harus tetap lulus atau disesuaikan ke `ShellView`).
 - [ ] **Step 5: Commit** `feat: add bottom navigation shell and state widgets`.
 
-### Task 6: Daftar Al-Qur'an (tab Surah dan Juz)
+### Task 5: Daftar Al-Qur'an (tab Surah dan Juz)
 
 **Files:**
 - Create: `lib/app/modules/quran_list/bindings/quran_list_binding.dart`, `controllers/quran_list_controller.dart`, `views/quran_list_view.dart`, `widgets/surah_list_item.dart`, `widgets/juz_list_item.dart`, `lib/app/modules/quran_detail/surah_args.dart`, `test/support/fake_repositories.dart`
@@ -188,37 +190,37 @@ test/support/fake_repositories.dart            FakeQuranRepository, FakeUserRepo
   - `class SurahArgs { const SurahArgs(this.surah, [this.ayah = 0]); final int surah; final int ayah; }` (`ayah == 0` berarti tanpa target).
   - `QuranListController`: `Rx<UiState<List<Surah>>> surahs`, `Rx<UiState<List<Juz>>> juz`, `RxSet<int> bookmarkedSurahs`, `RxInt lastReadSurah` (0 = belum ada), `void load()`. Memuat di `onInit`.
   - `enum SurahItemState { normal, bookmarked, lastRead }`; `SurahListItem({required Surah surah, required SurahItemState state, required VoidCallback onTap})`; `JuzListItem({required Juz juz, required VoidCallback onTap})`.
-  - `QuranListView`: `TabBar` dengan tab "Surah" dan "Juz" (tab "Bookmark" ditambah di Task 11). Mengetuk surah memanggil `Get.toNamed(Routes.surah, arguments: SurahArgs(number))`.
+  - `QuranListView`: `TabBar` dengan tab "Surah" dan "Juz" (tab "Bookmark" ditambah di Task 10). Tidak ada kolom cari (Keputusan 3). Mengetuk surah memanggil `Get.toNamed(Routes.surah, arguments: SurahArgs(number))`.
   - `FakeQuranRepository` dan `FakeUserRepository` di `test/support/fake_repositories.dart` (data dan kegagalan dapat diatur per tes).
 
-- [ ] **Step 1: Tulis tes yang gagal** (repository palsu): daftar menampilkan nama Latin, arti (`nameId`), `7 ayat`, dan nama Arab; `revelation == ''` tidak menampilkan label tempat turun; `makkiyah` tampil "Makkiyah", `madaniyah` tampil "Madaniyah", nilai lain disembunyikan; item surah terakhir dibaca menampilkan teks "Terakhir dibaca" dan ikon; item bookmarked menampilkan ikon bookmark dengan label semantik; repository melempar `ContentUnavailable` → `ErrorState` dan "Coba lagi" memuat ulang; tab Juz dengan `listJuz() == []` menampilkan `EmptyState` "Daftar juz belum tersedia"; baris juz menampilkan nomor dan rentang `1:1 – 1:7` untuk `Juz(1, 1, 1, 1, 7)`; mengetuk surah membuka route `Routes.surah` dengan `SurahArgs` berisi nomor yang benar.
+- [ ] **Step 1: Tulis tes yang gagal** (repository palsu): daftar menampilkan nama Latin, arti (`nameId`), `7 ayat`, dan nama Arab; `revelation == ''` tidak menampilkan label tempat turun; `makkiyah` tampil "Makkiyah", `madaniyah` tampil "Madaniyah", nilai lain disembunyikan; item surah terakhir dibaca menampilkan teks "Terakhir dibaca" dan ikon; item bookmarked menampilkan ikon bookmark dengan label semantik; repository melempar `ContentUnavailable` → `ErrorState` dan "Coba lagi" memuat ulang; tab Juz dengan `listJuz() == []` menampilkan `EmptyState` "Daftar juz belum tersedia"; baris juz menampilkan nomor dan rentang `1:1 – 1:7` untuk `Juz(1, 1, 1, 1, 7)`; mengetuk surah membuka route `Routes.surah` dengan `SurahArgs` berisi nomor yang benar; tidak ada `TextField` di layar; **uji Latin 130%:** tab Surah dan tab Juz pada `TextScaler.linear(1.3)` di 360 × 640 tanpa exception.
 - [ ] **Step 2: Jalankan** `flutter test test/app/modules/quran_list`. Harapan: GAGAL.
 - [ ] **Step 3: Implementasi** sesuai Interfaces. `SurahListItem`: nomor di bingkai ornamen, nama Latin, arti, jumlah ayat, tempat turun (bila ada), nama Arab (gaya `arabicTitle`); teks keterangan wrap, tinggi mengikuti isi dengan `minHeight`.
 - [ ] **Step 4: Jalankan tes** sampai lulus, termasuk keadaan loading yang terlihat sebelum data.
 - [ ] **Step 5: Commit** `feat: list surah and juz in quran tab`.
 
-### Task 7: Baca Surah
+### Task 6: Baca Surah
 
 **Files:**
 - Create: `lib/app/modules/quran_detail/bindings/quran_detail_binding.dart`, `controllers/quran_detail_controller.dart`, `views/quran_detail_view.dart`, `widgets/surah_header_card.dart`, `bismillah_header.dart`, `ayah_card.dart`, `ayah_number_badge.dart`, `ayah_action_bar.dart`
-- Modify: `lib/app/routes/app_pages.dart` (daftarkan `Routes.surah`), `test/support/fake_repositories.dart`
+- Modify: `pubspec.yaml` (tambah `super_sliver_list: ^0.4.1`), `lib/app/routes/app_pages.dart` (daftarkan `Routes.surah`), `test/support/fake_repositories.dart`
 - Test: `test/app/modules/quran_detail/quran_detail_test.dart`
 
 **Interfaces:**
 - Consumes: `QuranRepository`, `UserRepository`, `SurahArgs`, `NuraTextStyles`, `NuraColors`.
 - Produces:
   - `class SurahContent { final Surah surah; final String basmalah; final List<Ayah> ayahs; }`.
-  - `QuranDetailController(SurahArgs args)`: `Rx<UiState<SurahContent>> state`, `RxSet<int> bookmarked`, `Rx<ReadingPrefs> prefs`, `void load()`, `void toggleBookmark(int ayahNumber)`, `Future<void> copyAyah(Ayah ayah)`. `basmalah` = `getAyah(AyahRef(1, 1)).arab`.
+  - `QuranDetailController(SurahArgs args)`: `Rx<UiState<SurahContent>> state`, `RxSet<int> bookmarked`, `Rx<ReadingPrefs> prefs`, `final ListController listController` (dari `super_sliver_list`), `void load()`, `void toggleBookmark(int ayahNumber)`, `Future<void> copyAyah(Ayah ayah)`. `basmalah` = `getAyah(AyahRef(1, 1)).arab`.
   - `SurahHeaderCard({required Surah surah, required String basmalah, required bool showBismillah})` dengan `showBismillah = surah.number != 1 && surah.number != 9`; `BismillahHeader({required String text})`; `AyahNumberBadge({required int number})`; `AyahActionBar({required bool bookmarked, required VoidCallback onBookmark, required VoidCallback onCopy})`; `AyahCard({required Ayah ayah, required bool bookmarked, required bool lastRead, required ReadingPrefs prefs, required VoidCallback onBookmark, required VoidCallback onCopy})`.
-  - App bar: nama surah dan subjudul `<Nama Latin> · <n> ayat`. Daftar memakai `ListView.builder`. Teks Arab `textDirection: TextDirection.rtl` dengan gaya `arabicReading` berukuran `prefs.arabicFontSize`; terjemahan hanya bila `prefs.showTranslation`.
+  - App bar: nama surah dan subjudul `<Nama Latin> · <n> ayat`. Daftar memakai `SuperListView.builder` (header surah di indeks 0, ayat di indeks 1..n). Teks Arab `textDirection: TextDirection.rtl` dengan gaya `arabicReading` berukuran `prefs.arabicFontSize`; terjemahan hanya bila `prefs.showTranslation`.
 
-- [ ] **Step 1: Tulis tes yang gagal:** surah 1 dan surah 9 tidak punya `BismillahHeader`; surah 2 punya tepat satu dengan teks sama persis dengan Arab ayat 1:1 dari repository; `AyahCard` merender `ayah.arab` dan `ayah.translation` persis (entri sintetis berisi spasi di akhir dan karakter U+200C, dicari dengan `find.text` string utuh); `showTranslation == false` menyembunyikan terjemahan; mengetuk ikon bookmark memanggil `toggleBookmark` dan ikon berubah terisi dengan label semantik "Hapus bookmark" atau "Tambah bookmark"; ayat sintetis Arab 1.218 karakter dan terjemahan 1.670 karakter pada `arabicFontSize == 40` dan `textScaler` 1,3 di layar 360 × 800 tidak menimbulkan exception layout; `copyAyah` menaruh teks format Keputusan 7 ke clipboard dan menampilkan snackbar "Ayat disalin"; `ContentUnavailable` → `ErrorState` dan "Coba lagi" memuat ulang; urutan ayat mengikuti repository.
+- [ ] **Step 1: Tulis tes yang gagal:** surah 1 dan surah 9 tidak punya `BismillahHeader`; surah 2 punya tepat satu dengan teks sama persis dengan Arab ayat 1:1 dari repository; `AyahCard` merender `ayah.arab` dan `ayah.translation` persis (entri sintetis berisi spasi di akhir dan karakter U+200C, dicari dengan `find.text` string utuh); `showTranslation == false` menyembunyikan terjemahan; mengetuk ikon bookmark memanggil `toggleBookmark` dan ikon berubah terisi dengan label semantik "Hapus bookmark" atau "Tambah bookmark"; ayat sintetis Arab 1.218 karakter dan terjemahan 1.670 karakter pada `arabicFontSize == 40` dan `TextScaler.linear(1.3)` di 360 × 640 tidak menimbulkan exception layout; `copyAyah` menaruh teks format Keputusan 9 ke clipboard dan menampilkan snackbar "Ayat disalin"; `ContentUnavailable` → `ErrorState` dan "Coba lagi" memuat ulang; urutan ayat mengikuti repository.
 - [ ] **Step 2: Jalankan** `flutter test test/app/modules/quran_detail`. Harapan: GAGAL.
 - [ ] **Step 3: Implementasi** sesuai Interfaces. Tata letak `AyahCard`: baris badge kiri dan `AyahActionBar` kanan, lalu Arab, lalu terjemahan. Tanpa bayangan, jarak antarkartu 12, padding horizontal 20.
 - [ ] **Step 4: Jalankan tes** sampai lulus.
 - [ ] **Step 5: Commit** `feat: read surah with ayah cards and bookmark`.
 
-### Task 8: Tafsir (bottom sheet)
+### Task 7: Tafsir (bottom sheet)
 
 **Files:**
 - Create: `lib/app/modules/quran_detail/widgets/tafsir_sheet.dart`
@@ -228,13 +230,13 @@ test/support/fake_repositories.dart            FakeQuranRepository, FakeUserRepo
 **Interfaces:**
 - Produces: `Future<void> showTafsirSheet(BuildContext context, {required List<Ayah> ayahs, required int initialIndex, required String surahName})`. Sheet: pegangan, judul "Tafsir Kemenag", subjudul `<surahName> · ayat <n>`, isi tafsir yang bisa digulir, dan dua tombol teks berikon "Sebelumnya" dan "Berikutnya" (wrap bila tidak muat). Tinggi maksimum 90% layar, `barrierColor` = `colorScheme.scrim` dengan alpha 0,32.
 
-- [ ] **Step 1: Tulis tes yang gagal:** sheet menampilkan `ayah.tafsir` persis; tafsir sintetis 19.245 karakter berisi `\n` dapat digulir sampai teks terakhir terlihat dan tidak overflow, dan `\n` dipertahankan; "Sebelumnya" nonaktif pada ayat pertama dan "Berikutnya" nonaktif pada ayat terakhir; "Berikutnya" menampilkan tafsir ayat berikutnya dan subjudul berubah; tafsir kosong (`''`) menampilkan "Tafsir belum tersedia untuk ayat ini"; tinggi sheet ≤ 0,9 × tinggi layar (720 pada 800); mengetuk ikon tafsir pada `AyahCard` membuka sheet untuk ayat yang benar.
+- [ ] **Step 1: Tulis tes yang gagal:** sheet menampilkan `ayah.tafsir` persis; tafsir sintetis 19.245 karakter berisi `\n` dapat digulir sampai teks terakhir terlihat dan tidak overflow, dan `\n` dipertahankan; "Sebelumnya" nonaktif pada ayat pertama dan "Berikutnya" nonaktif pada ayat terakhir; "Berikutnya" menampilkan tafsir ayat berikutnya dan subjudul berubah; tafsir kosong (`''`) menampilkan "Tafsir belum tersedia untuk ayat ini"; tinggi sheet ≤ 0,9 × tinggi layar (576 pada 640); mengetuk ikon tafsir pada `AyahCard` membuka sheet untuk ayat yang benar; **uji Latin 130%:** sheet pada `TextScaler.linear(1.3)` di 360 × 640 tanpa exception.
 - [ ] **Step 2: Jalankan** tes itu. Harapan: GAGAL.
 - [ ] **Step 3: Implementasi** sesuai Interfaces. `isScrollControlled: true`.
 - [ ] **Step 4: Jalankan tes** sampai lulus.
 - [ ] **Step 5: Commit** `feat: show tafsir kemenag in bottom sheet`.
 
-### Task 9: Pengaturan tampilan baca dan tema reaktif
+### Task 8: Pengaturan tampilan baca dan tema reaktif
 
 **Files:**
 - Create: `lib/app/modules/quran_detail/widgets/reading_settings_sheet.dart`, `lib/app/core/theme/theme_controller.dart`
@@ -247,28 +249,34 @@ test/support/fake_repositories.dart            FakeQuranRepository, FakeUserRepo
   - `QuranDetailController.setArabicFontSize(double)` dan `setShowTranslation(bool)`: memperbarui `prefs` dan menyimpan lewat `UserRepository`.
   - `showReadingSettingsSheet(BuildContext context, {required QuranDetailController controller, required ThemeController theme})`: slider ukuran Arab 20–40 (`divisions: 10`) dengan pratinjau langsung memakai Basmalah dari `SurahContent`, sakelar "Tampilkan terjemahan", dan pilihan tema "Sistem", "Terang", "Gelap" (`SegmentedButton`). Tinggi maksimum 90%, isi bisa digulir.
 
-- [ ] **Step 1: Tulis tes yang gagal:** menggeser slider ke 36 mengubah `fontSize` teks Arab pada `AyahCard` menjadi 36 dan tersimpan di repository; sakelar menyembunyikan dan menampilkan terjemahan; memilih "Gelap" mengubah `GetMaterialApp.themeMode` menjadi `ThemeMode.dark` dan tersimpan; `ThemeController` baru yang dibuat setelah itu membaca `dark`; sheet pada `textScaler` 1,3 tidak overflow dan tinggi ≤ 90%.
+- [ ] **Step 1: Tulis tes yang gagal:** menggeser slider ke 36 mengubah `fontSize` teks Arab pada `AyahCard` menjadi 36 dan tersimpan di repository; sakelar menyembunyikan dan menampilkan terjemahan; memilih "Gelap" mengubah `GetMaterialApp.themeMode` menjadi `ThemeMode.dark` dan tersimpan; `ThemeController` baru yang dibuat setelah itu membaca `dark`; **uji Latin 130%:** sheet pada `TextScaler.linear(1.3)` di 360 × 640 tanpa exception dan tinggi ≤ 90%.
 - [ ] **Step 2: Jalankan** tes itu. Harapan: GAGAL.
 - [ ] **Step 3: Implementasi** sesuai Interfaces. Pilihan tema yang aktif ditandai dengan ikon centang, bukan warna saja.
 - [ ] **Step 4: Jalankan tes** sampai lulus, termasuk `bootstrap_test`.
 - [ ] **Step 5: Commit** `feat: add reading settings sheet and reactive theme`.
 
-### Task 10: Last Read
+### Task 9: Last Read
 
 **Files:**
-- Modify: `pubspec.yaml` (tambah `scrollable_positioned_list`), `controllers/quran_detail_controller.dart`, `views/quran_detail_view.dart`, `widgets/ayah_card.dart`
+- Modify: `controllers/quran_detail_controller.dart`, `views/quran_detail_view.dart`, `widgets/ayah_card.dart`
 - Test: `test/app/modules/quran_detail/last_read_test.dart`
 
 **Interfaces:**
-- Produces: `QuranDetailController.lastReadAyah` (`RxInt`, 0 = tidak ada di surah ini), `void onVisibleAyahChanged(int ayahNumber)`, `void flushLastRead()` (menyimpan `AyahRef(surah, ayat terakhir yang dilaporkan)` lewat `UserRepository.setLastRead`; tidak menulis apa pun bila belum pernah dilaporkan). `flushLastRead` dipanggil di `onClose` dan saat `AppLifecycleState.paused`. Daftar memakai `ScrollablePositionedList` dan membuka surah dengan menggulir ke `args.ayah` bila > 0, atau ke ayat last read bila ada di surah ini. `AyahCard(lastRead: true)`: latar `lastReadHighlight`, label "Terakhir dibaca", ikon `Icons.history_rounded`.
+- Produces: `QuranDetailController({Duration lastReadDebounce = const Duration(seconds: 3)})`, `lastReadAyah` (`RxInt`, 0 = tidak ada di surah ini), `void onVisibleAyahChanged(int ayahNumber)`, `void flushLastRead()`.
+  - `onVisibleAyahChanged` mencatat ayat terlihat dan memulai ulang timer debounce; saat timer habis (scroll berhenti selama `lastReadDebounce`), ayat itu disimpan lewat `UserRepository.setLastRead(AyahRef(surah, ayat))`.
+  - `flushLastRead()` menyimpan segera ayat terakhir yang dilaporkan bila belum tersimpan, lalu membatalkan timer. Dipanggil di `onClose` dan saat `AppLifecycleState.paused`.
+  - Tidak ada tulisan ulang untuk ayat yang sama, dan tidak ada tulisan sama sekali bila belum pernah ada laporan.
+  - Layar membaca `listController.visibleRange` (listener pada `ListController`) untuk melaporkan ayat terlihat: indeks daftar 0 (header) dihitung ayat 1, indeks `i ≥ 1` = ayat `i`.
+  - Membuka surah menggulir dengan `listController.jumpToItem(index, scrollController, alignment: 0.0)` ke `args.ayah` bila > 0, atau ke ayat last read bila ada di surah ini.
+  - `AyahCard(lastRead: true)`: latar `lastReadHighlight`, label "Terakhir dibaca", ikon `Icons.history_rounded`.
 
-- [ ] **Step 1: Tulis tes yang gagal:** `flushLastRead()` tanpa laporan tidak menulis (repository palsu mencatat nol panggilan `setLastRead`); setelah `onVisibleAyahChanged(5)` lalu `flushLastRead()` tepat satu panggilan dengan `AyahRef(1, 5)`; dua laporan lalu flush menyimpan nilai terakhir; membuka surah 1 dengan last read 1:5 menampilkan tepat satu label "Terakhir dibaca" pada ayat 5; `SurahArgs(1, 3)` membuat ayat 3 terlihat; last read di surah lain tidak menandai ayat mana pun; peluncuran pertama (`getLastRead() == null`) tidak melempar.
+- [ ] **Step 1: Tulis tes yang gagal** (waktu dikendalikan dengan `fakeAsync` atau `tester.pump(Duration)`, repository palsu mencatat panggilan): tanpa laporan, `flushLastRead()` tidak menulis; `onVisibleAyahChanged(5)` lalu maju 2 detik tidak menulis, maju sampai 3 detik menulis tepat sekali `AyahRef(1, 5)`; laporan 6 lalu 7 dalam jendela debounce menulis hanya 7; setelah timer menulis 5, `flushLastRead()` tidak menulis ulang; `onVisibleAyahChanged(8)` lalu `flushLastRead()` menulis 8 segera dan timer tidak menulis lagi; membuka surah 1 dengan last read 1:5 menampilkan tepat satu label "Terakhir dibaca" pada ayat 5; `SurahArgs(1, 3)` membuat ayat 3 terlihat; last read di surah lain tidak menandai ayat mana pun; peluncuran pertama (`getLastRead() == null`) tidak melempar; **uji Latin 130%:** layar baca dengan ayat last read pada `TextScaler.linear(1.3)` di 360 × 640 tanpa exception.
 - [ ] **Step 2: Jalankan** tes itu. Harapan: GAGAL.
-- [ ] **Step 3: Implementasi** sesuai Interfaces. Ayat terlihat = indeks terkecil dengan `itemTrailingEdge > 0`; header surah di indeks 0 dihitung sebagai ayat 1. Jika Keputusan 1 ditolak, hentikan dan minta arahan.
+- [ ] **Step 3: Implementasi** sesuai Interfaces.
 - [ ] **Step 4: Jalankan** `flutter test` penuh sampai lulus.
 - [ ] **Step 5: Commit** `feat: track and highlight last read ayah`.
 
-### Task 11: Tab Bookmark
+### Task 10: Tab Bookmark
 
 **Files:**
 - Create: `lib/app/modules/bookmarks/controllers/bookmarks_controller.dart`, `views/bookmarks_tab.dart`, `widgets/bookmark_tile.dart`
@@ -278,27 +286,44 @@ test/support/fake_repositories.dart            FakeQuranRepository, FakeUserRepo
 **Interfaces:**
 - Produces: `BookmarksController`: `Rx<UiState<List<BookmarkItem>>> items`, `void load()`. `class BookmarkItem { final Bookmark bookmark; final Surah surah; final Ayah ayah; }`. `BookmarkTile({required BookmarkItem item, required VoidCallback onTap})`: `<Nama Latin> · ayat <n>` dan terjemahan maksimal dua baris dengan elipsis. Mengetuk membuka `Routes.surah` dengan `SurahArgs(surah, ayat)`. Daftar dimuat ulang saat kembali dari layar baca. `EmptyState` berjudul "Belum ada bookmark".
 
-- [ ] **Step 1: Tulis tes yang gagal:** tiga bookmark tampil terbaru dulu; daftar kosong menampilkan "Belum ada bookmark"; bookmark ke ayat yang tidak ada di repository (`getAyah` melempar `ContentUnavailable`) dilewati dan yang lain tetap tampil; mengetuk tile membuka route dengan `SurahArgs` yang benar; setelah `toggleBookmark` dari layar baca lalu kembali, daftar diperbarui; kegagalan membaca menghasilkan `ErrorState`.
+- [ ] **Step 1: Tulis tes yang gagal:** tiga bookmark tampil terbaru dulu; daftar kosong menampilkan "Belum ada bookmark"; bookmark ke ayat yang tidak ada di repository (`getAyah` melempar `ContentUnavailable`) dilewati dan yang lain tetap tampil; mengetuk tile membuka route dengan `SurahArgs` yang benar; setelah `toggleBookmark` dari layar baca lalu kembali, daftar diperbarui; kegagalan membaca menghasilkan `ErrorState`; **uji Latin 130%:** tab Bookmark berisi tiga bookmark pada `TextScaler.linear(1.3)` di 360 × 640 tanpa exception.
 - [ ] **Step 2: Jalankan** tes itu. Harapan: GAGAL.
 - [ ] **Step 3: Implementasi** sesuai Interfaces.
 - [ ] **Step 4: Jalankan** `flutter test` penuh dan `flutter analyze`.
 - [ ] **Step 5: Commit** `feat: list saved ayah in bookmark tab`.
 
+### Task 11: Aset font Plus Jakarta Sans (tidak memblokir task lain)
+
+**Files:**
+- Modify: `pubspec.yaml` (bagian `flutter.fonts`)
+- Create (oleh pemilik proyek): `assets/fonts/` berisi file Plus Jakarta Sans (bobot 400, 500, 600) dan teks lisensi OFL
+- Test: `test/app/core/theme/font_assets_test.dart`
+
+**Interfaces:**
+- Produces: family `Plus Jakarta Sans` terdaftar di `pubspec.yaml`. Family `LPMQ Isep Misbah` sengaja belum terdaftar (menunggu Q6).
+
+- [ ] **Step 1: Periksa prasyarat.** Jika `assets/fonts/` belum berisi file Plus Jakarta Sans dan lisensinya, LEWATI task ini, catat di `docs/STATUS.md` bahwa font Latin belum terpasang, dan lanjut ke Task 12. Jangan mengunduh font sendiri.
+- [ ] **Step 2: Tulis tes yang gagal.** Tes membaca `pubspec.yaml` dan memastikan family `Plus Jakarta Sans` terdaftar dengan bobot 400, 500, 600, setiap file yang dideklarasikan ada di disk, dan `LPMQ Isep Misbah` tidak terdaftar.
+- [ ] **Step 3: Daftarkan font** di `pubspec.yaml`.
+- [ ] **Step 4: Jalankan** `flutter test` penuh, lalu catat sumber dan tanggal unduh font di `docs/STATUS.md` bagian Catatan Teknis.
+- [ ] **Step 5: Commit** `build: bundle plus jakarta sans font`.
+
 ### Task 12: Dokumen dan uji perangkat
 
 **Files:**
-- Modify: `docs/STATUS.md`, `docs/PRD.md` (sesuai Keputusan 6, bila disetujui), `docs/specs/2026-11-09-nura-v1-design.md` (bila ada keputusan yang mengubah spec)
+- Modify: `docs/STATUS.md`, `docs/PRD.md` (Keputusan 8), `docs/specs/2026-11-09-nura-v1-design.md` (bila ada keputusan yang mengubah spec)
 
-- [ ] **Step 1: Perbarui `docs/STATUS.md`:** baris fitur Al-Qur'an offline (yang selesai dan yang menunggu Q4), baris Desain UI (tema dari token dan font), dan Langkah Berikutnya. Rapikan PRD 5.1 bila Keputusan 6 disetujui.
+- [ ] **Step 1: Perbarui `docs/STATUS.md`:** baris fitur Al-Qur'an offline (yang selesai dan yang menunggu Q4), baris Desain UI (tema dari token, font Latin, font Arab masih fallback sampai Q6), dan Langkah Berikutnya. Rapikan PRD 5.1: ukuran font terjemahan tidak diatur pengguna.
 - [ ] **Step 2: Jalankan** `flutter analyze` dan `flutter test`; catat jumlah tes di STATUS.
 - [ ] **Step 3: Commit** `docs: update status after phase 2`.
-- [ ] **Step 4: Uji perangkat oleh pemilik proyek** (AGENTS: fitur UI selesai hanya setelah dijalankan di perangkat). Daftar periksa: daftar 114 surah tampil dan bisa digulir; baca Al-Baqarah sampai akhir tanpa jank; tafsir panjang bisa digulir; Arab 40 dan teks sistem besar tidak terpotong; tema gelap bertahan setelah aplikasi ditutup; bookmark dan last read bertahan setelah restart; mode pesawat tidak memengaruhi apa pun. Catat hasilnya di STATUS.
+- [ ] **Step 4: Uji perangkat oleh pemilik proyek** (AGENTS: fitur UI selesai hanya setelah dijalankan di perangkat). Daftar periksa: daftar 114 surah tampil dan bisa digulir; baca Al-Baqarah sampai akhir tanpa jank; tafsir panjang bisa digulir; Arab 40 dan teks sistem besar tidak terpotong; **tanda waqaf dan tanda baca Al-Qur'an tampil lengkap pada font fallback sistem** (catat bila ada kotak atau tanda hilang, itu bahan keputusan Q6); tema gelap bertahan setelah aplikasi ditutup; bookmark dan last read bertahan setelah restart; last read tersimpan setelah berhenti menggulir beberapa detik; mode pesawat tidak memengaruhi apa pun. Catat hasilnya di STATUS.
 
 ---
 
 ## Di Luar Rencana Ini
 
 - Pencarian Al-Qur'an (SearchField, layar 10, cuplikan hasil): Fase 4. Aturan cuplikan sudah ada di spec bagian 5.5.
+- Mendaftarkan font LPMQ Isep Misbah: setelah Q6 selesai. Nama family sudah dipakai di tema, jadi cukup menambah file dan deklarasi `pubspec.yaml`.
 - Isi Beranda (kartu waktu sholat, kartu harian, LastReadCard): Fase 5 dan 6.
 - Audio, bagikan ayat, dan layar hadis: Fase 7, tertunda, dan Fase 3.
 - Data meta (`surah_info.json`, `juz.json`): menunggu Q4. Kode Fase 2 sudah menangani ketiadaannya.
