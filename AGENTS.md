@@ -9,6 +9,7 @@ Baca dokumen ini sebelum mengubah kode. Dokumen pendamping: `docs/PRD.md` (apa y
 - Nama paket Dart: `nura`. Application ID Android: lihat PRD bagian 4.
 - Stack: Flutter (SDK ^3.9.0), GetX untuk state, DI, dan routing.
 - Rebuild bersih: jangan menyalin model, controller, atau kode API dari implementasi lama.
+- `docs/design/` hanya berisi tiga berkas: `tokens.json` (sumber nilai token), `HANDOFF-flutter.md`, dan `2026-11-09-nura-ui-design-brief.md`. `HANDOFF-flutter.md` ditulis untuk folder proyek desain, jadi rujukannya ke `review-round1.md`, `tokens.dart`, `CLAUDE.md`, `STATUS-desain.md`, dan file FigCraft tidak berlaku di repo ini. Sumber token = `tokens.json`.
 
 ## Aturan Mutlak
 

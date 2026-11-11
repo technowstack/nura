@@ -36,7 +36,6 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | Tema dari token desain | Belum | Tema saat ini masih dasar. Terapkan `ColorScheme`, `NuraColors`, `NuraTextStyles`, dan konstanta jarak/radius di `lib/app/core/theme/` dari `tokens.json` (jalur tetap `lib/app/core/theme/`; handoff menyebut `lib/core/theme/`, lihat catatan di AGENTS.md) |
 | Font Arab LPMQ dan font Latin Plus Jakarta Sans | Belum ada di repo | Lisensi font Arab dicek sebelum rilis (Q6) |
 | Placeholder di desain | Ada | Slot "[Q4]" (tempat turun, juz). Teks "~XXX MB" di layar error ruang penyimpanan: isi saat layar itu dibangun (ukuran `content.db` 112,38 MB; perhitungkan ruang `.tmp` saat pembaruan). Ikon selain `history` dan ilustrasi masih placeholder. Wordmark sementara (Q2) |
-| Berkas yang disebut handoff tetapi tidak ada di `docs/design/` | Menunggu pemilik proyek | `review-round1.md`, `tokens.dart`, `CLAUDE.md`, `STATUS-desain.md`, dan file Figma `Nura — UI v1.figcraft`. Pemilik proyek menyalinnya terpisah; setelah ada, dicek dan di-commit terpisah. Sementara itu hanya brief, handoff, dan `tokens.json` yang ada di repo |
 
 ## Fitur v1
 
@@ -84,6 +83,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | 2026-11-11 | Seleksi matan hadis harian ditunda ke Fase 6 dan butuh persetujuan pemilik proyek (mengubah `daily_hadith`) |
 | 2026-11-11 | Jalur kode tema tetap `lib/app/core/theme/`. `HANDOFF-flutter.md` tidak diubah; pemetaan jalur dicatat di AGENTS.md |
 | 2026-11-11 | `main` adalah cabang utama. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<nama>`), lalu `merge --no-ff` ke `main` setelah review akhir (riwayat tidak di-squash). Commit docs langsung di `main` diperbolehkan |
+| 2026-11-11 | Repo hanya menyimpan tiga berkas desain: `tokens.json`, `HANDOFF-flutter.md`, dan brief. `review-round1.md`, `tokens.dart`, `CLAUDE.md`, `STATUS-desain.md`, dan file FigCraft milik proyek desain terpisah dan tidak disalin. Sumber token = `tokens.json` |
 
 ## Pertanyaan Terbuka
 
