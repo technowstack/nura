@@ -28,15 +28,14 @@ class NuraApp extends StatelessWidget {
       case BootstrapSuccess():
         final done = r.user.getSetting(SettingKeys.onboardingDone) == 'true';
         final theme = Get.find<ThemeController>();
-        return Obx(
-          () => GetMaterialApp(
-            title: 'Nura',
-            theme: AppTheme.light,
-            darkTheme: AppTheme.dark,
-            themeMode: theme.mode.value,
-            initialRoute: done ? Routes.home : Routes.onboarding,
-            getPages: appPages(r),
-          ),
+        // Later changes go through Get.changeThemeMode (ThemeController.setMode).
+        return GetMaterialApp(
+          title: 'Nura',
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: theme.mode.value,
+          initialRoute: done ? Routes.home : Routes.onboarding,
+          getPages: appPages(r),
         );
     }
   }

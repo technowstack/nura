@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/app_bootstrap.dart';
+import 'package:nura/app/core/theme/theme_controller.dart';
 import 'package:nura/app/core/theme/theme_mode_setting.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
@@ -137,4 +139,21 @@ void main() {
       );
     });
   }
+
+  testWidgets('theme switch keeps pushed route and turns dark', (tester) async {
+    final s =
+        await tester.runAsync(() => ready(onboardingDone: 'true'))
+            as BootstrapSuccess;
+    await tester.pumpWidget(NuraApp(result: s, onRetry: () {}));
+    await tester.pumpAndSettle();
+    unawaited(Get.to<void>(() => const Scaffold(body: Text('PUSHED'))));
+    await tester.pumpAndSettle();
+    Get.find<ThemeController>().setMode(ThemeMode.dark);
+    await tester.pumpAndSettle();
+    expect(find.text('PUSHED'), findsOneWidget);
+    expect(
+      Theme.of(tester.element(find.text('PUSHED'))).brightness,
+      Brightness.dark,
+    );
+  });
 }
