@@ -52,6 +52,7 @@ class QuranDetailView extends GetView<QuranDetailController> {
         // Read observables here, not in itemBuilder, so changes rebuild.
         final marked = c.bookmarked.toSet();
         final prefs = c.prefs.value;
+        final lastRead = c.lastReadAyah.value;
         return switch (c.state.value) {
           UiLoading() => const Center(child: CircularProgressIndicator()),
           UiEmpty() => const EmptyState(title: 'Ayat belum tersedia'),
@@ -62,6 +63,7 @@ class QuranDetailView extends GetView<QuranDetailController> {
           ),
           UiData(:final value) => SuperListView.builder(
             listController: c.listController,
+            controller: c.scrollController,
             itemCount: value.ayahs.length + 1,
             itemBuilder: (_, i) {
               if (i == 0) {
@@ -79,7 +81,7 @@ class QuranDetailView extends GetView<QuranDetailController> {
               return AyahCard(
                 ayah: ayah,
                 bookmarked: marked.contains(ayah.ayahNumber),
-                lastRead: false,
+                lastRead: ayah.ayahNumber == lastRead,
                 prefs: prefs,
                 onBookmark: () => c.toggleBookmark(ayah.ayahNumber),
                 onCopy: () => c.copyAyah(ayah),

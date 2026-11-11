@@ -22,7 +22,6 @@ class AyahCard extends StatelessWidget {
   final Ayah ayah;
   final bool bookmarked;
 
-  /// Reserved: the last-read highlight is added in a later task.
   final bool lastRead;
   final ReadingPrefs prefs;
   final VoidCallback onBookmark;
@@ -30,16 +29,27 @@ class AyahCard extends StatelessWidget {
   final VoidCallback onTafsir;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(
-      NuraSpace.s20,
-      0,
-      NuraSpace.s20,
-      NuraSpace.s12,
-    ),
-    child: Column(
+  Widget build(BuildContext context) {
+    final colors = context.nuraColors;
+    final card = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (lastRead)
+          Padding(
+            padding: const EdgeInsets.only(bottom: NuraSpace.s8),
+            child: Row(
+              children: [
+                const Icon(Icons.history_rounded, size: 16),
+                const SizedBox(width: NuraSpace.s4),
+                Flexible(
+                  child: Text(
+                    'Terakhir dibaca',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -66,6 +76,26 @@ class AyahCard extends StatelessWidget {
           Text(ayah.translation, style: context.nuraText.translation),
         ],
       ],
-    ),
-  );
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        NuraSpace.s20,
+        0,
+        NuraSpace.s20,
+        NuraSpace.s12,
+      ),
+      child: lastRead
+          ? DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.lastReadHighlight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(NuraSpace.s12),
+                child: card,
+              ),
+            )
+          : card,
+    );
+  }
 }

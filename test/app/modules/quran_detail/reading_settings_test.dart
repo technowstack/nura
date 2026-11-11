@@ -48,7 +48,12 @@ void main() {
     );
     Get.put<UserRepository>(user);
     theme = Get.put(ThemeController());
-    Get.put(QuranDetailController(const SurahArgs(1)));
+    Get.put(
+      QuranDetailController(
+        const SurahArgs(1),
+        lastReadDebounce: Duration.zero,
+      ),
+    );
   });
   tearDown(Get.reset);
 

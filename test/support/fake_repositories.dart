@@ -55,6 +55,7 @@ class FakeUserRepository implements UserRepository {
     : bookmarkedSurahs = bookmarkedSurahs ?? {};
 
   LastRead? lastRead;
+  final List<AyahRef> lastReadWrites = [];
   Set<int> bookmarkedSurahs;
   final Map<int, Set<int>> ayahBookmarks = {};
 
@@ -100,8 +101,10 @@ class FakeUserRepository implements UserRepository {
   LastRead? getLastRead() => lastRead;
 
   @override
-  void setLastRead(AyahRef ref) =>
-      lastRead = LastRead(ref: ref, updatedAt: DateTime(2000));
+  void setLastRead(AyahRef ref) {
+    lastReadWrites.add(ref);
+    lastRead = LastRead(ref: ref, updatedAt: DateTime(2000));
+  }
 
   @override
   ReadingPrefs getReadingPrefs() => prefs;

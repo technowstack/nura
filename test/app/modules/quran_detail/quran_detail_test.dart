@@ -74,7 +74,9 @@ void main() {
     tester.view.physicalSize = const Size(360, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    Get.put(QuranDetailController(SurahArgs(surah)));
+    Get.put(
+      QuranDetailController(SurahArgs(surah), lastReadDebounce: Duration.zero),
+    );
     await tester.pumpWidget(
       GetMaterialApp(
         builder: (c, child) => MediaQuery(
@@ -85,6 +87,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.pump(Duration.zero); // drain zero-length debounce timer
   }
 
   testWidgets('surah 1 and 9 have no bismillah header', (tester) async {
@@ -157,6 +160,7 @@ void main() {
     expect(user.ayahBookmarks[2], {1});
     expect(find.bySemanticsLabel('Hapus bookmark'), findsOneWidget);
     expect(find.byIcon(Icons.bookmark), findsOneWidget);
+    await tester.pump(Duration.zero);
     handle.dispose();
   });
 
@@ -239,7 +243,12 @@ void _robustnessTests() {
       FakeQuranRepository(surahs: [_s(1)], ayahs: [_a(1, 1)]),
     );
     Get.put<UserRepository>(u);
-    Get.put(QuranDetailController(const SurahArgs(1)));
+    Get.put(
+      QuranDetailController(
+        const SurahArgs(1),
+        lastReadDebounce: Duration.zero,
+      ),
+    );
     await tester.pumpWidget(const GetMaterialApp(home: QuranDetailView()));
     await tester.pumpAndSettle();
     u.failure = StateError('db');
@@ -248,6 +257,7 @@ void _robustnessTests() {
     expect(Get.find<QuranDetailController>().bookmarked, isEmpty);
     expect(find.text('Gagal menyimpan bookmark'), findsOneWidget);
     await tester.pumpAndSettle(const Duration(seconds: 5));
+    await tester.pump(Duration.zero);
   });
 
   testWidgets('clipboard failure shows snackbar', (tester) async {
@@ -256,7 +266,12 @@ void _robustnessTests() {
       FakeQuranRepository(surahs: [_s(1)], ayahs: [_a(1, 1)]),
     );
     Get.put<UserRepository>(FakeUserRepository());
-    Get.put(QuranDetailController(const SurahArgs(1)));
+    Get.put(
+      QuranDetailController(
+        const SurahArgs(1),
+        lastReadDebounce: Duration.zero,
+      ),
+    );
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,
       (call) async {
@@ -314,7 +329,12 @@ void _robustnessTests() {
       FakeQuranRepository(surahs: [_s(1)], ayahs: [_a(1, 1)]),
     );
     Get.put<UserRepository>(FakeUserRepository()..failure = StateError('x'));
-    Get.put(QuranDetailController(const SurahArgs(1)));
+    Get.put(
+      QuranDetailController(
+        const SurahArgs(1),
+        lastReadDebounce: Duration.zero,
+      ),
+    );
     await tester.pumpWidget(const GetMaterialApp(home: QuranDetailView()));
     await tester.pumpAndSettle();
     expect(find.byType(ErrorState), findsOneWidget);

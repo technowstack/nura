@@ -1,4 +1,6 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
+
+import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
@@ -23,8 +25,13 @@ class SurahContent {
   final List<Ayah> ayahs;
 }
 
-class QuranDetailController extends GetxController {
-  QuranDetailController(this.args);
+class QuranDetailController extends GetxController with WidgetsBindingObserver {
+  QuranDetailController(
+    this.args, {
+    this.lastReadDebounce = const Duration(seconds: 3),
+  });
+
+  final Duration lastReadDebounce;
 
   final SurahArgs args;
   final QuranRepository _quran = Get.find();
@@ -34,11 +41,82 @@ class QuranDetailController extends GetxController {
   final bookmarked = <int>{}.obs;
   late final prefs = Rx<ReadingPrefs>(_user.getReadingPrefs());
   final ListController listController = ListController();
+  final ScrollController scrollController = ScrollController();
+
+  /// Last-read ayah within this surah; 0 means none.
+  final lastReadAyah = 0.obs;
+
+  Timer? _timer;
+  int _pending = 0;
+  int _saved = 0;
+  // Ignore list reports until the initial jump is done, so the
+  // pre-jump position never overwrites the stored last read.
+  bool _tracking = false;
 
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
+    listController.addListener(_onVisibleRange);
     load();
+  }
+
+  @override
+  void onClose() {
+    flushLastRead();
+    WidgetsBinding.instance.removeObserver(this);
+    listController.removeListener(_onVisibleRange);
+    listController.dispose();
+    scrollController.dispose();
+    super.onClose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) flushLastRead();
+  }
+
+  void _onVisibleRange() {
+    final range = listController.visibleRange;
+    if (!_tracking || range == null) return;
+    // Index 0 is the surah header and counts as ayah 1.
+    final ayah = range.$1 < 1 ? 1 : range.$1;
+    // Relayouts re-notify with the same range; don't restart the debounce.
+    if (ayah != _pending) onVisibleAyahChanged(ayah);
+  }
+
+  void onVisibleAyahChanged(int ayahNumber) {
+    _pending = ayahNumber;
+    _timer?.cancel();
+    _timer = Timer(lastReadDebounce, flushLastRead);
+  }
+
+  void flushLastRead() {
+    _timer?.cancel();
+    _timer = null;
+    if (_pending == 0 || _pending == _saved) return;
+    try {
+      _user.setLastRead(AyahRef(args.surah, _pending));
+      _saved = _pending;
+      lastReadAyah.value = _pending;
+    } on Object catch (e) {
+      debugPrint('QuranDetailController: save last read failed: $e');
+    }
+  }
+
+  void _openAtTarget() {
+    final target = args.ayah > 0 ? args.ayah : lastReadAyah.value;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isClosed) return;
+      if (target > 0 && listController.isAttached) {
+        listController.jumpToItem(
+          index: target,
+          scrollController: scrollController,
+          alignment: 0.0,
+        );
+      }
+      _tracking = true;
+    });
   }
 
   void load() {
@@ -60,12 +138,26 @@ class QuranDetailController extends GetxController {
         final readingPrefs = _user.getReadingPrefs();
         bookmarked.assignAll(marks);
         prefs.value = readingPrefs;
+        _loadLastRead();
         state.value = UiData(content);
+        _openAtTarget();
       } on Object catch (e) {
         debugPrint('QuranDetailController: load failed: $e');
         state.value = const UiError('Konten tidak dapat dibaca.');
       }
     });
+  }
+
+  void _loadLastRead() {
+    try {
+      final ref = _user.getLastRead()?.ref;
+      if (ref != null && ref.surah == args.surah) {
+        lastReadAyah.value = ref.ayah;
+        _saved = ref.ayah;
+      }
+    } on Object catch (e) {
+      debugPrint('QuranDetailController: read last read failed: $e');
+    }
   }
 
   void toggleBookmark(int ayahNumber) {
