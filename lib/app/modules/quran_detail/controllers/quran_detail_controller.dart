@@ -1,8 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
 
-import '../../../core/errors.dart';
 import '../../../core/ui_state.dart';
 import '../../../data/models/ayah.dart';
 import '../../../data/models/reading_prefs.dart';
@@ -51,46 +51,55 @@ class QuranDetailController extends GetxController {
           state.value = const UiEmpty();
           return;
         }
-        state.value = UiData(
-          SurahContent(
-            surah: _quran.getSurah(args.surah),
-            basmalah: _quran.getAyah(const AyahRef(1, 1)).arab,
-            ayahs: ayahs,
-          ),
+        final content = SurahContent(
+          surah: _quran.getSurah(args.surah),
+          basmalah: _quran.getAyah(const AyahRef(1, 1)).arab,
+          ayahs: ayahs,
         );
-        bookmarked.assignAll(_user.bookmarkedAyahNumbers(args.surah));
-        prefs.value = _user.getReadingPrefs();
-      } on ContentUnavailable {
+        final marks = _user.bookmarkedAyahNumbers(args.surah);
+        final readingPrefs = _user.getReadingPrefs();
+        bookmarked.assignAll(marks);
+        prefs.value = readingPrefs;
+        state.value = UiData(content);
+      } on Object catch (e) {
+        debugPrint('QuranDetailController: load failed: $e');
         state.value = const UiError('Konten tidak dapat dibaca.');
       }
     });
   }
 
   void toggleBookmark(int ayahNumber) {
-    final on = _user.toggleBookmark(AyahRef(args.surah, ayahNumber));
-    if (on) {
-      bookmarked.add(ayahNumber);
-    } else {
-      bookmarked.remove(ayahNumber);
+    try {
+      final on = _user.toggleBookmark(AyahRef(args.surah, ayahNumber));
+      if (on) {
+        bookmarked.add(ayahNumber);
+      } else {
+        bookmarked.remove(ayahNumber);
+      }
+    } on Object catch (e) {
+      debugPrint('QuranDetailController: bookmark failed: $e');
+      _notify('Gagal menyimpan bookmark');
     }
   }
 
   Future<void> copyAyah(Ayah ayah) async {
-    final surah = switch (state.value) {
-      UiData(:final value) => value.surah.nameLatin,
-      _ => _quran.getSurah(ayah.surahNumber).nameLatin,
-    };
-    await Clipboard.setData(
-      ClipboardData(
-        text:
-            '${ayah.arab}\n\n${ayah.translation}\n\nQS. $surah: ${ayah.ayahNumber}',
-      ),
-    );
-    Get.showSnackbar(
-      const GetSnackBar(
-        message: 'Ayat disalin',
-        duration: Duration(seconds: 2),
-      ),
-    );
+    final current = state.value;
+    if (current is! UiData<SurahContent>) return;
+    try {
+      await Clipboard.setData(
+        ClipboardData(
+          text:
+              '${ayah.arab}\n\n${ayah.translation}\n\nQS. ${current.value.surah.nameLatin}: ${ayah.ayahNumber}',
+        ),
+      );
+      _notify('Ayat disalin');
+    } on Object catch (e) {
+      debugPrint('QuranDetailController: copy failed: $e');
+      _notify('Gagal menyalin ayat');
+    }
   }
+
+  void _notify(String message) => Get.showSnackbar(
+    GetSnackBar(message: message, duration: const Duration(seconds: 2)),
+  );
 }

@@ -10,6 +10,8 @@ import 'package:nura/app/data/models/reading_prefs.dart';
 import 'package:nura/app/data/models/surah.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
+import 'package:nura/app/modules/quran_detail/bindings/quran_detail_binding.dart';
+import 'package:nura/app/modules/quran_detail/widgets/surah_header_card.dart';
 import 'package:nura/app/modules/quran_detail/controllers/quran_detail_controller.dart';
 import 'package:nura/app/modules/quran_detail/surah_args.dart';
 import 'package:nura/app/modules/quran_detail/views/quran_detail_view.dart';
@@ -38,6 +40,7 @@ Ayah _a(int s, int n, {String? arab, String? tr}) => Ayah(
 const _basmalah = 'BASMALAH-FROM-REPO';
 
 void main() {
+  _robustnessTests();
   late FakeQuranRepository quran;
   late FakeUserRepository user;
 
@@ -156,6 +159,20 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('bookmark twice returns to unbookmarked', (tester) async {
+    final handle = tester.ensureSemantics();
+    await pumpPage(tester, 2);
+    await tester.tap(find.bySemanticsLabel('Tambah bookmark').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Hapus bookmark'));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Hapus bookmark'), findsNothing);
+    expect(find.byIcon(Icons.bookmark), findsNothing);
+    expect(find.byIcon(Icons.bookmark_border), findsWidgets);
+    expect(user.ayahBookmarks[2], isEmpty);
+    handle.dispose();
+  });
+
   testWidgets('very long ayah at 40pt and 130% scale does not overflow', (
     tester,
   ) async {
@@ -208,5 +225,97 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(ErrorState), findsNothing);
     expect(find.text('arab2:1'), findsOneWidget);
+  });
+}
+
+void _robustnessTests() {
+  testWidgets('bookmark write failure keeps set and shows snackbar', (
+    tester,
+  ) async {
+    Get.reset();
+    final u = FakeUserRepository();
+    Get.put<QuranRepository>(
+      FakeQuranRepository(surahs: [_s(1)], ayahs: [_a(1, 1)]),
+    );
+    Get.put<UserRepository>(u);
+    Get.put(QuranDetailController(const SurahArgs(1)));
+    await tester.pumpWidget(const GetMaterialApp(home: QuranDetailView()));
+    await tester.pumpAndSettle();
+    u.failure = StateError('db');
+    await tester.tap(find.byIcon(Icons.bookmark_border).first);
+    await tester.pump();
+    expect(Get.find<QuranDetailController>().bookmarked, isEmpty);
+    expect(find.text('Gagal menyimpan bookmark'), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 5));
+  });
+
+  testWidgets('clipboard failure shows snackbar', (tester) async {
+    Get.reset();
+    Get.put<QuranRepository>(
+      FakeQuranRepository(surahs: [_s(1)], ayahs: [_a(1, 1)]),
+    );
+    Get.put<UserRepository>(FakeUserRepository());
+    Get.put(QuranDetailController(const SurahArgs(1)));
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          throw PlatformException(code: 'x');
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await tester.pumpWidget(const GetMaterialApp(home: QuranDetailView()));
+    await tester.pumpAndSettle();
+    await Get.find<QuranDetailController>().copyAyah(_a(1, 1));
+    await tester.pump();
+    expect(find.text('Gagal menyalin ayat'), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 5));
+  });
+
+  testWidgets('missing route arguments show error, not Al-Fatihah', (
+    tester,
+  ) async {
+    Get.reset();
+    Get.put<QuranRepository>(
+      FakeQuranRepository(surahs: [_s(1)], ayahs: [_a(1, 1)]),
+    );
+    Get.put<UserRepository>(FakeUserRepository());
+    await tester.pumpWidget(
+      GetMaterialApp(
+        initialRoute: '/s',
+        getPages: [
+          GetPage(
+            name: '/s',
+            page: QuranDetailView.new,
+            binding: QuranDetailBinding(),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('arab1:1'), findsNothing);
+    expect(find.byType(SurahHeaderCard), findsNothing);
+    expect(find.byType(AyahCard), findsNothing);
+  });
+
+  testWidgets('user repo failing after content load shows error', (
+    tester,
+  ) async {
+    Get.reset();
+    Get.put<QuranRepository>(
+      FakeQuranRepository(surahs: [_s(1)], ayahs: [_a(1, 1)]),
+    );
+    Get.put<UserRepository>(FakeUserRepository()..failure = StateError('x'));
+    Get.put(QuranDetailController(const SurahArgs(1)));
+    await tester.pumpWidget(const GetMaterialApp(home: QuranDetailView()));
+    await tester.pumpAndSettle();
+    expect(find.byType(ErrorState), findsOneWidget);
   });
 }

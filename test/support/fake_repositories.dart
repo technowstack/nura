@@ -57,6 +57,15 @@ class FakeUserRepository implements UserRepository {
   LastRead? lastRead;
   Set<int> bookmarkedSurahs;
   final Map<int, Set<int>> ayahBookmarks = {};
+
+  /// When set, bookmark calls throw it.
+  Object? failure;
+
+  void _check() {
+    final f = failure;
+    if (f != null) throw f;
+  }
+
   ReadingPrefs prefs = const ReadingPrefs(
     arabicFontSize: 28,
     showTranslation: true,
@@ -65,6 +74,7 @@ class FakeUserRepository implements UserRepository {
 
   @override
   bool toggleBookmark(AyahRef ref) {
+    _check();
     bookmarkedSurahs.add(ref.surah);
     final set = ayahBookmarks.putIfAbsent(ref.surah, () => <int>{});
     return set.add(ref.ayah) || !set.remove(ref.ayah);
@@ -74,7 +84,12 @@ class FakeUserRepository implements UserRepository {
   List<Bookmark> listBookmarks() => const [];
 
   @override
-  Set<int> bookmarkedAyahNumbers(int surahNumber) => {
+  Set<int> bookmarkedAyahNumbers(int surahNumber) {
+    _check();
+    return bookmarkedAyahsOf(surahNumber);
+  }
+
+  Set<int> bookmarkedAyahsOf(int surahNumber) => {
     ...?ayahBookmarks[surahNumber],
   };
 
