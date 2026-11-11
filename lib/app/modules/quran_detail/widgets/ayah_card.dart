@@ -37,17 +37,20 @@ class AyahCard extends StatelessWidget {
         if (lastRead)
           Padding(
             padding: const EdgeInsets.only(bottom: NuraSpace.s8),
-            child: Row(
-              children: [
-                const Icon(Icons.history_rounded, size: 16),
-                const SizedBox(width: NuraSpace.s4),
-                Flexible(
-                  child: Text(
-                    'Terakhir dibaca',
-                    style: Theme.of(context).textTheme.labelMedium,
+            child: SizedBox(
+              height: 24,
+              child: Row(
+                children: [
+                  const Icon(Icons.history_rounded, size: 16),
+                  const SizedBox(width: NuraSpace.s4),
+                  Flexible(
+                    child: Text(
+                      'Terakhir dibaca',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         Row(
@@ -88,7 +91,7 @@ class AyahCard extends StatelessWidget {
           ? DecoratedBox(
               decoration: BoxDecoration(
                 color: colors.lastReadHighlight,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(NuraRadius.md),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(NuraSpace.s12),
