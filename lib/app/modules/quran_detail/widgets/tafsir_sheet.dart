@@ -9,6 +9,7 @@ Future<void> showTafsirSheet(
   required int initialIndex,
   required String surahName,
 }) {
+  assert(initialIndex >= 0 && initialIndex < ayahs.length);
   final scheme = Theme.of(context).colorScheme;
   return showModalBottomSheet<void>(
     context: context,
@@ -58,17 +59,22 @@ class _TafsirSheetState extends State<_TafsirSheet> {
           children: [
             const SizedBox(height: NuraSpace.s8),
             Center(
-              child: Container(
-                width: 32,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(NuraRadius.full),
+              child: ExcludeSemantics(
+                child: Container(
+                  width: 32,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(NuraRadius.full),
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: NuraSpace.s16),
-            Text('Tafsir Kemenag', style: text.titleMedium),
+            Semantics(
+              header: true,
+              child: Text('Tafsir Kemenag', style: text.titleMedium),
+            ),
             Text(
               '${widget.surahName} · ayat ${ayah.ayahNumber}',
               style: text.bodySmall,
