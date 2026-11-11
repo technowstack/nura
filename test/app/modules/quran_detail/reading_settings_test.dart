@@ -92,6 +92,15 @@ void main() {
     expect(arabSize(t), 36);
   });
 
+  testWidgets('settings button >= 48x48 and scrim alpha 0.32', (t) async {
+    await pump(t);
+    final b = t.getSize(find.byTooltip('Pengaturan tampilan'));
+    expect(b.width, greaterThanOrEqualTo(48));
+    expect(b.height, greaterThanOrEqualTo(48));
+    final barrier = t.widget<ModalBarrier>(find.byType(ModalBarrier).last);
+    expect(barrier.color?.a, closeTo(0.32, 0.005));
+  });
+
   testWidgets('preview uses basmalah from content', (t) async {
     await pump(t);
     expect(find.text(_basmalah), findsWidgets);

@@ -35,6 +35,8 @@ void main() {
     c.setMode(ThemeMode.dark);
     expect(c.mode.value, ThemeMode.light);
     expect(user.themeMode, ThemeMode.light);
+    await tester.pump();
+    expect(find.text('Gagal menyimpan tema'), findsOneWidget);
     await tester.pump(const Duration(seconds: 3));
   });
 }
