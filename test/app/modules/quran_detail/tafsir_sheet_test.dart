@@ -18,6 +18,8 @@ final _longTafsir = [
   for (var i = 0; i < 1200; i++) 'baris $i xxxxxxxx',
 ].join('\n').padRight(19245, 'z').substring(0, 19245);
 
+final _longTafsir2 = 'AWAL ${_longTafsir.substring(6)}';
+
 Future<void> _pump(WidgetTester tester, Widget home, {double scale = 1}) async {
   tester.view.physicalSize = const Size(360, 640);
   tester.view.devicePixelRatio = 1;
@@ -64,6 +66,19 @@ Finder _btn(String label) =>
 
 void main() {
   final ayahs = [_a(1, 'tafsir satu'), _a(2, ''), _a(3, 'a\nb  ')];
+
+  testWidgets('scroll resets to top when ayah changes', (tester) async {
+    await _open(tester, [_a(1, _longTafsir), _a(2, _longTafsir2)], 0);
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -200000),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(_btn('Berikutnya'));
+    await tester.pumpAndSettle();
+    final view = tester.getRect(find.byType(SingleChildScrollView));
+    expect(tester.getTopLeft(find.text(_longTafsir2)).dy, view.top);
+  });
 
   testWidgets('shows title, subtitle and exact tafsir', (tester) async {
     await _open(tester, ayahs, 0);

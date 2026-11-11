@@ -76,6 +76,7 @@ class _TafsirSheetState extends State<_TafsirSheet> {
             const SizedBox(height: NuraSpace.s12),
             Flexible(
               child: SingleChildScrollView(
+                key: ValueKey(_index),
                 child: Text(
                   ayah.tafsir.isEmpty
                       ? 'Tafsir belum tersedia untuk ayat ini'
