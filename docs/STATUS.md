@@ -102,7 +102,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 
 1. Cek manual di perangkat: waktu first-run dan memori untuk salinan native masih tertunda. Catat hasilnya setelah dijalankan.
 2. Merge lokal ke `main` sudah dilakukan (merge commit `7b0340c`). Push hanya setelah pemilik proyek memastikan repo privat.
-3. Susun rencana Fase 2 (Al-Qur'an offline) dari spec dan desain putaran 1: repository pertama, daftar surah, detail ayat, dan penerapan token desain ke tema. Data meta (Q4) dicari paralel.
+3. Tinjau rencana Fase 2 (`docs/plans/2026-11-11-nura-phase2-quran.md`, branch `feat/phase-2-quran`) dan jawab 10 keputusan di bagian awalnya, terutama paket `scrollable_positioned_list` dan file font di `assets/fonts/`. Data meta (Q4) dicari paralel.
 4. Siapkan putaran desain 2 (hadis, jadwal sholat, pengaturan, ikon) sebelum Fase 3.
 4. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
 
