@@ -14,7 +14,7 @@ Ayah _a(int n, String tafsir) => Ayah(
   tafsir: tafsir,
 );
 
-final _longTafsir = _body + ' AKHIR\n ';
+final _longTafsir = '$_body AKHIR\n ';
 final _body = [
   for (var i = 0; i < 1200; i++) 'baris $i xxxxxxxx',
 ].join('\n').padRight(19230, 'z').substring(0, 19230);
