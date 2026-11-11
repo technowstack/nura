@@ -7,7 +7,8 @@ class QuranDetailBinding extends Bindings {
   @override
   void dependencies() {
     final args = Get.arguments;
-    final surahArgs = args is SurahArgs ? args : const SurahArgs(1);
+    // Invalid sentinel: load() shows an error instead of a wrong surah.
+    final surahArgs = args is SurahArgs ? args : const SurahArgs(0);
     Get.lazyPut<QuranDetailController>(() => QuranDetailController(surahArgs));
   }
 }
