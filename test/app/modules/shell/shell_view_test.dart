@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:nura/app/data/repositories/quran_repository.dart';
+import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/modules/shell/views/shell_view.dart';
+import '../../../support/fake_repositories.dart';
 
 void main() {
+  setUp(() {
+    Get.reset();
+    Get.put<QuranRepository>(FakeQuranRepository());
+    Get.put<UserRepository>(FakeUserRepository());
+  });
+  tearDown(Get.reset);
+
   const shell = MaterialApp(home: ShellView(dataVersion: 'v1'));
 
   testWidgets('has four labelled destinations and Hadis shows Segera hadir', (

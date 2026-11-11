@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../home/home_view.dart';
+import '../../quran_list/views/quran_list_view.dart';
 import '../controllers/shell_controller.dart';
 import '../widgets/coming_soon_tab.dart';
 
@@ -18,7 +19,7 @@ class ShellView extends StatelessWidget {
         index: c.index,
         children: [
           HomeView(dataVersion: dataVersion),
-          const SizedBox.shrink(), // replaced by the Quran tab in Task 5
+          const QuranListView(),
           const ComingSoonTab(),
           const ComingSoonTab(),
         ],
