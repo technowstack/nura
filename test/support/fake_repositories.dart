@@ -107,14 +107,29 @@ class FakeUserRepository implements UserRepository {
   ReadingPrefs getReadingPrefs() => prefs;
 
   @override
-  void setArabicFontSize(double size) {}
+  void setArabicFontSize(double size) {
+    _check();
+    prefs = ReadingPrefs(
+      arabicFontSize: size,
+      showTranslation: prefs.showTranslation,
+    );
+  }
 
   @override
-  void setShowTranslation(bool value) {}
+  void setShowTranslation(bool value) {
+    _check();
+    prefs = ReadingPrefs(
+      arabicFontSize: prefs.arabicFontSize,
+      showTranslation: value,
+    );
+  }
 
   @override
   ThemeMode getThemeMode() => themeMode;
 
   @override
-  void setThemeMode(ThemeMode mode) => themeMode = mode;
+  void setThemeMode(ThemeMode mode) {
+    _check();
+    themeMode = mode;
+  }
 }

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
 
+import '../../../core/theme/theme_controller.dart';
 import '../../../core/ui_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../controllers/quran_detail_controller.dart';
 import '../widgets/ayah_card.dart';
+import '../widgets/reading_settings_sheet.dart';
 import '../widgets/surah_header_card.dart';
 import '../widgets/tafsir_sheet.dart';
 
@@ -33,6 +35,18 @@ class QuranDetailView extends GetView<QuranDetailController> {
             ],
           );
         }),
+        actions: [
+          IconButton(
+            tooltip: 'Pengaturan tampilan',
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            icon: const Icon(Icons.tune),
+            onPressed: () => showReadingSettingsSheet(
+              context,
+              controller: c,
+              theme: Get.find<ThemeController>(),
+            ),
+          ),
+        ],
       ),
       body: Obx(() {
         // Read observables here, not in itemBuilder, so changes rebuild.

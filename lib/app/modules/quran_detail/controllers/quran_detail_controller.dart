@@ -82,6 +82,34 @@ class QuranDetailController extends GetxController {
     }
   }
 
+  void setArabicFontSize(double size) {
+    final p = prefs.value;
+    _savePrefs(
+      () => _user.setArabicFontSize(size),
+      ReadingPrefs(arabicFontSize: size, showTranslation: p.showTranslation),
+    );
+  }
+
+  void setShowTranslation(bool show) {
+    final p = prefs.value;
+    _savePrefs(
+      () => _user.setShowTranslation(show),
+      ReadingPrefs(arabicFontSize: p.arabicFontSize, showTranslation: show),
+    );
+  }
+
+  /// Persists first; the UI only changes when storage succeeded.
+  void _savePrefs(void Function() save, ReadingPrefs next) {
+    try {
+      save();
+    } on Object catch (e) {
+      debugPrint('QuranDetailController: save prefs failed: $e');
+      _notify('Gagal menyimpan pengaturan');
+      return;
+    }
+    prefs.value = next;
+  }
+
   Future<void> copyAyah(Ayah ayah) async {
     final current = state.value;
     if (current is! UiData<SurahContent>) return;
