@@ -70,8 +70,18 @@ class SurahListItem extends StatelessWidget {
                           if (revelation.isNotEmpty)
                             Text(revelation, style: text.bodySmall),
                           if (state == SurahItemState.lastRead) ...[
-                            const Icon(Icons.history, size: 16),
-                            Text('Terakhir dibaca', style: text.labelMedium),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.history, size: 16),
+                                Flexible(
+                                  child: Text(
+                                    'Terakhir dibaca',
+                                    style: text.labelMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ],
                       ),
