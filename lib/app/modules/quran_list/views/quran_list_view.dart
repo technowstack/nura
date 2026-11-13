@@ -5,7 +5,9 @@ import '../../../core/ui_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../routes/app_routes.dart';
+import '../../bookmarks/views/bookmarks_tab.dart';
 import '../../quran_detail/surah_args.dart';
+import '../../bookmarks/controllers/bookmarks_controller.dart';
 import '../controllers/quran_list_controller.dart';
 import '../widgets/juz_list_item.dart';
 import '../widgets/surah_list_item.dart';
@@ -17,13 +19,14 @@ class QuranListView extends GetView<QuranListController> {
   Widget build(BuildContext context) {
     final c = controller;
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Column(
         children: [
           const TabBar(
             tabs: [
               Tab(text: 'Surah'),
               Tab(text: 'Juz'),
+              Tab(text: 'Bookmark'),
             ],
           ),
           Expanded(
@@ -71,6 +74,7 @@ class QuranListView extends GetView<QuranListController> {
                     ),
                   ),
                 ),
+                BookmarksTab(onReturn: c.refreshMarkers),
               ],
             ),
           ),
@@ -82,6 +86,7 @@ class QuranListView extends GetView<QuranListController> {
   Future<void> _open(QuranListController c, SurahArgs args) async {
     await Get.toNamed(Routes.surah, arguments: args);
     c.refreshMarkers();
+    Get.find<BookmarksController>().load();
   }
 
   Widget _body<T>(

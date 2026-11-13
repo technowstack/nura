@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/models/bookmark.dart';
 import 'package:nura/app/data/models/juz.dart';
@@ -32,8 +33,12 @@ class FakeQuranRepository implements QuranRepository {
   List<Surah> listSurah() => _guard(() => surahs);
 
   @override
-  Surah getSurah(int number) =>
-      _guard(() => surahs.firstWhere((s) => s.number == number));
+  Surah getSurah(int number) => _guard(
+    () => surahs.firstWhere(
+      (s) => s.number == number,
+      orElse: () => throw ContentUnavailable('surah $number'),
+    ),
+  );
 
   @override
   List<Ayah> listAyah(int surahNumber) =>
@@ -43,6 +48,7 @@ class FakeQuranRepository implements QuranRepository {
   Ayah getAyah(AyahRef ref) => _guard(
     () => ayahs.firstWhere(
       (a) => a.surahNumber == ref.surah && a.ayahNumber == ref.ayah,
+      orElse: () => throw ContentUnavailable('ayah ${ref.surah}:${ref.ayah}'),
     ),
   );
 
@@ -58,6 +64,9 @@ class FakeUserRepository implements UserRepository {
   final List<AyahRef> lastReadWrites = [];
   Set<int> bookmarkedSurahs;
   final Map<int, Set<int>> ayahBookmarks = {};
+
+  /// Newest first, as the real repository returns them.
+  final List<Bookmark> bookmarks = [];
 
   /// When set, bookmark calls throw it.
   Object? failure;
@@ -78,11 +87,19 @@ class FakeUserRepository implements UserRepository {
     _check();
     bookmarkedSurahs.add(ref.surah);
     final set = ayahBookmarks.putIfAbsent(ref.surah, () => <int>{});
-    return set.add(ref.ayah) || !set.remove(ref.ayah);
+    final added = set.add(ref.ayah) || !set.remove(ref.ayah);
+    bookmarks.removeWhere((b) => b.ref == ref);
+    if (added) {
+      bookmarks.insert(0, Bookmark(ref: ref, createdAt: DateTime(2000)));
+    }
+    return added;
   }
 
   @override
-  List<Bookmark> listBookmarks() => const [];
+  List<Bookmark> listBookmarks() {
+    _check();
+    return List.of(bookmarks);
+  }
 
   @override
   Set<int> bookmarkedAyahNumbers(int surahNumber) {
