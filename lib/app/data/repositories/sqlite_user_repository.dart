@@ -112,10 +112,14 @@ class SqliteUserRepository implements UserRepository {
   );
 
   @override
-  void setArabicFontSize(double size) => _db.setSetting(
-    SettingKeys.arabicFontSize,
-    size.clamp(_minFontSize, _maxFontSize).toString(),
-  );
+  void setArabicFontSize(double size) {
+    // NaN.clamp stays NaN and would be stored.
+    if (!size.isFinite) return;
+    _db.setSetting(
+      SettingKeys.arabicFontSize,
+      size.clamp(_minFontSize, _maxFontSize).toString(),
+    );
+  }
 
   @override
   void setShowTranslation(bool value) =>

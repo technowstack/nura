@@ -93,6 +93,14 @@ void main() {
     expect(repo.getReadingPrefs().arabicFontSize, 20.0);
   });
 
+  test('non-finite font size is ignored', () {
+    repo.setArabicFontSize(32);
+    repo.setArabicFontSize(double.nan);
+    repo.setArabicFontSize(double.infinity);
+    repo.setArabicFontSize(double.negativeInfinity);
+    expect(repo.getReadingPrefs().arabicFontSize, 32.0);
+  });
+
   test('values persist after reopening', () {
     repo.toggleBookmark(const AyahRef(1, 1));
     repo.setLastRead(const AyahRef(2, 2));
