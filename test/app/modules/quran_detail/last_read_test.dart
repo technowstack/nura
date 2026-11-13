@@ -1,0 +1,216 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:nura/app/data/models/ayah.dart';
+import 'package:nura/app/data/models/last_read.dart';
+import 'package:nura/app/data/models/surah.dart';
+import 'package:nura/app/data/repositories/quran_repository.dart';
+import 'package:nura/app/data/repositories/user_repository.dart';
+import 'package:nura/app/modules/quran_detail/controllers/quran_detail_controller.dart';
+import 'package:nura/app/modules/quran_detail/surah_args.dart';
+import 'package:nura/app/modules/quran_detail/views/quran_detail_view.dart';
+import 'package:nura/app/modules/quran_detail/widgets/ayah_card.dart';
+
+import '../../../support/fake_repositories.dart';
+
+Surah _s(int n) => Surah(
+  number: n,
+  nameArab: 'A$n',
+  nameLatin: 'L$n',
+  nameId: 'T$n',
+  ayahCount: n == 1 ? 40 : 3,
+  revelation: 'makkiyah',
+);
+
+Ayah _a(int s, int n) => Ayah(
+  surahNumber: s,
+  ayahNumber: n,
+  arab: 'arab$s:$n',
+  translation: 'trans$s:$n',
+  tafsir: 't',
+);
+
+void main() {
+  late FakeUserRepository user;
+
+  setUp(() {
+    Get.reset();
+    Get.put<QuranRepository>(
+      FakeQuranRepository(
+        surahs: [_s(1), _s(2)],
+        ayahs: [
+          for (var i = 1; i <= 40; i++) _a(1, i),
+          for (var i = 1; i <= 3; i++) _a(2, i),
+        ],
+      ),
+    );
+    user = FakeUserRepository();
+    Get.put<UserRepository>(user);
+  });
+  tearDown(Get.reset);
+
+  QuranDetailController ctl() =>
+      Get.put(QuranDetailController(const SurahArgs(1)));
+
+  test('flush without report writes nothing', () {
+    ctl().flushLastRead();
+    expect(user.lastReadWrites, isEmpty);
+  });
+
+  testWidgets('debounce writes once after 3s', (t) async {
+    final c = ctl()..onVisibleAyahChanged(5);
+    await t.pump(const Duration(seconds: 2));
+    expect(user.lastReadWrites, isEmpty);
+    await t.pump(const Duration(seconds: 1));
+    expect(user.lastReadWrites, [const AyahRef(1, 5)]);
+    c.flushLastRead();
+    await t.pump(const Duration(seconds: 5));
+    expect(user.lastReadWrites, [const AyahRef(1, 5)]);
+  });
+
+  testWidgets('new report restarts the debounce', (t) async {
+    final c = ctl()..onVisibleAyahChanged(6);
+    await t.pump(const Duration(seconds: 2));
+    c.onVisibleAyahChanged(7);
+    await t.pump(const Duration(seconds: 2));
+    expect(user.lastReadWrites, isEmpty);
+    await t.pump(const Duration(seconds: 1));
+    expect(user.lastReadWrites, [const AyahRef(1, 7)]);
+  });
+
+  testWidgets('paused lifecycle flushes immediately', (t) async {
+    ctl().onVisibleAyahChanged(4);
+    t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    expect(user.lastReadWrites, [const AyahRef(1, 4)]);
+  });
+
+  testWidgets('closing the controller flushes', (t) async {
+    ctl().onVisibleAyahChanged(4);
+    Get.delete<QuranDetailController>();
+    expect(user.lastReadWrites, [const AyahRef(1, 4)]);
+  });
+
+  testWidgets('save failure is swallowed', (t) async {
+    user.failure = StateError('disk');
+    ctl()
+      ..onVisibleAyahChanged(4)
+      ..flushLastRead();
+    expect(user.lastReadWrites, isEmpty);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('flush writes immediately and cancels timer', (t) async {
+    ctl()
+      ..onVisibleAyahChanged(8)
+      ..flushLastRead();
+    expect(user.lastReadWrites, [const AyahRef(1, 8)]);
+    await t.pump(const Duration(seconds: 5));
+    expect(user.lastReadWrites, [const AyahRef(1, 8)]);
+  });
+
+  Future<void> pump(
+    WidgetTester t,
+    SurahArgs args, {
+    double scale = 1,
+    Duration debounce = Duration.zero,
+  }) async {
+    t.view.physicalSize = const Size(360, 640);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    Get.put(QuranDetailController(args, lastReadDebounce: debounce));
+    await t.pumpWidget(
+      GetMaterialApp(
+        builder: (c, child) => MediaQuery(
+          data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(scale)),
+          child: child ?? const SizedBox.shrink(),
+        ),
+        home: const QuranDetailView(),
+      ),
+    );
+    await t.pumpAndSettle();
+    await t.pump(Duration.zero); // drain zero-length debounce timer
+  }
+
+  // tester.drag pumps no frame mid-gesture; a real drag lays out while held.
+  Future<void> dragUp(WidgetTester t) async {
+    final g = await t.startGesture(const Offset(180, 500));
+    for (var i = 0; i < 4; i++) {
+      await g.moveBy(const Offset(0, -150));
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    await g.up();
+    await t.pumpAndSettle();
+  }
+
+  LastRead lr(int s, int a) =>
+      LastRead(ref: AyahRef(s, a), updatedAt: DateTime(2000));
+
+  testWidgets('label sits on last-read ayah, jumped into view', (t) async {
+    user.lastRead = lr(1, 30);
+    await pump(t, const SurahArgs(1));
+    final label = find.ancestor(
+      of: find.text('Terakhir dibaca'),
+      matching: find.byWidgetPredicate(
+        (w) => w is AyahCard && w.ayah.ayahNumber == 30,
+      ),
+    );
+    expect(find.text('Terakhir dibaca'), findsOneWidget);
+    expect(label, findsOneWidget);
+    expect(
+      Get.find<QuranDetailController>().listController.visibleRange?.$1,
+      30,
+    );
+  });
+
+  testWidgets('SurahArgs ayah 30 is jumped to', (t) async {
+    await pump(t, const SurahArgs(1, 30));
+    expect(find.text('arab1:30'), findsOneWidget);
+    expect(find.text('arab1:2'), findsNothing);
+    expect(t.getTopLeft(find.text('arab1:30')).dy, lessThan(300));
+  });
+
+  testWidgets('opening a surah does not overwrite last read', (t) async {
+    user.lastRead = lr(2, 5);
+    await pump(t, const SurahArgs(1, 3), debounce: const Duration(seconds: 3));
+    await t.pump(const Duration(seconds: 5));
+    Get.delete<QuranDetailController>();
+    expect(user.lastReadWrites, isEmpty);
+  });
+
+  testWidgets('a real drag then idle saves the visible ayah', (t) async {
+    await pump(t, const SurahArgs(1), debounce: const Duration(seconds: 3));
+    await dragUp(t);
+    await t.pump(const Duration(seconds: 3));
+    expect(user.lastReadWrites, hasLength(1));
+    expect(user.lastReadWrites.single.surah, 1);
+    expect(user.lastReadWrites.single.ayah, greaterThan(1));
+  });
+
+  testWidgets('highlight stays on stored ayah while reading', (t) async {
+    user.lastRead = lr(1, 30);
+    await pump(t, const SurahArgs(1), debounce: const Duration(seconds: 3));
+    await dragUp(t);
+    await t.pump(const Duration(seconds: 3));
+    expect(user.lastReadWrites, isNotEmpty);
+    expect(Get.find<QuranDetailController>().lastReadAyah.value, 30);
+  });
+
+  testWidgets('last read in another surah marks nothing', (t) async {
+    user.lastRead = lr(2, 2);
+    await pump(t, const SurahArgs(1));
+    expect(find.text('Terakhir dibaca'), findsNothing);
+  });
+
+  testWidgets('first launch does not throw', (t) async {
+    await pump(t, const SurahArgs(1));
+    expect(find.text('Terakhir dibaca'), findsNothing);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('Latin 130% at 360x640 with last read', (t) async {
+    user.lastRead = lr(1, 5);
+    await pump(t, const SurahArgs(1), scale: 1.3);
+    expect(t.takeException(), isNull);
+    expect(find.text('Terakhir dibaca'), findsOneWidget);
+  });
+}

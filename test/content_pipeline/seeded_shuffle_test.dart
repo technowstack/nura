@@ -18,6 +18,17 @@ void main() {
 
   // Golden locks the algorithm; do not change it without updating this.
   test('seededShuffle golden', () {
-    expect(seededShuffle(List.generate(10, (i) => i), dailySeed), <int>[6, 9, 1, 8, 0, 3, 5, 7, 2, 4]);
+    expect(seededShuffle(List.generate(10, (i) => i), dailySeed), <int>[
+      6,
+      9,
+      1,
+      8,
+      0,
+      3,
+      5,
+      7,
+      2,
+      4,
+    ]);
   });
 }

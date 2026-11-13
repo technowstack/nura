@@ -15,6 +15,7 @@ dependencies:
   path_provider: ^2.1.0
   path: ^1.9.0
   crypto: ^3.0.6
+  super_sliver_list: ^0.4.1
 
 dev_dependencies:
   flutter_lints: ^6.0.0
@@ -26,3 +27,13 @@ flutter:
   assets:
     - assets/db/content.db
     - assets/db/content.version
+    - assets/fonts/PlusJakartaSans/OFL.txt
+  fonts:
+    - family: Plus Jakarta Sans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans/PlusJakartaSans-SemiBold.ttf
+          weight: 600

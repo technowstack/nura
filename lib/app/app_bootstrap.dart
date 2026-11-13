@@ -3,6 +3,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import 'core/theme/theme_controller.dart';
+import 'data/repositories/quran_repository.dart';
+import 'data/repositories/sqlite_quran_repository.dart';
+import 'data/repositories/sqlite_user_repository.dart';
+import 'data/repositories/user_repository.dart';
 import 'data/sources/content_database.dart';
 import 'data/sources/content_db_installer.dart';
 import 'data/sources/user_database.dart';
@@ -37,6 +42,10 @@ Future<BootstrapResult> bootstrap({
     user = UserDatabase.open(File('${dataDir.path}/user.db'));
     Get.put<ContentDatabase>(content, permanent: true);
     Get.put<UserDatabase>(user, permanent: true);
+    Get.put<QuranRepository>(SqliteQuranRepository(content), permanent: true);
+    Get.put<UserRepository>(SqliteUserRepository(user), permanent: true);
+    // Lazy so the stored mode is read when the app first builds.
+    Get.lazyPut<ThemeController>(ThemeController.new, fenix: true);
     return BootstrapSuccess(content, user);
   } catch (e, st) {
     FlutterError.reportError(

@@ -7,14 +7,16 @@ import '../support/fixtures.dart';
 
 void main() {
   ChecksumManifest fixtureManifest() => ChecksumManifest.parse(
-        File(fixturePath('CHECKSUMS.sha256')).readAsStringSync(),
-      );
+    File(fixturePath('CHECKSUMS.sha256')).readAsStringSync(),
+  );
 
   Directory tempCopy() {
     final tmp = Directory.systemTemp.createTempSync('nura_fixture_');
     addTearDown(() => tmp.deleteSync(recursive: true));
     final root = fixtureDir('').absolute.path.replaceFirst(RegExp(r'/$'), '');
-    for (final f in fixtureDir('').listSync(recursive: true).whereType<File>()) {
+    for (final f in fixtureDir(
+      '',
+    ).listSync(recursive: true).whereType<File>()) {
       final rel = f.absolute.path.substring(root.length + 1);
       final dest = File('${tmp.path}/$rel')..createSync(recursive: true);
       dest.writeAsBytesSync(f.readAsBytesSync());
@@ -28,8 +30,13 @@ void main() {
 
   test('detects modified file', () {
     final tmp = tempCopy();
-    File('${tmp.path}/hadith/darimi.json').writeAsStringSync(' ', mode: FileMode.append);
-    expect(fixtureManifest().verify(tmp), contains(contains('hadith/darimi.json')));
+    File(
+      '${tmp.path}/hadith/darimi.json',
+    ).writeAsStringSync(' ', mode: FileMode.append);
+    expect(
+      fixtureManifest().verify(tmp),
+      contains(contains('hadith/darimi.json')),
+    );
   });
 
   test('detects missing and unlisted files', () {
@@ -42,12 +49,17 @@ void main() {
   });
 
   test('parse rejects malformed lines and ignores blank ones', () {
-    expect(() => ChecksumManifest.parse('abc quran/1.json'), throwsFormatException);
+    expect(
+      () => ChecksumManifest.parse('abc quran/1.json'),
+      throwsFormatException,
+    );
     expect(ChecksumManifest.parse('\n\n').entries, isEmpty);
   });
 
   test('toJson is sorted', () {
-    final m = ChecksumManifest.parse('${'b' * 64}  z.json\n${'a' * 64}  a.json\n');
+    final m = ChecksumManifest.parse(
+      '${'b' * 64}  z.json\n${'a' * 64}  a.json\n',
+    );
     expect(m.toJson(), '{"a.json":"${'a' * 64}","z.json":"${'b' * 64}"}');
   });
 }

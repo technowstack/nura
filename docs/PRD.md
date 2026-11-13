@@ -40,7 +40,7 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 - Tab Juz: 30 juz dengan awal dan akhir masing-masing.
 - Bookmark ayat dan Last Read.
 - Pencarian di terjemahan dan teks Arab. Hasil dikelompokkan per surah. Terjemahan tampil sebagai cuplikan (maksimal 3 baris) yang berpusat pada kata cocok, dan semua kata cocok disorot (aturan lengkap di spec bagian 5.5).
-- Pengaturan ukuran font Arab (20–40, default 28) dan terjemahan.
+- Pengaturan baca: ukuran font Arab (20–40, default 28), sakelar tampil/sembunyi terjemahan, dan pilihan tema. Ukuran font terjemahan tetap, tidak diatur pengguna.
 
 ### 5.2 Al-Qur'an (online, opsional)
 - Sakelar "Fitur Online" di Pengaturan, **mati secara default**.
