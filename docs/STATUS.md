@@ -10,7 +10,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 - Repo lama (`main`, sebelum rebuild, HEAD `933deb5`): aplikasi Quran berbasis API, sekitar 25–30% jadi. Dijadikan referensi tampilan saja.
 - Data JSON Quran dan hadis sudah dipindah ke `data-source/` dan di-track git. `CHECKSUMS.sha256` dan `README.md` sudah dibuat.
 - Working tree lama yang kotor sudah dirapikan menjadi commit terpisah di `main` (platform, kode UI lama, docs, data).
-- Tahap saat ini: Fase 1 (Fondasi) selesai. PRD v0.4, spec desain v1 (`docs/specs/2026-11-09-nura-v1-design.md`, disetujui), dan desain UI putaran 1 (`docs/design/`) sudah ada. Fase 2 (Al-Qur'an offline) selesai di kode pada branch `feat/phase-2-quran` (review akhir lolos), belum di-merge ke `main` dan belum dijalankan di perangkat.
+- Tahap saat ini: Fase 1 (Fondasi) selesai. PRD v0.4, spec desain v1 (`docs/specs/2026-11-09-nura-v1-design.md`, disetujui), dan desain UI putaran 1 (`docs/design/`) sudah ada. Fase 2 (Al-Qur'an offline) selesai: lolos review akhir dan uji perangkat (oleh pemilik proyek, perangkat fisik), dan di-merge ke `main`.
 
 ## Data
 
@@ -34,8 +34,8 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | Putaran desain 1 (Fondasi dan Fase 2) | Selesai, diserahkan 2026-11-11 | Brief: `docs/design/2026-11-09-nura-ui-design-brief.md`. Handoff ke Flutter: `docs/design/HANDOFF-flutter.md`. Token: `docs/design/tokens.json`. Di Figma (`Nura — UI v1`): 9 layar Fase 1 dan 16 layar Fase 2, masing-masing Light dan Dark |
 | Putaran desain 2 | Belum | Layar hadis (termasuk detail dengan sanad), jadwal sholat bulanan, pengaturan notifikasi lengkap, pengunduhan audio, pengaturan umum, daftar kota, ikon aplikasi final, materi Play Store |
 | Tema dari token desain | Selesai di kode (branch `feat/phase-2-quran`) | `ColorScheme`, `NuraColors`, `NuraTextStyles`, dan konstanta jarak/radius ada di `lib/app/core/theme/`, diturunkan dari `tokens.json` |
-| Font Latin Plus Jakarta Sans | Belum dibundel | Task 11 dilewati karena `assets/fonts/` kosong. Pemilik proyek perlu menyediakan berkas font dan lisensi OFL, lalu Task 11 dijalankan sendiri |
-| Font Arab LPMQ | Belum didaftarkan | Menunggu Q6 (lisensi). Sementara teks Arab memakai font fallback sistem |
+| Font Latin Plus Jakarta Sans | Dibundel (2026-11-13) | Regular 400, Medium 500, dan SemiBold 600 di `assets/fonts/PlusJakartaSans/` beserta `OFL.txt` (SIL OFL 1.1, Copyright 2020 The Plus Jakarta Sans Project Authors). Zip kiriman pemilik (`assets/fonts/*.zip`) diabaikan git |
+| Font Arab LPMQ | Belum didaftarkan | Menunggu Q6 (lisensi). Sementara teks Arab memakai font fallback sistem. `LPMQ IsepMisbah.zip` ada di folder lokal tetapi diabaikan git dan tidak didaftarkan |
 | Placeholder di desain | Ada | Slot "[Q4]" (tempat turun, juz). Teks "~XXX MB" di layar error ruang penyimpanan: isi saat layar itu dibangun (ukuran `content.db` 112,38 MB; perhitungkan ruang `.tmp` saat pembaruan). Ikon selain `history` dan ilustrasi masih placeholder. Wordmark sementara (Q2) |
 
 ## Fitur v1
@@ -43,7 +43,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | Fitur | Status |
 |---|---|
 | Fondasi (struktur, paket, pipeline data, user.db) | Selesai (2026-11-10): pipeline data, `ContentDatabase`/installer, `user.db` dengan migrasi, bootstrap, DI, tema, route awal. Installer tidak lagi membaca 112 MB per start (hanya asset `content.version`), salinan memakai streaming native di Android. Uji manual di perangkat asli: pemilik proyek melaporkan aplikasi berjalan (rincian per langkah belum dicatat) |
-| Al-Qur'an offline (surah, detail, tafsir, juz, bookmark, last read, cari) | Selesai di kode pada branch `feat/phase-2-quran` (belum di-merge ke `main`, belum dijalankan di perangkat): daftar surah, tab Juz (kosong sampai `juz.json` ada, Q4), baca surah dengan Basmalah dari DB, bottom sheet tafsir, pengaturan baca (ukuran Arab 20–40, sakelar terjemahan, tema), bookmark, last read otomatis (debounce 3 detik). Belum: pencarian (Fase 4), bagikan, audio |
+| Al-Qur'an offline (surah, detail, tafsir, juz, bookmark, last read, cari) | Selesai (lulus uji perangkat oleh pemilik proyek, di-merge ke `main`): daftar surah, tab Juz (kosong sampai `juz.json` ada, Q4), baca surah dengan Basmalah dari DB, bottom sheet tafsir, pengaturan baca (ukuran Arab 20–40, sakelar terjemahan, tema), bookmark, last read otomatis (debounce 3 detik). Belum: pencarian (Fase 4), bagikan, audio |
 | Hadis (kitab, daftar, detail, cari, bookmark) | Belum mulai |
 | Jadwal sholat dan notifikasi | Belum mulai |
 | 1 Hari 1 Ayat/Hadis (kartu dan notifikasi harian) | Belum mulai |
@@ -89,6 +89,9 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | 2026-11-13 | Fase 2: last read disimpan otomatis dengan debounce 3 detik |
 | 2026-11-13 | Pencarian Al-Qur'an dikerjakan di Fase 4, bukan Fase 2 |
 | 2026-11-13 | Tombol "Bagikan" ayat dan audio tidak masuk Fase 2 |
+| 2026-11-13 | Judul layar baca: judul = nama Latin, subjudul = arti + jumlah ayat (contoh "Pembukaan · 7 ayat"). Menggantikan subjudul `<Nama Latin> · <n> ayat` dari brief desain |
+| 2026-11-13 | Font Plus Jakarta Sans dibundel (OFL). Zip font tidak di-commit (`assets/fonts/*.zip` di-`.gitignore`). LPMQ tetap belum didaftarkan sampai Q6 selesai |
+| 2026-11-13 | Fase 2 lulus uji perangkat (pemilik proyek, perangkat fisik) dan di-merge `--no-ff` ke `main`. Tidak di-push |
 
 ## Pertanyaan Terbuka
 
@@ -105,9 +108,9 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 
 ## Langkah Berikutnya
 
-1. Uji perangkat oleh pemilik proyek untuk Fase 2, dengan daftar periksa Task 12 Step 4 di `docs/plans/2026-11-11-nura-phase2-quran.md` (114 surah, baca Al-Baqarah sampai akhir, tafsir panjang, Arab 40, tanda waqaf pada font fallback sistem untuk bahan Q6, tema gelap, bookmark dan last read bertahan setelah restart, mode pesawat). Catat hasilnya di sini. Waktu first-run dan memori salinan native Fase 1 juga masih tertunda.
-2. Sediakan berkas Plus Jakarta Sans dan lisensi OFL di `assets/fonts/`, lalu jalankan Task 11 sendiri.
-3. Setelah itu: review akhir, lalu `merge --no-ff` `feat/phase-2-quran` ke `main`. Jangan push sebelum pemilik proyek memastikan repo privat (merge Fase 1 `7b0340c` juga belum di-push).
+1. Uji perangkat Fase 2: LULUS (2026-11-13, dilakukan pemilik proyek di perangkat fisik). Tanda waqaf pada font fallback sistem: belum dilaporkan (bahan untuk Q6, mohon dicatat di sini). Waktu first-run dan memori salinan native Fase 1 belum dilaporkan.
+2. Tindak lanjut dari pemilik proyek: last read sebaiknya hanya menghitung ayat yang minimal separuh kartunya terlihat. Saat ini kartu yang hanya tampak sebagian ikut dihitung sebagai ayat terlihat.
+3. Fase 2 di-merge `--no-ff` ke `main` pada 2026-11-13 (SHA merge ada di `git log`). Jangan push sebelum pemilik proyek memastikan repo privat (merge Fase 1 `7b0340c` dan merge Fase 2 belum di-push).
 4. Tindak lanjut kode: bungkus `SqliteException` di `SqliteUserRepository` menjadi error domain (seperti `ContentUnavailable`); bersihkan `SettingKeys.arabicFontScale`/`translationFontScale` yang tidak terpakai. Dari review akhir Fase 2: pelacakan last read baru aktif setelah gulir sentuh pertama (gulir lewat scrollbar, keyboard, dan pembaca layar belum menyimpan posisi); `ROLLBACK` telanjang di `toggleBookmark` bisa menutupi galat asli; batas tinggi sheet 90% dihitung sekali saat dibuka (tidak mengikuti rotasi); judul app bar layar baca mengulang nama Latin (menunggu keputusan pemilik); sisa catatan kualitas tes kecil dari tiap task tidak dibawa ke sini.
 5. Data meta (Q4: `juz.json`, info surah) dicari paralel.
 6. Siapkan putaran desain 2 (hadis, jadwal sholat, pengaturan, ikon) sebelum Fase 3.
@@ -121,4 +124,4 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 - Ukuran build (2026-11-09): APK debug 200.414.436 byte (191 MiB); AAB release 80,4 MB (flutter) / 76,7 MiB, ditandatangani dengan kunci debug (template proyek `build.gradle.kts` memakai `signingConfig debug`). Perkiraan unduhan `bundletool get-size total`: tidak tersedia (bundletool tidak terpasang).
 - Verifikasi checksum: 123 file di `data-source/` cocok semuanya dengan cadangan `../nura-data-backup/` (dibuat dari `data-source/` setelah dipindah, bukan dari assets asli).
 - Belum dijalankan di repo lama: `flutter analyze`, test, dan aplikasi di emulator.
-- Tes (2026-11-13, branch `feat/phase-2-quran`): 185 lulus (`flutter test`). Dependensi baru: `super_sliver_list ^0.4.1` untuk daftar ayat panjang, karena repo `scrollable_positioned_list` sudah diarsipkan.
+- Tes (2026-11-13, branch `feat/phase-2-quran`): 195 lulus (`flutter test`). Dependensi baru: `super_sliver_list ^0.4.1` untuk daftar ayat panjang, karena repo `scrollable_positioned_list` sudah diarsipkan.
