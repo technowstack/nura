@@ -1,6 +1,6 @@
 # STATUS: Proyek Nura
 
-Terakhir diperbarui: 2026-11-11
+Terakhir diperbarui: 2026-11-13
 
 Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<nama>`), lalu `merge --no-ff` ke `main` setelah review akhir. Fase 1 dikerjakan di `rebuild/nura` dan sudah di-merge lokal ke `main` (merge commit `7b0340c`). Belum di-push.
 
@@ -33,8 +33,9 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 |---|---|---|
 | Putaran desain 1 (Fondasi dan Fase 2) | Selesai, diserahkan 2026-11-11 | Brief: `docs/design/2026-11-09-nura-ui-design-brief.md`. Handoff ke Flutter: `docs/design/HANDOFF-flutter.md`. Token: `docs/design/tokens.json`. Di Figma (`Nura — UI v1`): 9 layar Fase 1 dan 16 layar Fase 2, masing-masing Light dan Dark |
 | Putaran desain 2 | Belum | Layar hadis (termasuk detail dengan sanad), jadwal sholat bulanan, pengaturan notifikasi lengkap, pengunduhan audio, pengaturan umum, daftar kota, ikon aplikasi final, materi Play Store |
-| Tema dari token desain | Belum | Tema saat ini masih dasar. Terapkan `ColorScheme`, `NuraColors`, `NuraTextStyles`, dan konstanta jarak/radius di `lib/app/core/theme/` dari `tokens.json` (jalur tetap `lib/app/core/theme/`; handoff menyebut `lib/core/theme/`, lihat catatan di AGENTS.md) |
-| Font Arab LPMQ dan font Latin Plus Jakarta Sans | Belum ada di repo | Lisensi font Arab dicek sebelum rilis (Q6) |
+| Tema dari token desain | Selesai di kode (branch `feat/phase-2-quran`) | `ColorScheme`, `NuraColors`, `NuraTextStyles`, dan konstanta jarak/radius ada di `lib/app/core/theme/`, diturunkan dari `tokens.json` |
+| Font Latin Plus Jakarta Sans | Belum dibundel | Task 11 dilewati karena `assets/fonts/` kosong. Pemilik proyek perlu menyediakan berkas font dan lisensi OFL, lalu Task 11 dijalankan sendiri |
+| Font Arab LPMQ | Belum didaftarkan | Menunggu Q6 (lisensi). Sementara teks Arab memakai font fallback sistem |
 | Placeholder di desain | Ada | Slot "[Q4]" (tempat turun, juz). Teks "~XXX MB" di layar error ruang penyimpanan: isi saat layar itu dibangun (ukuran `content.db` 112,38 MB; perhitungkan ruang `.tmp` saat pembaruan). Ikon selain `history` dan ilustrasi masih placeholder. Wordmark sementara (Q2) |
 
 ## Fitur v1
@@ -42,7 +43,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | Fitur | Status |
 |---|---|
 | Fondasi (struktur, paket, pipeline data, user.db) | Selesai (2026-11-10): pipeline data, `ContentDatabase`/installer, `user.db` dengan migrasi, bootstrap, DI, tema, route awal. Installer tidak lagi membaca 112 MB per start (hanya asset `content.version`), salinan memakai streaming native di Android. Uji manual di perangkat asli: pemilik proyek melaporkan aplikasi berjalan (rincian per langkah belum dicatat) |
-| Al-Qur'an offline (surah, detail, tafsir, juz, bookmark, last read, cari) | Belum mulai |
+| Al-Qur'an offline (surah, detail, tafsir, juz, bookmark, last read, cari) | Selesai di kode pada branch `feat/phase-2-quran` (belum di-merge ke `main`, belum dijalankan di perangkat): daftar surah, tab Juz (kosong sampai `juz.json` ada, Q4), baca surah dengan Basmalah dari DB, bottom sheet tafsir, pengaturan baca (ukuran Arab 20–40, sakelar terjemahan, tema), bookmark, last read otomatis (debounce 3 detik). Belum: pencarian (Fase 4), bagikan, audio |
 | Hadis (kitab, daftar, detail, cari, bookmark) | Belum mulai |
 | Jadwal sholat dan notifikasi | Belum mulai |
 | 1 Hari 1 Ayat/Hadis (kartu dan notifikasi harian) | Belum mulai |
@@ -84,6 +85,10 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | 2026-11-11 | Jalur kode tema tetap `lib/app/core/theme/`. `HANDOFF-flutter.md` tidak diubah; pemetaan jalur dicatat di AGENTS.md |
 | 2026-11-11 | `main` adalah cabang utama. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<nama>`), lalu `merge --no-ff` ke `main` setelah review akhir (riwayat tidak di-squash). Commit docs langsung di `main` diperbolehkan |
 | 2026-11-11 | Repo hanya menyimpan tiga berkas desain: `tokens.json`, `HANDOFF-flutter.md`, dan brief. `review-round1.md`, `tokens.dart`, `CLAUDE.md`, `STATUS-desain.md`, dan file FigCraft milik proyek desain terpisah dan tidak disalin. Sumber token = `tokens.json` |
+| 2026-11-13 | Fase 2: paket scroll `super_sliver_list` (repo `scrollable_positioned_list` diarsipkan) |
+| 2026-11-13 | Fase 2: last read disimpan otomatis dengan debounce 3 detik |
+| 2026-11-13 | Pencarian Al-Qur'an dikerjakan di Fase 4, bukan Fase 2 |
+| 2026-11-13 | Tombol "Bagikan" ayat dan audio tidak masuk Fase 2 |
 
 ## Pertanyaan Terbuka
 
@@ -100,11 +105,13 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 
 ## Langkah Berikutnya
 
-1. Cek manual di perangkat: waktu first-run dan memori untuk salinan native masih tertunda. Catat hasilnya setelah dijalankan.
-2. Merge lokal ke `main` sudah dilakukan (merge commit `7b0340c`). Push hanya setelah pemilik proyek memastikan repo privat.
-3. Eksekusi Fase 2 (`docs/plans/2026-11-11-nura-phase2-quran.md`, branch `feat/phase-2-quran`). Keputusan plan sudah dijawab (paket scroll: `super_sliver_list`). Sediakan Plus Jakarta Sans di `assets/fonts/` untuk Task 11. Data meta (Q4) dicari paralel.
-4. Siapkan putaran desain 2 (hadis, jadwal sholat, pengaturan, ikon) sebelum Fase 3.
-4. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
+1. Uji perangkat oleh pemilik proyek untuk Fase 2, dengan daftar periksa Task 12 Step 4 di `docs/plans/2026-11-11-nura-phase2-quran.md` (114 surah, baca Al-Baqarah sampai akhir, tafsir panjang, Arab 40, tanda waqaf pada font fallback sistem untuk bahan Q6, tema gelap, bookmark dan last read bertahan setelah restart, mode pesawat). Catat hasilnya di sini. Waktu first-run dan memori salinan native Fase 1 juga masih tertunda.
+2. Sediakan berkas Plus Jakarta Sans dan lisensi OFL di `assets/fonts/`, lalu jalankan Task 11 sendiri.
+3. Setelah itu: review akhir, lalu `merge --no-ff` `feat/phase-2-quran` ke `main`. Jangan push sebelum pemilik proyek memastikan repo privat (merge Fase 1 `7b0340c` juga belum di-push).
+4. Tindak lanjut kode: bungkus `SqliteException` di `SqliteUserRepository` menjadi error domain (seperti `ContentUnavailable`); bersihkan `SettingKeys.arabicFontScale`/`translationFontScale` yang tidak terpakai.
+5. Data meta (Q4: `juz.json`, info surah) dicari paralel.
+6. Siapkan putaran desain 2 (hadis, jadwal sholat, pengaturan, ikon) sebelum Fase 3.
+7. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
 
 ## Catatan Teknis
 
@@ -114,3 +121,4 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 - Ukuran build (2026-11-09): APK debug 200.414.436 byte (191 MiB); AAB release 80,4 MB (flutter) / 76,7 MiB, ditandatangani dengan kunci debug (template proyek `build.gradle.kts` memakai `signingConfig debug`). Perkiraan unduhan `bundletool get-size total`: tidak tersedia (bundletool tidak terpasang).
 - Verifikasi checksum: 123 file di `data-source/` cocok semuanya dengan cadangan `../nura-data-backup/` (dibuat dari `data-source/` setelah dipindah, bukan dari assets asli).
 - Belum dijalankan di repo lama: `flutter analyze`, test, dan aplikasi di emulator.
+- Tes (2026-11-13, branch `feat/phase-2-quran`): 185 lulus (`flutter test`). Dependensi baru: `super_sliver_list ^0.4.1` untuk daftar ayat panjang, karena repo `scrollable_positioned_list` sudah diarsipkan.
