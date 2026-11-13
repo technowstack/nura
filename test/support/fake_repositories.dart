@@ -67,6 +67,7 @@ class FakeUserRepository implements UserRepository {
 
   /// Newest first, as the real repository returns them.
   final List<Bookmark> bookmarks = [];
+  int _tick = 0;
 
   /// When set, bookmark calls throw it.
   Object? failure;
@@ -90,7 +91,10 @@ class FakeUserRepository implements UserRepository {
     final added = set.add(ref.ayah) || !set.remove(ref.ayah);
     bookmarks.removeWhere((b) => b.ref == ref);
     if (added) {
-      bookmarks.insert(0, Bookmark(ref: ref, createdAt: DateTime(2000)));
+      bookmarks.insert(
+        0,
+        Bookmark(ref: ref, createdAt: DateTime(2000, 1, 1, 0, 0, ++_tick)),
+      );
     }
     return added;
   }

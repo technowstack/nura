@@ -33,8 +33,10 @@ Ayah _a(int s, int n) => Ayah(
   tafsir: '',
 );
 
+int _sec = 0;
+
 Bookmark _b(int s, int n) =>
-    Bookmark(ref: AyahRef(s, n), createdAt: DateTime(2000));
+    Bookmark(ref: AyahRef(s, n), createdAt: DateTime(2000, 1, 1, 0, 0, ++_sec));
 
 void main() {
   late FakeQuranRepository quran;
@@ -111,10 +113,24 @@ void main() {
     expect(find.textContaining('ayat 99'), findsNothing);
   });
 
-  testWidgets('all skipped shows empty state', (tester) async {
+  testWidgets('all skipped shows error state', (tester) async {
     user.bookmarks.add(_b(2, 99));
     await pump(tester);
-    expect(find.text('Belum ada bookmark'), findsOneWidget);
+    expect(find.byType(ErrorState), findsOneWidget);
+    expect(find.text('Konten tidak dapat dibaca.'), findsOneWidget);
+  });
+
+  testWidgets('non-ContentUnavailable list failure shows ErrorState + retry', (
+    tester,
+  ) async {
+    user.bookmarks.add(_b(1, 1));
+    user.failure = StateError('x');
+    await pump(tester);
+    expect(find.byType(ErrorState), findsOneWidget);
+    user.failure = null;
+    await tester.tap(find.text('Coba lagi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Latin1 · ayat 1'), findsOneWidget);
   });
 
   testWidgets('tap opens route with SurahArgs', (tester) async {
