@@ -320,6 +320,23 @@ test/support/fake_repositories.dart            FakeQuranRepository, FakeUserRepo
 
 ---
 
+### Task 13: Judul layar baca (keputusan pemilik 2026-11-13)
+
+**Files:**
+- Modify: `lib/app/modules/quran_detail/views/quran_detail_view.dart` (app bar), `docs/design/` tidak diubah
+- Test: `test/app/modules/quran_detail/quran_detail_test.dart`
+
+**Interfaces:**
+- Produces: app bar layar baca dengan judul `surah.nameLatin` dan subjudul `<surah.nameId> · <surah.ayahCount> ayat` (contoh "Pembukaan · 7 ayat"). Menggantikan subjudul `<Nama Latin> · <n> ayat` dari Task 6.
+
+- [ ] **Step 1: Tulis tes yang gagal:** untuk surah dengan `nameLatin: 'Latin2'`, `nameId` dan `ayahCount: 3`, app bar menampilkan judul `Latin2` dan subjudul `<nameId> · 3 ayat`; teks lama `Latin2 · 3 ayat` tidak ada; **uji Latin 130%:** app bar dengan `nameId` panjang pada `TextScaler.linear(1.3)` di 360 × 640 tanpa exception.
+- [ ] **Step 2: Jalankan** `flutter test test/app/modules/quran_detail`. Harapan: GAGAL.
+- [ ] **Step 3: Implementasi** di app bar sesuai Interfaces. Jangan mengubah header surah di dalam daftar.
+- [ ] **Step 4: Jalankan tes sampai lulus**, lalu `flutter analyze`.
+- [ ] **Step 5: Commit** `fix: show surah meaning in reading app bar subtitle`.
+
+---
+
 ## Di Luar Rencana Ini
 
 - Pencarian Al-Qur'an (SearchField, layar 10, cuplikan hasil): Fase 4. Aturan cuplikan sudah ada di spec bagian 5.5.
