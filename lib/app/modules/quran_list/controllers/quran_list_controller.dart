@@ -41,7 +41,7 @@ class QuranListController extends GetxController {
     try {
       bookmarkedSurahs.assignAll(_user.bookmarkedSurahNumbers());
       lastReadSurah.value = _user.getLastRead()?.ref.surah ?? 0;
-    } on ContentUnavailable catch (e) {
+    } on Object catch (e) {
       // Markers are decoration; the lists stay usable without them.
       debugPrint('QuranListController: markers unavailable: $e');
     }

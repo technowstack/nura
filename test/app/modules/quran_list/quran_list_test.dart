@@ -212,4 +212,28 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('user.db failure leaves markers untouched, no exception', (
+    tester,
+  ) async {
+    user.failure = StateError('x');
+    await pump(tester);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Latin1'), findsOneWidget);
+    expect(Get.find<QuranListController>().lastReadSurah.value, 0);
+  });
+
+  testWidgets('returning from surah reloads bookmarks even if markers fail', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.pumpAndSettle();
+    user.failure = StateError('x');
+    await tester.tap(find.text('Latin1'));
+    await tester.pumpAndSettle();
+    Get.back<void>();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
 }
