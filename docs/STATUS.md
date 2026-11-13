@@ -10,7 +10,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 - Repo lama (`main`, sebelum rebuild, HEAD `933deb5`): aplikasi Quran berbasis API, sekitar 25–30% jadi. Dijadikan referensi tampilan saja.
 - Data JSON Quran dan hadis sudah dipindah ke `data-source/` dan di-track git. `CHECKSUMS.sha256` dan `README.md` sudah dibuat.
 - Working tree lama yang kotor sudah dirapikan menjadi commit terpisah di `main` (platform, kode UI lama, docs, data).
-- Tahap saat ini: Fase 1 (Fondasi) selesai. PRD v0.4, spec desain v1 (`docs/specs/2026-11-09-nura-v1-design.md`, disetujui), dan desain UI putaran 1 (`docs/design/`) sudah ada. Fase 2 (Al-Qur'an offline) sedang dieksekusi di branch `feat/phase-2-quran`.
+- Tahap saat ini: Fase 1 (Fondasi) selesai. PRD v0.4, spec desain v1 (`docs/specs/2026-11-09-nura-v1-design.md`, disetujui), dan desain UI putaran 1 (`docs/design/`) sudah ada. Fase 2 (Al-Qur'an offline) selesai di kode pada branch `feat/phase-2-quran` (review akhir lolos), belum di-merge ke `main` dan belum dijalankan di perangkat.
 
 ## Data
 
@@ -108,7 +108,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 1. Uji perangkat oleh pemilik proyek untuk Fase 2, dengan daftar periksa Task 12 Step 4 di `docs/plans/2026-11-11-nura-phase2-quran.md` (114 surah, baca Al-Baqarah sampai akhir, tafsir panjang, Arab 40, tanda waqaf pada font fallback sistem untuk bahan Q6, tema gelap, bookmark dan last read bertahan setelah restart, mode pesawat). Catat hasilnya di sini. Waktu first-run dan memori salinan native Fase 1 juga masih tertunda.
 2. Sediakan berkas Plus Jakarta Sans dan lisensi OFL di `assets/fonts/`, lalu jalankan Task 11 sendiri.
 3. Setelah itu: review akhir, lalu `merge --no-ff` `feat/phase-2-quran` ke `main`. Jangan push sebelum pemilik proyek memastikan repo privat (merge Fase 1 `7b0340c` juga belum di-push).
-4. Tindak lanjut kode: bungkus `SqliteException` di `SqliteUserRepository` menjadi error domain (seperti `ContentUnavailable`); bersihkan `SettingKeys.arabicFontScale`/`translationFontScale` yang tidak terpakai.
+4. Tindak lanjut kode: bungkus `SqliteException` di `SqliteUserRepository` menjadi error domain (seperti `ContentUnavailable`); bersihkan `SettingKeys.arabicFontScale`/`translationFontScale` yang tidak terpakai. Dari review akhir Fase 2: pelacakan last read baru aktif setelah gulir sentuh pertama (gulir lewat scrollbar, keyboard, dan pembaca layar belum menyimpan posisi); `ROLLBACK` telanjang di `toggleBookmark` bisa menutupi galat asli; batas tinggi sheet 90% dihitung sekali saat dibuka (tidak mengikuti rotasi); judul app bar layar baca mengulang nama Latin (menunggu keputusan pemilik); sisa catatan kualitas tes kecil dari tiap task tidak dibawa ke sini.
 5. Data meta (Q4: `juz.json`, info surah) dicari paralel.
 6. Siapkan putaran desain 2 (hadis, jadwal sholat, pengaturan, ikon) sebelum Fase 3.
 7. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
