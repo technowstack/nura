@@ -16,9 +16,13 @@ void main() {
     expect(normalizeArabicForSearch('  قال   رسول  '), 'قال رسول');
   });
   test('indonesian: lowercases, replaces punctuation, collapses spaces', () {
-    expect(normalizeIndonesianForSearch('Dengan nama Allah, Yang Maha Pengasih.'),
-        'dengan nama allah yang maha pengasih');
-    expect(normalizeIndonesianForSearch('"(Yaitu)"  orang-orang'),
-        'yaitu orang orang');
+    expect(
+      normalizeIndonesianForSearch('Dengan nama Allah, Yang Maha Pengasih.'),
+      'dengan nama allah yang maha pengasih',
+    );
+    expect(
+      normalizeIndonesianForSearch('"(Yaitu)"  orang-orang'),
+      'yaitu orang orang',
+    );
   });
 }
