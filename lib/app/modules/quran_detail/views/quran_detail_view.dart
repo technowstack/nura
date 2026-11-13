@@ -35,7 +35,11 @@ class QuranDetailView extends GetView<QuranDetailController> {
               children: [
                 Text(surah.nameLatin),
                 Text(
-                  '${surah.nameLatin} · ${surah.ayahCount} ayat',
+                  surah.nameId.isEmpty
+                      ? '${surah.ayahCount} ayat'
+                      : '${surah.nameId} · ${surah.ayahCount} ayat',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

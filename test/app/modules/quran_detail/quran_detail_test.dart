@@ -104,7 +104,34 @@ void main() {
     await pumpPage(t, 2);
     expect(find.byType(BismillahHeader), findsOneWidget);
     expect(find.text(_basmalah), findsOneWidget);
-    expect(find.text('Latin2 · 3 ayat'), findsOneWidget);
+    expect(find.text('Arti2 · 3 ayat'), findsOneWidget);
+    expect(find.text('Latin2 · 3 ayat'), findsNothing);
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: find.text('Latin2')),
+      findsOneWidget,
+    );
+  });
+
+  Surah withNameId(String nameId) => Surah(
+    number: 2,
+    nameArab: 'ArabSurah2',
+    nameLatin: 'Latin2',
+    nameId: nameId,
+    ayahCount: 3,
+    revelation: 'makkiyah',
+  );
+
+  testWidgets('app bar subtitle without nameId has no separator', (t) async {
+    quran.surahs = [withNameId('')];
+    await pumpPage(t, 2);
+    expect(find.text('3 ayat'), findsOneWidget);
+    expect(find.text(' · 3 ayat'), findsNothing);
+  });
+
+  testWidgets('app bar with long nameId at 130% does not overflow', (t) async {
+    quran.surahs = [withNameId('Arti yang sangat panjang sekali ' * 3)];
+    await pumpPage(t, 2, scale: 1.3);
+    expect(t.takeException(), isNull);
   });
 
   testWidgets('ayat follow repository order', (tester) async {
