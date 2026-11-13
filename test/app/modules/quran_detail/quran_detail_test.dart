@@ -234,6 +234,24 @@ void main() {
 }
 
 void _robustnessTests() {
+  testWidgets('getReadingPrefs failure builds with default prefs', (
+    tester,
+  ) async {
+    Get.reset();
+    Get.put<QuranRepository>(
+      FakeQuranRepository(surahs: [_s(1)], ayahs: [_a(1, 1)]),
+    );
+    Get.put<UserRepository>(
+      FakeUserRepository()..prefsFailure = StateError('x'),
+    );
+    final c = Get.put(QuranDetailController(const SurahArgs(1)));
+    expect(c.prefs.value.arabicFontSize, 28);
+    await tester.pumpWidget(const GetMaterialApp(home: QuranDetailView()));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(ErrorState), findsOneWidget);
+  });
+
   testWidgets('bookmark write failure keeps set and shows snackbar', (
     tester,
   ) async {

@@ -69,6 +69,9 @@ class FakeUserRepository implements UserRepository {
   final List<Bookmark> bookmarks = [];
   int _tick = 0;
 
+  /// When set, getReadingPrefs throws it.
+  Object? prefsFailure;
+
   /// When set, bookmark calls throw it.
   Object? failure;
 
@@ -129,7 +132,11 @@ class FakeUserRepository implements UserRepository {
   }
 
   @override
-  ReadingPrefs getReadingPrefs() => prefs;
+  ReadingPrefs getReadingPrefs() {
+    final f = prefsFailure;
+    if (f != null) throw f;
+    return prefs;
+  }
 
   @override
   void setArabicFontSize(double size) {

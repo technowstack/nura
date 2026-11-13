@@ -40,7 +40,10 @@ class QuranDetailController extends GetxController with WidgetsBindingObserver {
 
   final state = Rx<UiState<SurahContent>>(const UiLoading());
   final bookmarked = <int>{}.obs;
-  late final prefs = Rx<ReadingPrefs>(_user.getReadingPrefs());
+  // Defaults until load() reads the stored prefs; never touch user.db in build.
+  final prefs = Rx<ReadingPrefs>(
+    const ReadingPrefs(arabicFontSize: 28, showTranslation: true),
+  );
   final ListController listController = ListController();
   final ScrollController scrollController = ScrollController();
 
