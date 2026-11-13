@@ -48,6 +48,19 @@ void main() {
     expect(rows('bookmark'), 1);
   });
 
+  test('listBookmarks orders created_at ties by id descending', () {
+    final fixed = SqliteUserRepository(
+      db,
+      now: () => DateTime.fromMillisecondsSinceEpoch(5000, isUtc: true),
+    );
+    fixed.toggleBookmark(const AyahRef(1, 1));
+    fixed.toggleBookmark(const AyahRef(2, 5));
+    expect(fixed.listBookmarks().map((b) => b.ref).toList(), const [
+      AyahRef(2, 5),
+      AyahRef(1, 1),
+    ]);
+  });
+
   test('listBookmarks newest first; surah/ayah sets', () {
     repo.toggleBookmark(const AyahRef(1, 1));
     repo.toggleBookmark(const AyahRef(2, 5));
