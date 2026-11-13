@@ -18,84 +18,91 @@ class QuranDetailView extends GetView<QuranDetailController> {
   @override
   Widget build(BuildContext context) {
     final c = controller;
-    return Scaffold(
-      appBar: AppBar(
-        title: Obx(() {
-          final s = c.state.value;
-          if (s is! UiData<SurahContent>) return const Text('Baca Surah');
-          final surah = s.value.surah;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(surah.nameLatin),
-              Text(
-                '${surah.nameLatin} · ${surah.ayahCount} ayat',
-                style: Theme.of(context).textTheme.bodySmall,
+    // Save the pending last read on pop: onClose runs only after the exit
+    // animation, i.e. after the list already refreshed its markers.
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) c.flushLastRead();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Obx(() {
+            final s = c.state.value;
+            if (s is! UiData<SurahContent>) return const Text('Baca Surah');
+            final surah = s.value.surah;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(surah.nameLatin),
+                Text(
+                  '${surah.nameLatin} · ${surah.ayahCount} ayat',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            );
+          }),
+          actions: [
+            IconButton(
+              tooltip: 'Pengaturan tampilan',
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              icon: const Icon(Icons.tune),
+              onPressed: () => showReadingSettingsSheet(
+                context,
+                controller: c,
+                theme: Get.find<ThemeController>(),
               ),
-            ],
-          );
-        }),
-        actions: [
-          IconButton(
-            tooltip: 'Pengaturan tampilan',
-            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            icon: const Icon(Icons.tune),
-            onPressed: () => showReadingSettingsSheet(
-              context,
-              controller: c,
-              theme: Get.find<ThemeController>(),
             ),
-          ),
-        ],
-      ),
-      body: Obx(() {
-        // Read observables here, not in itemBuilder, so changes rebuild.
-        final marked = c.bookmarked.toSet();
-        final prefs = c.prefs.value;
-        final lastRead = c.lastReadAyah.value;
-        return switch (c.state.value) {
-          UiLoading() => const Center(child: CircularProgressIndicator()),
-          UiEmpty() => const EmptyState(title: 'Ayat belum tersedia'),
-          UiError(:final message) => ErrorState(
-            title: 'Gagal memuat',
-            description: message,
-            onRetry: c.load,
-          ),
-          UiData(:final value) => SuperListView.builder(
-            listController: c.listController,
-            controller: c.scrollController,
-            itemCount: value.ayahs.length + 1,
-            itemBuilder: (_, i) {
-              if (i == 0) {
-                final n = value.surah.number;
-                return Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: SurahHeaderCard(
-                    surah: value.surah,
-                    basmalah: value.basmalah,
-                    showBismillah: n != 1 && n != 9,
+          ],
+        ),
+        body: Obx(() {
+          // Read observables here, not in itemBuilder, so changes rebuild.
+          final marked = c.bookmarked.toSet();
+          final prefs = c.prefs.value;
+          final lastRead = c.lastReadAyah.value;
+          return switch (c.state.value) {
+            UiLoading() => const Center(child: CircularProgressIndicator()),
+            UiEmpty() => const EmptyState(title: 'Ayat belum tersedia'),
+            UiError(:final message) => ErrorState(
+              title: 'Gagal memuat',
+              description: message,
+              onRetry: c.load,
+            ),
+            UiData(:final value) => SuperListView.builder(
+              listController: c.listController,
+              controller: c.scrollController,
+              itemCount: value.ayahs.length + 1,
+              itemBuilder: (_, i) {
+                if (i == 0) {
+                  final n = value.surah.number;
+                  return Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: SurahHeaderCard(
+                      surah: value.surah,
+                      basmalah: value.basmalah,
+                      showBismillah: n != 1 && n != 9,
+                    ),
+                  );
+                }
+                final ayah = value.ayahs[i - 1];
+                return AyahCard(
+                  ayah: ayah,
+                  bookmarked: marked.contains(ayah.ayahNumber),
+                  lastRead: ayah.ayahNumber == lastRead,
+                  prefs: prefs,
+                  onBookmark: () => c.toggleBookmark(ayah.ayahNumber),
+                  onCopy: () => c.copyAyah(ayah),
+                  onTafsir: () => showTafsirSheet(
+                    context,
+                    ayahs: value.ayahs,
+                    initialIndex: i - 1,
+                    surahName: value.surah.nameLatin,
                   ),
                 );
-              }
-              final ayah = value.ayahs[i - 1];
-              return AyahCard(
-                ayah: ayah,
-                bookmarked: marked.contains(ayah.ayahNumber),
-                lastRead: ayah.ayahNumber == lastRead,
-                prefs: prefs,
-                onBookmark: () => c.toggleBookmark(ayah.ayahNumber),
-                onCopy: () => c.copyAyah(ayah),
-                onTafsir: () => showTafsirSheet(
-                  context,
-                  ayahs: value.ayahs,
-                  initialIndex: i - 1,
-                  surahName: value.surah.nameLatin,
-                ),
-              );
-            },
-          ),
-        };
-      }),
+              },
+            ),
+          };
+        }),
+      ),
     );
   }
 }
