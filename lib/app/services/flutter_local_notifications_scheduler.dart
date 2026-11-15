@@ -28,11 +28,17 @@ class FlutterLocalNotificationsScheduler implements NotificationScheduler {
 
   /// Idempotent; every other call awaits it so early calls cannot race it.
   @override
-  Future<void> init() => _init ??= _plugin.initialize(
-    settings: const InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-    ),
-  );
+  Future<void> init() => _init ??= _plugin
+      .initialize(
+        settings: const InitializationSettings(
+          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        ),
+      )
+      .then<void>((_) {})
+      .onError<Object>((e, st) {
+        _init = null; // a failed init must not be cached; retry next call
+        Error.throwWithStackTrace(e, st);
+      });
 
   @override
   Future<void> cancelPrayer() async {

@@ -168,13 +168,24 @@ class PrayerNotifier {
     }
     final at = _clock.instantOf(last, '08:00', zone);
     if (at.isAfter(now)) {
-      await _scheduler.schedule(
-        prayerNotificationId(last, 9),
-        at,
-        updateReminderTitle,
-        updateReminderBody,
-        exact: exact,
+      await _safely(
+        () => _scheduler.schedule(
+          prayerNotificationId(last, 9),
+          at,
+          updateReminderTitle,
+          updateReminderBody,
+          exact: exact,
+        ),
       );
+    }
+  }
+
+  /// One failing item must not abort the rest of the window.
+  Future<void> _safely(Future<void> Function() f) async {
+    try {
+      await f();
+    } on Object catch (e) {
+      debugPrint('PrayerNotifier: schedule failed: $e');
     }
   }
 
@@ -190,12 +201,14 @@ class PrayerNotifier {
       if (hhmm == null) continue;
       final at = _clock.instantOf(day.date, hhmm, region.zone);
       if (!at.isAfter(now)) continue;
-      await _scheduler.schedule(
-        prayerNotificationId(day.date, p.index),
-        at,
-        'Waktu ${_label(p)}',
-        'Pukul $hhmm ${region.zone.label}',
-        exact: exact,
+      await _safely(
+        () => _scheduler.schedule(
+          prayerNotificationId(day.date, p.index),
+          at,
+          'Waktu ${_label(p)}',
+          'Pukul $hhmm ${region.zone.label}',
+          exact: exact,
+        ),
       );
     }
   }
