@@ -62,7 +62,7 @@ ContentDatabase buildSearchDb(
       'INSERT INTO ayah_fts(rowid, arab, translation) VALUES (?,?,?)',
       [
         i + 1,
-        normalizeArabicForSearch(a.arab),
+        normalizeAyahArabicForIndex(a.arab),
         normalizeIndonesianForSearch(a.translation),
       ],
     );

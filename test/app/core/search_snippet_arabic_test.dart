@@ -128,4 +128,41 @@ void main() {
       expect(n.offsets.length, n.text.length);
     }
   });
+
+  test(
+    'variant form: salat found by its imla\'i spelling, word fully marked',
+    () {
+      // 2:3 contains ٱلصَّلَٰوةَ (small alef + waw); the query is الصلاه.
+      final text =
+          _db
+                  .select(
+                    "SELECT arab FROM ayah WHERE id = (SELECT id FROM ayah "
+                    "WHERE arab LIKE '%' || char(1604,1648,1608,1577) || '%' LIMIT 1)",
+                  )
+                  .first['arab']
+              as String;
+      final s = buildArabicSnippet(text, ['الصلاه']);
+      expect(s.highlights, isNotEmpty);
+      for (final h in _highlighted(s)) {
+        expect(normalizeArabicVariantForSearch(h), startsWith('الصلاه'));
+        expect(h.runes.last, isNot(0x670));
+      }
+    },
+  );
+
+  test('variant offset map equals the variant normalizer', () {
+    final samples = [
+      for (final r in _db.select(
+        'SELECT arab FROM ayah WHERE id % 125 = 0 LIMIT 50',
+      ))
+        r['arab'] as String,
+      _ayah(53, 15),
+      ' َ  ب \n',
+    ];
+    for (final text in samples) {
+      final n = normalizeArabicVariantWithOffsets(text);
+      expect(n.text, normalizeArabicVariantForSearch(text));
+      expect(n.offsets.length, n.text.length);
+    }
+  });
 }

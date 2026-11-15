@@ -113,7 +113,7 @@ BuildResult buildContentDb({
         ]);
         insAyahFts.execute([
           ayahCount,
-          normalizeArabicForSearch(a.arab),
+          normalizeAyahArabicForIndex(a.arab),
           normalizeIndonesianForSearch(a.translation),
         ]);
       }
