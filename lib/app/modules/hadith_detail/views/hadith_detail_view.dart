@@ -5,6 +5,7 @@ import '../../../core/theme/tokens.dart';
 import '../../../core/ui_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../controllers/hadith_detail_controller.dart';
+import '../hadith_detail_content.dart';
 import '../widgets/hadith_text_card.dart';
 
 class HadithDetailView extends GetView<HadithDetailController> {

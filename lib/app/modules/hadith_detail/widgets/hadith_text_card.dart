@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../data/models/reading_prefs.dart';
-import '../controllers/hadith_detail_controller.dart';
+import '../hadith_detail_content.dart';
 
 /// Arabic text, optional translation and truncation note. No maxLines or
 /// ellipsis: the full text must be readable by scrolling.

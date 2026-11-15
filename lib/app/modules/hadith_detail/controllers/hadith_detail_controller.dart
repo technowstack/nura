@@ -8,29 +8,7 @@ import '../../../data/models/reading_prefs.dart';
 import '../../../data/repositories/hadith_repository.dart';
 import '../../../data/repositories/user_repository.dart';
 import '../hadith_detail_args.dart';
-
-/// Display model: every string and flag the view renders.
-class HadithDetailContent {
-  const HadithDetailContent({
-    required this.ref,
-    required this.title,
-    required this.subtitle,
-    required this.arab,
-    required this.translation,
-    required this.showTruncationNote,
-    required this.referenceLabel,
-  });
-
-  final HadithRef ref;
-  final String title;
-  final String subtitle;
-  final String arab;
-  final String translation;
-  final bool showTruncationNote;
-
-  /// `HR. <book> No. <n>`, appended when copying.
-  final String referenceLabel;
-}
+import '../hadith_detail_content.dart';
 
 class HadithDetailController extends GetxController {
   HadithDetailController(this.args) : _ref = HadithRef(args.slug, args.number);
