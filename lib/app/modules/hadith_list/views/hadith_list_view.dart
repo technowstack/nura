@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/theme/tokens.dart';
 import '../../../core/ui_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -48,13 +49,13 @@ class HadithListView extends GetView<HadithListController> {
             }
             if (failed) {
               return ListTile(
-                minTileHeight: 56,
+                minTileHeight: 56, // M3 two-line tile minimum
                 onTap: controller.loadMore,
                 title: const Text('Gagal memuat, ketuk untuk mencoba lagi'),
               );
             }
             return const Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(NuraSpace.s16),
               child: Center(child: CircularProgressIndicator()),
             );
           },
