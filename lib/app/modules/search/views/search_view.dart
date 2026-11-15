@@ -113,14 +113,22 @@ class SearchView extends GetView<SearchResultsController> {
   }
 
   Widget _list(List<SearchSection> sections, bool more, bool failed) {
-    // Flat rows: a section is its title (String) followed by its items.
-    final rows = <Object>[
-      for (final s in sections) ...[s.title, ...s.items],
+    final rows = <_Row>[
+      for (final s in sections) ...[
+        _HeaderRow(s.title),
+        for (final item in s.items) _ItemRow(item),
+      ],
     ];
     final footer = more || failed ? 1 : 0;
     return NotificationListener<ScrollUpdateNotification>(
+      // shortcut: load-more fires only on scroll; assumes the first page
+      // (30 rows >= 56 px) always overflows the viewport, like
+      // HadithListController. Revisit if page size or viewport changes.
       onNotification: (n) {
-        if (n.metrics.extentAfter < 300) controller.loadMore();
+        // After a failure only the retry row reloads; scrolling must not loop.
+        if (!controller.moreError.value && n.metrics.extentAfter < 300) {
+          controller.loadMore();
+        }
         return false;
       },
       child: ListView.builder(
@@ -128,11 +136,11 @@ class SearchView extends GetView<SearchResultsController> {
         itemBuilder: (context, i) {
           if (i < rows.length) {
             return switch (rows[i]) {
-              final SearchItem item => SearchResultTile(
+              _ItemRow(:final item) => SearchResultTile(
                 item: item,
                 onTap: () => _open(item.hit),
               ),
-              final title => _SectionHeader('$title'),
+              _HeaderRow(:final title) => _SectionHeader(title),
             };
           }
           if (failed) {
@@ -150,6 +158,23 @@ class SearchView extends GetView<SearchResultsController> {
       ),
     );
   }
+}
+
+/// One ListView row: a section title or a result.
+sealed class _Row {
+  const _Row();
+}
+
+class _HeaderRow extends _Row {
+  const _HeaderRow(this.title);
+
+  final String title;
+}
+
+class _ItemRow extends _Row {
+  const _ItemRow(this.item);
+
+  final SearchItem item;
 }
 
 class _SectionHeader extends StatelessWidget {

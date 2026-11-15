@@ -119,6 +119,50 @@ void main() {
         _nahl42,
       );
     });
+    List<(String, Color?)> parts(InlineSpan span) {
+      final out = <(String, Color?)>[];
+      span.visitChildren((s) {
+        if (s is TextSpan && s.text != null) {
+          out.add((s.text ?? '', s.style?.backgroundColor));
+        }
+        return true;
+      });
+      return out;
+    }
+
+    test('highlight at offset 0 and ending at text end with cutEnd', () {
+      const s = Snippet(
+        text: 'sabar dan sabar',
+        highlights: [
+          TextRange(start: 0, end: 5),
+          TextRange(start: 10, end: 15),
+        ],
+        cutStart: true,
+        cutEnd: true,
+      );
+      expect(parts(snippetSpan(s, _base, _hl)), [
+        ('…', null),
+        ('sabar', _hl),
+        (' dan ', null),
+        ('sabar', _hl),
+        ('…', null),
+      ]);
+    });
+
+    test('touching ranges stay separate and ellipses are unhighlighted', () {
+      const s = Snippet(
+        text: 'abcdef',
+        highlights: [TextRange(start: 0, end: 3), TextRange(start: 3, end: 6)],
+        cutStart: false,
+        cutEnd: true,
+      );
+      expect(parts(snippetSpan(s, _base, _hl)), [
+        ('abc', _hl),
+        ('def', _hl),
+        ('…', null),
+      ]);
+    });
+
     test('highlights use the given background color', () {
       final span = snippetSpan(buildSnippet(_nahl42, ['sabar']), _base, _hl);
       final colors = <Color?>[];
@@ -325,10 +369,19 @@ void main() {
       expect(ctl().moreError.value, isTrue);
       final retry = find.text('Gagal memuat, ketuk untuk mencoba lagi');
       expect(retry, findsOneWidget);
+      // Scrolling after a failure must not fire more requests.
+      final calls = repo.calls.length;
+      await tester.drag(find.byType(ListView), const Offset(0, 300));
+      await tester.pumpAndSettle();
+      await tester.fling(find.byType(ListView), const Offset(0, -20000), 8000);
+      await tester.pumpAndSettle();
+      expect(repo.calls.length, calls);
+      expect(ctl().moreError.value, isTrue);
       repo.failure = null;
       repo.ayahPage = SearchPage.empty;
       await tester.tap(retry);
       await tester.pumpAndSettle();
+      expect(repo.calls.length, calls + 1);
       expect(ctl().moreError.value, isFalse);
       expect(retry, findsNothing);
     });
@@ -348,7 +401,15 @@ void main() {
     ) async {
       await pump(tester, scope: SearchScope.hadith);
       await type(tester, 'sabar');
-      expect(find.text('Shahih Bukhari'), findsWidgets);
+      final header = find.descendant(
+        of: find.byType(ListView),
+        matching: find.text('Shahih Bukhari'),
+      );
+      expect(header, findsOneWidget);
+      expect(
+        tester.getTopLeft(header).dy,
+        lessThan(tester.getTopLeft(find.text('No. 4.066')).dy),
+      );
       expect(find.text('No. 4.066'), findsOneWidget);
       await tester.tap(find.text('No. 4.066'));
       await tester.pumpAndSettle();
