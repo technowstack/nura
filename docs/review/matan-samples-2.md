@@ -303,3 +303,15 @@ Terjemahan: Tidaklah seorang Muslim yang menanam sebatang pohon atau tanaman, la
 Arab: أَمْسِكْ عَلَيْكَ بَعْضَ مَالِكَ فَهُوَ خَيْرٌ لَكَ
 
 Terjemahan: tahan sebagian hartamu, itu lebih baik bagimu.
+
+## Catatan peninjau (Claude; bukan keputusan, keputusan akhir ada pada pemilik)
+
+Sampel dibaca satu per satu setelah aturan "tanpa tanda kutip lain di dalam matan". Tidak ada sampel yang berisi dialog atau komentar sahabat (jenis masalah pada sampel pertama). Yang menurut saya masih belum bersih, semuanya ringan:
+
+- **Nomor 32 (Bukhari 6343):** matan Arab diawali sisa kata kerja yang menempel, `قَالَلَا عُقُوبَةَ…` (kata `قَالَ` ikut terbawa), padahal terjemahannya sudah benar.
+- **Nomor 33 (Muslim 4935):** matan Arab diawali sisa `أَنَّهُ قَالَ` yang tidak ada di terjemahan.
+- **Nomor 34 (Bukhari 4036):** terjemahan memuat keterangan perawi di dalam matan: "(beliau sambil menunjuk ke arah Yaman dengan tangan beliau)".
+
+Catatan lain, bukan masalah seleksi: nomor 30 (Muslim 332) berakhir dengan tanda kutip tunggal nyasar (`…terdahulu'.`) dan nomor 39 (Bukhari 2231) memuat salah ketik dari sumber ("Sesunhgguhnya", "setiaapa"). Teks sumber tidak diubah.
+
+Ringkasan: 3 dari 50 (6%) tidak sempurna dan semuanya sisa di sisi Arab atau keterangan perawi, bukan dialog. Pengukuran pada seluruh daftar `default` (1.141 hadis): 20 matan Arab diawali `أَنَّهُ قَالَ` atau `قَالَ…` (sebagian memang sah, mis. `قَالَ اللَّهُ…` pada hadis qudsi) dan 2 memuat `قَالَ` yang menempel pada kata berikutnya. Kalau ingin ditutup, perluasan kecil daftar kata kerja ucap pada aturan Arab (menambah `أنه قال` dan kasus menempel) bisa dikerjakan; saya belum mengubahnya.
