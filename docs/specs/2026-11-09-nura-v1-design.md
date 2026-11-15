@@ -385,7 +385,7 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 ### 7.1 Sumber
 
 - **API** (diputuskan 2026-11-15: equran.id v2, `https://equran.id/api/v2/shalat`, dokumentasi `https://equran.id/apidev/shalat`; syarat layanan belum dibaca, wajib dibaca sebelum rilis): ambil sekali per bulan per wilayah (bulan berjalan, bulan berikutnya bila perlu) lalu simpan ke `prayer_day` dengan `source = 'api'`. Rate limit tidak didokumentasikan: batasi permintaan, jangan polling.
-- **Perhitungan offline** (`adhan`): Subuh 20°, Isya 18°, Asar mazhab Syafi'i. Ihtiyat bawaan (keputusan 2026-11-15, Q5): +3 menit untuk subuh, dzuhur, ashar, maghrib, isya dan -3 menit untuk terbit, diukur terhadap API pada November 2026 untuk Jakarta dan Bontang (selisih akhir maksimal 1 menit). Penyesuaian dari setting (`prayer_adjust_*`) ditambahkan di atasnya. Imsak = subuh (setelah ihtiyat) - 10 menit. Dhuha tidak dihitung (aturan belum ditetapkan). Kalkulator hanya aktif bila koordinat wilayah ada. Simpan dengan `source = 'calc'`.
+- **Perhitungan offline** (`adhan`): Subuh 20°, Isya 18°, Asar mazhab Syafi'i. Ihtiyat bawaan (keputusan 2026-11-15, Q5): +3 menit untuk subuh, dzuhur, ashar, maghrib, isya dan -3 menit untuk terbit, diukur terhadap API pada November 2026 untuk Jakarta dan Bontang (selisih akhir maksimal 1 menit). Catatan: metode Singapore di `adhan` sudah menambah +1 menit pada dzuhur, jadi ihtiyat efektif dzuhur terhadap waktu astronomis adalah +4 (konstanta kita +3 di atas metode). Penyesuaian dari setting (`prayer_adjust_*`) ditambahkan di atasnya. Imsak = subuh (setelah ihtiyat) - 10 menit. Dhuha tidak dihitung (aturan belum ditetapkan). Kalkulator hanya aktif bila koordinat wilayah ada. Simpan dengan `source = 'calc'`.
 
 ### 7.2 Alur
 
