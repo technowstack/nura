@@ -1,4 +1,4 @@
-const int contentSchemaVersion = 1;
+const int contentSchemaVersion = 2;
 
 /// Source texts at or above this many UTF-8 bytes were cut off at 16,384
 /// bytes in the source data (19 of 38,102 hadith); they never become daily

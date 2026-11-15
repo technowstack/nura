@@ -151,7 +151,7 @@ void main() {
       for (final r in db.select('SELECT key, value FROM meta'))
         r['key']: r['value'],
     };
-    expect(m['schema_version'], '1');
+    expect(m['schema_version'], '2');
     expect(m['data_version'], matches(RegExp(r'^[0-9a-f]{16}$')));
     expect(m['built_at'], '2026-11-09T00:00:00.000Z');
     expect(m['source_checksums'], contains('quran/1.json'));
@@ -235,7 +235,7 @@ void main() {
       final bytes = File('${tempDir.path}/content.db').readAsBytesSync();
       expect(
         result.contentVersion,
-        '1:${sha256.convert(bytes).toString().substring(0, 16)}',
+        '2:${sha256.convert(bytes).toString().substring(0, 16)}',
       );
       final manifest = fixtureDir('').uri.resolve('CHECKSUMS.sha256');
       final want = sha256
