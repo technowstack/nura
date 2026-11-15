@@ -4,7 +4,7 @@ import 'package:sqlite3/sqlite3.dart';
 
 /// Read-only handle on the bundled content.db.
 class ContentDatabase {
-  ContentDatabase._(this.raw, this.dataVersion, this.schemaVersion);
+  ContentDatabase._(this.file, this.raw, this.dataVersion, this.schemaVersion);
 
   static ContentDatabase open(File file) {
     final db = sqlite3.open(file.path, mode: OpenMode.readOnly);
@@ -15,6 +15,7 @@ class ContentDatabase {
               ]).single['value']
               as String;
       return ContentDatabase._(
+        file,
         db,
         meta('data_version'),
         meta('schema_version'),
@@ -25,6 +26,7 @@ class ContentDatabase {
     }
   }
 
+  final File file;
   final Database raw;
   final String dataVersion;
   final String schemaVersion;
