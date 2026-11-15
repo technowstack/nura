@@ -342,7 +342,7 @@ android/app/src/main/kotlin/com/technowstack/nura/
 
 Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 10).
 
-- Pencarian tidak peka huruf besar/kecil, dan kata cocok = substring. Berlaku untuk teks Arab (lewat indeks yang dinormalisasi) dan terjemahan. Hasil dikelompokkan per surah. Keadaan kosong menampilkan "Tidak ada hasil".
+- Pencarian tidak peka huruf besar/kecil. **Terjemahan**: kata cocok = substring, lewat `LIKE '%kata%' ESCAPE '\\'` pada kolom teks asli (satu `LIKE` per kata, digabung AND; `%`, `_`, dan `\\` di input di-escape; keputusan 2026-11-15). **Teks Arab**: kata cocok = awalan token, lewat indeks FTS yang dinormalisasi. Keterbatasan v1: kata Arab berawalan seperti ال atau ب tidak ditemukan dari bentuk dasarnya (dan sebaliknya tidak ada pencocokan di tengah kata). Hasil dikelompokkan per surah. Keadaan kosong menampilkan "Tidak ada hasil".
 - Terjemahan tiap hasil ditampilkan sebagai satu `Text.rich`, maksimal 3 baris.
 - Cuplikan berpusat pada kemunculan pertama kata cocok: jendela maksimal 100 karakter, digeser agar tidak melewati awal atau akhir teks, lalu dipotong ke batas kata (spasi terdekat) tanpa memotong kata cocok. Tanda baca tetap menempel pada kata.
 - Elipsis "…" ditambahkan di depan jika awal teks dipotong dan di belakang jika akhir dipotong. Isi cuplikan (tanpa elipsis) harus berupa substring persis dari terjemahan. Teks yang lebih pendek dari 100 karakter tampil utuh.
