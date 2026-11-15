@@ -1,4 +1,5 @@
 import 'package:flutter/painting.dart';
+import 'package:nura/content_pipeline/text_normalizer.dart';
 
 /// A search-result excerpt. [highlights] are relative to [text]; ellipses are
 /// added by the view according to [cutStart] and [cutEnd].
@@ -33,6 +34,65 @@ Snippet buildSnippet(String text, List<String> tokens) {
           TextRange(start: m.start, end: m.end),
   ];
   return _assemble(text, matches);
+}
+
+/// Builds a snippet of vocalized Arabic [text] for already-normalized
+/// [tokens] (Arabic mode): matching runs on the normalized form, while the
+/// window and highlights are offsets into the original [text].
+Snippet buildArabicSnippet(String text, List<String> tokens) {
+  final n = normalizeArabicWithOffsets(text);
+  final matches = <TextRange>[];
+  for (final t in tokens) {
+    if (t.isEmpty) continue;
+    for (var i = n.text.indexOf(t); i >= 0; i = n.text.indexOf(t, i + 1)) {
+      final start = n.offsets[i];
+      var end = n.offsets[i + t.length - 1] + 1;
+      // Absorb harakat/waqf marks attached after the last matched letter.
+      while (end < text.length && _isStripped(text[end])) {
+        end++;
+      }
+      matches.add(TextRange(start: start, end: end));
+    }
+  }
+  return _assemble(text, matches);
+}
+
+final _space = RegExp(r'\s');
+
+// Per-char normalizer results (' ' for whitespace); bounded by distinct code
+// units, and avoids running the normalizer's regexes on every char.
+final _charCache = <String, String>{};
+
+String _normalizeChar(String ch) => _charCache.putIfAbsent(
+  ch,
+  () => _space.hasMatch(ch) ? ' ' : normalizeArabicForSearch(ch),
+);
+
+bool _isStripped(String ch) => _normalizeChar(ch).isEmpty;
+
+/// Equals `normalizeArabicForSearch(text)`, plus for each normalized char the
+/// index of the original char it came from. Built per char with the index
+/// normalizer itself so the two cannot drift apart.
+({String text, List<int> offsets}) normalizeArabicWithOffsets(String text) {
+  final out = StringBuffer();
+  final offsets = <int>[];
+  var pendingSpace = -1;
+  for (var i = 0; i < text.length; i++) {
+    final mapped = _normalizeChar(text[i]);
+    if (mapped == ' ') {
+      if (offsets.isNotEmpty && pendingSpace < 0) pendingSpace = i;
+      continue;
+    }
+    if (mapped.isEmpty) continue;
+    if (pendingSpace >= 0) {
+      out.write(' ');
+      offsets.add(pendingSpace);
+      pendingSpace = -1;
+    }
+    out.write(mapped);
+    offsets.add(i);
+  }
+  return (text: out.toString(), offsets: offsets);
 }
 
 /// Windows [text] around the earliest of [matches] (ranges in [text]) and
