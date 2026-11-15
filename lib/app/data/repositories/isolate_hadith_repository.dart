@@ -55,8 +55,8 @@ class IsolateHadithRepository implements HadithRepository {
   Future<void> get exited => _exited.future;
 
   void _onReply(Object? m) {
-    final msg = m! as List<Object?>; // shortcut: replies come from our worker
-    if (msg[0] == 'ready') return _ready.complete(msg[1]! as SendPort);
+    final msg = m as List<Object?>; // shortcut: replies come from our worker
+    if (msg[0] == 'ready') return _ready.complete(msg[1] as SendPort);
     if (msg[0] == 'error') {
       return _ready.completeError(
         ContentUnavailable('Konten tidak dapat dibuka: ${msg[1]}'),
@@ -112,7 +112,7 @@ class IsolateHadithRepository implements HadithRepository {
   @override
   Future<List<HadithBook>> listBooks() async => [
     for (final m in await _call('listBooks', const []) as List<Object?>)
-      bookFromMap(m! as Map<Object?, Object?>),
+      bookFromMap(m as Map<Object?, Object?>),
   ];
 
   @override

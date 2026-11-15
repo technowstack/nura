@@ -94,7 +94,7 @@ Future<void> hadithWorkerMain(List<Object> init) async {
       inbox.close();
       return;
     }
-    final req = msg! as List<Object?>; // shortcut: only our client sends here
+    final req = msg as List<Object?>; // shortcut: only our client sends here
     final id = req[0] as int;
     final a = req[2] as List<Object?>;
     try {
