@@ -30,8 +30,10 @@ void _verifyDailyHadith(
 ) {
   final excluded = readExcludedHadith(sourceRoot);
   final next = <String, int>{};
+  final seenIds = <String>{};
+  final rowCounts = <String, int>{};
   final rows = db.select(
-    'SELECT d.list, d.seq, d.arab_start, d.arab_end, d.tr_start, d.tr_end, '
+    'SELECT d.list, d.seq, d.hadith_id, d.arab_start, d.arab_end, d.tr_start, d.tr_end, '
     'h.book_slug, h.number, h.arab, h.translation_id '
     'FROM daily_hadith d JOIN hadith h ON h.id = d.hadith_id '
     'ORDER BY d.list, d.seq',
@@ -49,6 +51,10 @@ void _verifyDailyHadith(
       errors.add("daily_hadith $list seq not dense: $seq != $want");
     }
     next[list] = seq + 1;
+    rowCounts[list] = (rowCounts[list] ?? 0) + 1;
+    if (!seenIds.add('$list:${r['hadith_id']}')) {
+      errors.add('$at appears twice in the $list list');
+    }
     if (list == 'default' &&
         r['book_slug'] != 'bukhari' &&
         r['book_slug'] != 'muslim') {
@@ -79,6 +85,33 @@ void _verifyDailyHadith(
             arab.substring(m.arabStart, m.arabEnd) ||
         tr.substring(ts, te) != tr.substring(m.trStart, m.trEnd)) {
       errors.add('$at slices differ from extractMatan');
+    }
+  }
+
+  // Completeness: each list holds every qualifying hadith, no fewer.
+  final qualifying = {'default': 0, 'all': 0};
+  for (final r in db.select(
+    'SELECT book_slug, number, arab, translation_id FROM hadith',
+  )) {
+    final arab = r['arab'] as String;
+    final tr = r['translation_id'] as String;
+    if (excluded.contains('${r['book_slug']}:${r['number']}') ||
+        utf8.encode(arab).length >= kSourceTruncationBytes ||
+        utf8.encode(tr).length >= kSourceTruncationBytes ||
+        extractMatan(arab, tr) == null) {
+      continue;
+    }
+    qualifying['all'] = (qualifying['all'] ?? 0) + 1;
+    if (r['book_slug'] == 'bukhari' || r['book_slug'] == 'muslim') {
+      qualifying['default'] = (qualifying['default'] ?? 0) + 1;
+    }
+  }
+  for (final e in qualifying.entries) {
+    final have = rowCounts[e.key] ?? 0;
+    if (have != e.value) {
+      errors.add(
+        'daily_hadith ${e.key} list has $have rows, ${e.value} qualify',
+      );
     }
   }
 }

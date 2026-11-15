@@ -60,6 +60,21 @@ void main() {
       },
     );
 
+    test('speech must follow the first salawat within 14 characters', () {
+      final ar = _ar(_arBody);
+      String tr(String gap) => 'Dari [A] $_sal${gap}bersabda: "$_body"';
+      expect(extractMatan(ar, tr(' ' * 14)), isNotNull);
+      expect(extractMatan(ar, tr(' ' * 15)), isNull);
+      // Speech before the first salawat.
+      expect(extractMatan(ar, 'Dia bersabda: "$_body" lalu $_sal'), isNull);
+      // A later salawat next to the speech does not count: the first one
+      // is more than 14 characters away.
+      expect(
+        extractMatan(ar, 'Dari [A] $_sal ${'x' * 20} $_sal bersabda: "$_body"'),
+        isNull,
+      );
+    });
+
     test('rejects missing key phrases and short matan', () {
       expect(extractMatan(_ar(_arBody), 'tanpa kutipan'), isNull);
       expect(extractMatan('tanpa kunci $_arBody', _tr(_body)), isNull);
@@ -116,9 +131,10 @@ void main() {
       }
     });
 
+    // 41, 47 and 88 are rejected only by the alignment condition.
     test('misaligned examples are rejected', () {
       final b = _bukhari();
-      for (final n in [112, 274, 660, 915, 1175]) {
+      for (final n in [112, 274, 660, 915, 1175, 41, 47, 88]) {
         final h = b[n]!;
         expect(
           extractMatan(h['arab'] as String, h['id'] as String),

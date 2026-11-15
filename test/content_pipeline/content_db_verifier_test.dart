@@ -263,6 +263,28 @@ void main() {
       expect(r.errors.join('\n'), contains('bukhari:2'));
     });
 
+    test('a hadith twice in one list is an error', () {
+      final r = verifyDaily(
+        "INSERT INTO daily_hadith SELECT list, 99, hadith_id, arab_start, "
+        "arab_end, tr_start, tr_end FROM daily_hadith "
+        "WHERE list = 'all' AND seq = 0",
+      );
+      expect(r.errors.join('\n'), contains('appears twice in the all list'));
+    });
+
+    test('a short or empty list is an error (completeness)', () {
+      var r = verifyDaily(
+        "DELETE FROM daily_hadith WHERE list = 'default' "
+        "AND seq = (SELECT MAX(seq) FROM daily_hadith WHERE list = 'default')",
+      );
+      expect(
+        r.errors.join('\n'),
+        contains('default list has 2 rows, 3 qualify'),
+      );
+      r = verifyDaily("DELETE FROM daily_hadith WHERE list = 'default'");
+      expect(r.errors.join('\n'), contains('default list has 0 rows'));
+    });
+
     test('an excluded hadith in a list is an error', () {
       final excluded = makeSource(
         tempDir,
