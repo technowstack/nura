@@ -9,6 +9,7 @@ import 'package:nura/app/data/models/juz.dart';
 import 'package:nura/app/data/models/last_read.dart';
 import 'package:nura/app/data/models/surah.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
+import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/modules/quran_detail/surah_args.dart';
 import 'package:nura/app/modules/quran_list/bindings/quran_list_binding.dart';
@@ -44,6 +45,7 @@ void main() {
     user = FakeUserRepository();
     Get.put<QuranRepository>(quran);
     Get.put<UserRepository>(user);
+    Get.put<HadithRepository>(FakeHadithRepository());
     QuranListBinding().dependencies();
   });
   tearDown(Get.reset);

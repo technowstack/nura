@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/modules/shell/views/shell_view.dart';
@@ -11,12 +12,13 @@ void main() {
     Get.reset();
     Get.put<QuranRepository>(FakeQuranRepository());
     Get.put<UserRepository>(FakeUserRepository());
+    Get.put<HadithRepository>(FakeHadithRepository());
   });
   tearDown(Get.reset);
 
   const shell = MaterialApp(home: ShellView(dataVersion: 'v1'));
 
-  testWidgets('has four labelled destinations and Hadis shows Segera hadir', (
+  testWidgets('has four labelled destinations and Hadis shows the book list', (
     tester,
   ) async {
     await tester.pumpWidget(shell);
@@ -29,7 +31,8 @@ void main() {
     }
     await tester.tap(find.text('Hadis'));
     await tester.pumpAndSettle();
-    expect(find.text('Segera hadir'), findsOneWidget);
+    expect(find.text('Segera hadir'), findsNothing);
+    expect(find.text('Daftar kitab belum tersedia'), findsOneWidget);
   });
 
   testWidgets('Latin 130% at 360x640 does not throw', (tester) async {

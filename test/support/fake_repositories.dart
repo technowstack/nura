@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/models/bookmark.dart';
+import 'package:nura/app/data/models/hadith.dart';
+import 'package:nura/app/data/models/hadith_book.dart';
 import 'package:nura/app/data/models/juz.dart';
 import 'package:nura/app/data/models/last_read.dart';
 import 'package:nura/app/data/models/reading_prefs.dart';
 import 'package:nura/app/data/models/surah.dart';
+import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 
@@ -118,6 +123,37 @@ class FakeUserRepository implements UserRepository {
     ...?ayahBookmarks[surahNumber],
   };
 
+  /// Newest first, as the real repository returns them.
+  final List<HadithBookmark> hadithBookmarks = [];
+
+  @override
+  bool toggleHadithBookmark(HadithRef ref) {
+    _check();
+    final before = hadithBookmarks.length;
+    hadithBookmarks.removeWhere((b) => b.ref == ref);
+    if (hadithBookmarks.length < before) return false;
+    hadithBookmarks.insert(
+      0,
+      HadithBookmark(ref: ref, createdAt: DateTime(2000, 1, 1, 0, 0, ++_tick)),
+    );
+    return true;
+  }
+
+  @override
+  List<HadithBookmark> listHadithBookmarks() {
+    _check();
+    return List.of(hadithBookmarks);
+  }
+
+  @override
+  Set<int> bookmarkedHadithNumbers(String slug) {
+    _check();
+    return {
+      for (final b in hadithBookmarks)
+        if (b.ref.slug == slug) b.ref.number,
+    };
+  }
+
   @override
   Set<int> bookmarkedSurahNumbers() => bookmarkedSurahs;
 
@@ -163,5 +199,115 @@ class FakeUserRepository implements UserRepository {
   void setThemeMode(ThemeMode mode) {
     _check();
     themeMode = mode;
+  }
+}
+
+/// Configurable in-memory hadith repository. Set [failure] to make every call
+/// throw. [summaries] hold per-book items ordered by number.
+class FakeHadithRepository implements HadithRepository {
+  FakeHadithRepository({
+    this.books = const [],
+    this.summaries = const {},
+    this.hadith = const [],
+    this.failure,
+  });
+
+  List<HadithBook> books;
+  Map<String, List<HadithSummary>> summaries;
+  List<Hadith> hadith;
+  Object? failure;
+
+  /// When set, only neighbor throws it.
+  Object? neighborFailure;
+
+  /// Number of listPage calls, and 1-based call indexes that should throw.
+  int listPageCalls = 0;
+  Set<int> failPageCalls = {};
+
+  /// `afterNumber` of every listPage call, in order.
+  final List<int> afterNumbers = [];
+
+  /// When set, listPage waits for it after reading its page (slow request).
+  Completer<void>? pageGate;
+
+  void _check() {
+    final f = failure;
+    if (f != null) throw f;
+  }
+
+  @override
+  Future<List<HadithBook>> listBooks() async {
+    _check();
+    return books;
+  }
+
+  @override
+  Future<HadithPage> listPage(
+    String slug, {
+    int afterNumber = 0,
+    int limit = 30,
+  }) async {
+    listPageCalls++;
+    afterNumbers.add(afterNumber);
+    if (failPageCalls.contains(listPageCalls)) {
+      throw const ContentUnavailable('page');
+    }
+    _check();
+    if (limit <= 0) throw ArgumentError.value(limit, 'limit');
+    final rest = (summaries[slug] ?? const <HadithSummary>[])
+        .where((h) => h.ref.number > afterNumber)
+        .toList();
+    final page = HadithPage(
+      items: rest.take(limit).toList(),
+      hasMore: rest.length > limit,
+    );
+    final gate = pageGate;
+    if (gate != null) {
+      pageGate = null; // only the first call after setting is slow
+      await gate.future;
+    }
+    return page;
+  }
+
+  /// Per-number gates: getHadith for that number waits (slow request).
+  final Map<int, Completer<void>> hadithGates = {};
+
+  /// Number of getHadith calls.
+  int getHadithCalls = 0;
+
+  @override
+  Future<Hadith> getHadith(HadithRef ref) async {
+    getHadithCalls++;
+    _check();
+    final gate = hadithGates[ref.number];
+    if (gate != null) await gate.future;
+    return hadith.firstWhere(
+      (h) => h.ref == ref,
+      orElse: () =>
+          throw ContentUnavailable('hadith ${ref.slug}:${ref.number}'),
+    );
+  }
+
+  @override
+  Future<HadithRef?> neighbor(HadithRef ref, {required bool next}) async {
+    _check();
+    final nf = neighborFailure;
+    if (nf != null) throw nf;
+    // Keyset semantics over the sorted numbers (gaps allowed); falls back to
+    // [hadith] when no summaries were configured for the book.
+    final listed = summaries[ref.slug];
+    final nums =
+        (listed != null
+                ? listed.map((h) => h.ref.number)
+                : hadith
+                      .where((h) => h.ref.slug == ref.slug)
+                      .map((h) => h.ref.number))
+            .toList()
+          ..sort();
+    if (!nums.contains(ref.number)) {
+      throw ContentUnavailable('hadith ${ref.slug}:${ref.number}');
+    }
+    final i = nums.indexOf(ref.number) + (next ? 1 : -1);
+    return i < 0 || i >= nums.length ? null : HadithRef(ref.slug, nums[i]);
   }
 }

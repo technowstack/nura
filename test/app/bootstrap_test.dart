@@ -8,6 +8,8 @@ import 'package:get/get.dart';
 import 'package:nura/app/app_bootstrap.dart';
 import 'package:nura/app/core/theme/theme_controller.dart';
 import 'package:nura/app/core/theme/theme_mode_setting.dart';
+import 'package:nura/app/data/repositories/hadith_repository.dart';
+import 'package:nura/app/data/repositories/isolate_hadith_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/data/sources/content_database.dart';
@@ -17,6 +19,7 @@ import 'package:nura/app/data/sources/user_database.dart';
 import 'package:nura/app/nura_app.dart';
 
 import '../support/fixture_db.dart';
+import '../support/fake_repositories.dart';
 
 void main() {
   late Directory tmp;
@@ -38,12 +41,22 @@ void main() {
     targetDir: Directory('${tmp.path}/data'),
   );
 
-  Future<BootstrapSuccess> ready({String? onboardingDone}) async {
+  Future<BootstrapSuccess> ready({
+    String? onboardingDone,
+    bool swapHadithForFake = false,
+  }) async {
     final r = await bootstrap(installer: installer(), dataDir: tmp);
     expect(r, isA<BootstrapSuccess>());
     final s = r as BootstrapSuccess;
     addTearDown(s.content.close);
     addTearDown(s.user.close);
+    final hadith = Get.find<HadithRepository>() as IsolateHadithRepository;
+    addTearDown(hadith.close);
+    if (swapHadithForFake) {
+      // The real isolate never replies under fake async, which would keep the
+      // Hadis tab's loading spinner animating forever.
+      Get.replace<HadithRepository>(FakeHadithRepository());
+    }
     if (onboardingDone != null) {
       s.user.setSetting(SettingKeys.onboardingDone, onboardingDone);
     }
@@ -63,7 +76,26 @@ void main() {
     expect(Get.isRegistered<UserDatabase>(), isTrue);
     expect(Get.find<QuranRepository>(), isA<QuranRepository>());
     expect(Get.find<UserRepository>(), isA<UserRepository>());
+    expect(Get.find<HadithRepository>(), isA<IsolateHadithRepository>());
   });
+
+  test(
+    'failed bootstrap closes the hadith worker and registers nothing',
+    () async {
+      Directory('${tmp.path}/user.db').createSync();
+      IsolateHadithRepository? started;
+      final r = await bootstrap(
+        installer: installer(),
+        dataDir: tmp,
+        startHadith: (f) async =>
+            started = await IsolateHadithRepository.start(f),
+      );
+      expect(r, isA<BootstrapFailure>());
+      expect(started, isNotNull);
+      await started?.exited.timeout(const Duration(seconds: 5));
+      expect(Get.isRegistered<HadithRepository>(), isFalse);
+    },
+  );
 
   test('bootstrap returns failure when installer throws', () async {
     final r = await bootstrap(
@@ -101,7 +133,9 @@ void main() {
   testWidgets('first launch goes to onboarding, Mulai goes to Beranda', (
     tester,
   ) async {
-    final s = await tester.runAsync(ready) as BootstrapSuccess;
+    final s =
+        await tester.runAsync(() => ready(swapHadithForFake: true))
+            as BootstrapSuccess;
     await tester.pumpWidget(NuraApp(result: s, onRetry: () {}));
     await tester.pumpAndSettle();
     expect(find.text('Selamat datang di Nura'), findsOneWidget);
@@ -114,7 +148,9 @@ void main() {
 
   testWidgets('onboarding_done=true goes to Beranda', (tester) async {
     final s =
-        await tester.runAsync(() => ready(onboardingDone: 'true'))
+        await tester.runAsync(
+              () => ready(onboardingDone: 'true', swapHadithForFake: true),
+            )
             as BootstrapSuccess;
     await tester.pumpWidget(NuraApp(result: s, onRetry: () {}));
     await tester.pumpAndSettle();
@@ -128,7 +164,9 @@ void main() {
   ]) {
     testWidgets('theme_mode=$setting gives $expected', (tester) async {
       final s =
-          await tester.runAsync(() => ready(onboardingDone: 'true'))
+          await tester.runAsync(
+                () => ready(onboardingDone: 'true', swapHadithForFake: true),
+              )
               as BootstrapSuccess;
       if (setting != null) s.user.setSetting(SettingKeys.themeMode, setting);
       await tester.pumpWidget(NuraApp(result: s, onRetry: () {}));
@@ -142,7 +180,9 @@ void main() {
 
   testWidgets('theme switch keeps pushed route and turns dark', (tester) async {
     final s =
-        await tester.runAsync(() => ready(onboardingDone: 'true'))
+        await tester.runAsync(
+              () => ready(onboardingDone: 'true', swapHadithForFake: true),
+            )
             as BootstrapSuccess;
     await tester.pumpWidget(NuraApp(result: s, onRetry: () {}));
     await tester.pumpAndSettle();

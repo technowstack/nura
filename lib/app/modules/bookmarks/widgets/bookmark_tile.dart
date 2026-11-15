@@ -24,12 +24,9 @@ class BookmarkTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(item.title, style: text.titleMedium),
               Text(
-                '${item.surah.nameLatin} · ayat ${item.ayah.ayahNumber}',
-                style: text.titleMedium,
-              ),
-              Text(
-                item.ayah.translation,
+                item.body,
                 style: text.bodyMedium,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

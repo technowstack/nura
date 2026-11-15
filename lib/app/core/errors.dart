@@ -7,3 +7,13 @@ class ContentUnavailable implements Exception {
   @override
   String toString() => 'ContentUnavailable: $message';
 }
+
+/// User data (bookmarks, last read, settings) could not be read or written.
+class UserDataUnavailable implements Exception {
+  const UserDataUnavailable(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'UserDataUnavailable: $message';
+}

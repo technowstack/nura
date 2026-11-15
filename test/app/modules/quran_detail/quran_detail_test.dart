@@ -129,9 +129,18 @@ void main() {
   });
 
   testWidgets('app bar with long nameId at 130% does not overflow', (t) async {
-    quran.surahs = [withNameId('Arti yang sangat panjang sekali ' * 3)];
+    final longName = 'Arti yang sangat panjang sekali ' * 3;
+    quran.surahs = [withNameId(longName)];
     await pumpPage(t, 2, scale: 1.3);
     expect(t.takeException(), isNull);
+    final subtitle = t.widget<Text>(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.textContaining('Arti yang sangat'),
+      ),
+    );
+    expect(subtitle.maxLines, 1);
+    expect(subtitle.overflow, TextOverflow.ellipsis);
   });
 
   testWidgets('ayat follow repository order', (tester) async {
