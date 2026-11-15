@@ -26,7 +26,9 @@ class ParsedQuery {
 const _maxChars = 100;
 const _maxTokens = 8;
 
-final _arabicLetter = RegExp(r'[؀-ۿ]');
+final _arabicLetter = RegExp(
+  r'[\u0621-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06FA-\u06FC\u06FF]',
+);
 final _notWord = RegExp(r'[^\p{L}\p{N}\s]', unicode: true);
 final _letterOrDigit = RegExp(r'[\p{L}\p{N}]', unicode: true);
 final _spaces = RegExp(r'\s+');
@@ -41,7 +43,10 @@ ParsedQuery _result(QueryStatus s, {bool arabic = false}) => ParsedQuery(
 );
 
 ParsedQuery parseSearchQuery(String raw) {
-  final cut = raw.length > _maxChars ? raw.substring(0, _maxChars) : raw;
+  var end = raw.length > _maxChars ? _maxChars : raw.length;
+  // Do not split a surrogate pair at the cut.
+  if (end < raw.length && (raw.codeUnitAt(end - 1) & 0xFC00) == 0xD800) end--;
+  final cut = raw.substring(0, end);
   if (cut.trim().isEmpty) return _result(QueryStatus.empty);
 
   if (_arabicLetter.hasMatch(cut)) {

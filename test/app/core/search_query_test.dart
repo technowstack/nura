@@ -122,4 +122,22 @@ void main() {
     expect(hit('100%'), ['100%']);
     expect(hit('a_b'), ['a_b']);
   });
+
+  test('Arabic punctuation alone keeps translation mode', () {
+    final q = parseSearchQuery('sabar \u061F');
+    expect(q.isArabic, isFalse);
+    expect(q.status, QueryStatus.ok);
+  });
+
+  test('Arabic letters still switch to Arabic mode', () {
+    expect(
+      parseSearchQuery('\u0627\u0644\u0635\u0644\u0627\u0629').isArabic,
+      isTrue,
+    );
+  });
+
+  test('truncation never leaves a lone surrogate', () {
+    final q = parseSearchQuery('${'a' * 99}\u{1F600}');
+    expect(q.tokens.single.length, 99);
+  });
 }
