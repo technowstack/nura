@@ -30,7 +30,8 @@ const _sizes = {'4x2': Size(320, 152), '4x3': Size(320, 240)};
 /// - For each kind (`ayah` | `hadith`), local date (`yyyy-MM-dd`), theme
 ///   (`light` | `dark`) and size tag (`4x2` | `4x3`) the home_widget key
 ///   `daily_<kind>_<yyyy-MM-dd>_<light|dark>_<4x2|4x3>` holds a JSON string
-///   `{"image": "<absolute path of the png>", "link": "nura://..."}`.
+///   `{"image": "<absolute path of the png>", "link": "nura://...",
+///   "description": "<TalkBack text>"}`; `description` is optional.
 /// - PNGs live in the app support directory under `widget/`, named like the
 ///   key plus `.png`; they are written to a temp file and renamed.
 /// - `daily_widget_updated` = ISO-8601 timestamp of the last refresh in which
