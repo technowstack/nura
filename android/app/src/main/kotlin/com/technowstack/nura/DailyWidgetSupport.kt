@@ -23,7 +23,7 @@ enum class BitmapPlan { BOTH, CURRENT_ONLY, NONE }
  * Pure selection logic for the daily widgets (no Android classes, unit-tested on the JVM).
  *
  * Reads the contract written by the Dart HomeWidgetService: key
- * `daily_<kind>_<yyyy-MM-dd>_<light|dark>_<4x2|4x3>` holding `{"image": "<png path>", "link": "nura://..."}`.
+ * `daily_<kind>_<yyyy-MM-dd>_<light|dark>_<4x2|4x3>` holding `{"image": "<png path>", "link": "nura://...", "description": "<TalkBack text, optional>"}`.
  */
 object DailyWidgetSupport {
     /**
