@@ -88,7 +88,7 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 - Doa-doa dan konten islami lain.
 - Widget iOS dan rilis iOS.
 - Akun pengguna, sinkronisasi cloud, dan iklan.
-- Platform web, Windows, Linux, dan macOS.
+- Platform web, Windows, Linux, dan macOS (folder platformnya dihapus dari repo pada 2026-11-15; v1 hanya Android, iOS menyusul). Catatan: `flutter test` tetap berjalan di mesin Linux sebagai host, lihat AGENTS.md.
 
 ## 7. Arsitektur Data
 
