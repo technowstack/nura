@@ -9,6 +9,7 @@ import 'package:nura/app/services/home_widget_service.dart';
 import '../../support/fake_daily.dart';
 import '../../support/fake_widget_storage.dart';
 
+// Test code: `!` marks values the fixture guarantees; a null fails the test anyway.
 void main() {
   late Directory dir;
   late FakeDailyContentRepository repo;

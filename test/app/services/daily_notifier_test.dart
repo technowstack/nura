@@ -21,6 +21,7 @@ class _Gated extends RecordingScheduler {
   }
 }
 
+// Test code: `!` marks values the fixture guarantees; a null fails the test anyway.
 void main() {
   late RecordingScheduler sch;
   late FakeDailyContentRepository repo;

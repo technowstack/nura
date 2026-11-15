@@ -16,6 +16,7 @@ Widget _host(Widget child) => Directionality(
   child: Center(child: child),
 );
 
+// Test code: `!` marks values the fixture guarantees; a null fails the test anyway.
 void main() {
   for (final b in Brightness.values) {
     for (final size in [_s42, _s43]) {

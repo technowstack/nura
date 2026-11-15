@@ -19,6 +19,7 @@ const _tr = '$_trPre$_trMatan.';
 
 int _u16(String s) => s.length;
 
+// Test code: `!` marks values the fixture guarantees; a null fails the test anyway.
 void main() {
   late Directory tmp;
   late Database db;

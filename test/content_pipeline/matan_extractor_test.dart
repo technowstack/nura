@@ -29,6 +29,7 @@ Map<int, Map<String, dynamic>> _bukhari() {
   };
 }
 
+// Test code: `!` marks values the fixture guarantees; a null fails the test anyway.
 void main() {
   group('extractMatan rule', () {
     test('translation matan is the text inside the quotes, arab after key', () {

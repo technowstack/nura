@@ -6,6 +6,7 @@ import 'package:nura/content_pipeline/content_schema.dart';
 
 import '../support/source_tree.dart';
 
+// Test code: `!` marks values the fixture guarantees; a null fails the test anyway.
 void main() {
   late Directory tmp;
   late File db;
