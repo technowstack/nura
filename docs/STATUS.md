@@ -128,7 +128,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 
 ## Catatan Teknis
 
-- Fase 3 (2026-11-15, branch `feat/phase-3-hadith`): `flutter test` 289 lulus, `flutter analyze` bersih. Query hadis lewat isolate pekerja (`IsolateHadithRepository`, dimulai di `app_bootstrap.dart`). Penomoran hadis berlubang di semua kitab (Ahmad sampai 26.363 dengan 4.305 baris) dan itu berasal dari sumber, bukan galat konversi.
+- Fase 3 (2026-11-15, branch `feat/phase-3-hadith`): `flutter test` 290 lulus, `flutter analyze` bersih. Query hadis lewat isolate pekerja (`IsolateHadithRepository`, dimulai di `app_bootstrap.dart`). Penomoran hadis berlubang di semua kitab (Ahmad sampai 26.363 dengan 4.305 baris) dan itu berasal dari sumber, bukan galat konversi.
 - Ukuran sumber: `data-source/` 82 MB (Quran 12 MB, hadis 69 MB; Bukhari 13,4 MB terbesar).
 - `content.db` dibuat lokal oleh `tool/prepare_content.sh` dan di-`.gitignore`, begitu juga `content.version`. Nilai `content.version` (`<schema_version>:<16 hex sha256 file db>`) dan `meta.data_version` (16 hex sha256 `CHECKSUMS.sha256`) diturunkan otomatis, tidak dipatok tangan. `built_at` tetap sehingga build deterministik; host dengan versi libsqlite3 berbeda menghasilkan hash berbeda (hanya satu salin ulang di perangkat). Test: 87 lulus. Clone baru wajib menjalankannya dulu: `pubspec.yaml` mendaftarkan `assets/db/content.db`, dan `flutter test`/`build` gagal ("No file or variants found for asset") jika file tidak ada.
 - Ukuran `content.db` per `page_size`: 4096 = 124,54 MB; 8192 = 118,28 MB; 16384 = 112,38 MB (dipakai); 32768 = 109,03 MB (dicoba, tidak dipakai). Sebelum skema contentless: 187 MB. Rincian (page 4096): hadith 85,1 MB, hadith_fts 22,9 MB, ayah 13,9 MB.
