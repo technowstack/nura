@@ -49,6 +49,7 @@ class SqliteHadithRepository implements HadithRepository {
     int afterNumber = 0,
     int limit = 30,
   }) async {
+    if (limit < 1) throw ArgumentError.value(limit, 'limit');
     final book = _select('SELECT 1 FROM hadith_book WHERE slug = ?', [slug]);
     if (book.isEmpty) throw ContentUnavailable('Kitab $slug tidak ditemukan');
     final rows = _select(
