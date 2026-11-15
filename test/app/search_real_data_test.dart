@@ -79,6 +79,12 @@ void main() {
       final uthmani = await _all('الصلوة', hadith: false);
       expect(uthmani, hasLength(_ftsCount('ayah', 'arab : "الصلوه"*')));
       expect(uthmani, isNotEmpty);
+      // Pinned limit: the modern spelling finds 0 ayat, while the Uthmani
+      // spelling الصلوة finds 55. Owner decision pending, see docs/STATUS.md.
+      expect(
+        await _all('\u0627\u0644\u0635\u0644\u0627\u0629', hadith: false),
+        isEmpty,
+      );
     });
   });
 
@@ -137,6 +143,7 @@ void main() {
   test('(d) harakat-insensitive, highlights cover the token', () async {
     final vocalized = await _repo.searchHadith(parseSearchQuery('الصَّلَاةَ'));
     final bare = await _repo.searchHadith(parseSearchQuery('الصلاه'));
+    expect(bare.hits, isNotEmpty);
     expect(
       vocalized.hits.map((h) => (h.rowId, h.snippet.text)),
       bare.hits.map((h) => (h.rowId, h.snippet.text)),
