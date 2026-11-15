@@ -62,6 +62,13 @@ class RecordingScheduler implements NotificationScheduler {
 class ThrowingScheduler extends RecordingScheduler {
   int? failId;
   bool failAll = false;
+  bool failCancel = false;
+
+  @override
+  Future<void> cancelPrayer() async {
+    if (failCancel) throw StateError('cancel boom');
+    await super.cancelPrayer();
+  }
 
   @override
   Future<void> schedule(

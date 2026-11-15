@@ -181,4 +181,14 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  tp('a generic reschedule failure still shows the stored switches ON', (
+    tester,
+  ) async {
+    final sched = ThrowingScheduler()..failCancel = true;
+    await pump(tester, scheduler: sched, preOn: {PrayerName.isya});
+    final isya = sw('Pengingat Isya');
+    await reveal(tester, isya);
+    expect(tester.widget<SwitchListTile>(isya).value, isTrue);
+  });
 }

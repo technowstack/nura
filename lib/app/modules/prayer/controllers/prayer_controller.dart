@@ -139,6 +139,7 @@ class PrayerController extends GetxController with WidgetsBindingObserver {
       await _safeRefresh(n);
     } on Object catch (e) {
       debugPrint('PrayerController: notifications failed: $e');
+      await _safeRefresh(n);
     }
   }
 
