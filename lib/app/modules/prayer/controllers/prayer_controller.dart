@@ -136,8 +136,18 @@ class PrayerController extends GetxController with WidgetsBindingObserver {
     } on PrayerScheduleException catch (e) {
       remindersFailed.value = true;
       debugPrint('PrayerController: $e');
+      await _safeRefresh(n);
     } on Object catch (e) {
       debugPrint('PrayerController: notifications failed: $e');
+    }
+  }
+
+  /// For catch branches: a failing status() must not escape the caller.
+  Future<void> _safeRefresh(PrayerNotifier n) async {
+    try {
+      await _refreshNotify(n);
+    } on Object catch (e) {
+      debugPrint('PrayerController: refresh failed: $e');
     }
   }
 
@@ -161,8 +171,8 @@ class PrayerController extends GetxController with WidgetsBindingObserver {
       if (!ok) notifyDenied.value = true;
     } on PrayerScheduleException catch (e) {
       remindersFailed.value = true;
-      await _refreshNotify(n);
       debugPrint('PrayerController: $e');
+      await _safeRefresh(n);
     } on Object catch (e) {
       debugPrint('PrayerController: switch failed: $e');
     }

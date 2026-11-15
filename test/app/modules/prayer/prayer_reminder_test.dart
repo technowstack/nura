@@ -19,6 +19,7 @@ Future<(RecordingScheduler, MemoryPrayerStore)> pump(
   PermissionState exact = PermissionState.granted,
   PermissionState afterRequest = PermissionState.granted,
   RecordingScheduler? scheduler,
+  Set<PrayerName> preOn = const {},
 }) async {
   tester.view.physicalSize = const Size(360, 640);
   tester.view.devicePixelRatio = 1;
@@ -29,7 +30,7 @@ Future<(RecordingScheduler, MemoryPrayerStore)> pump(
     ..notif = afterRequest == PermissionState.denied
         ? PermissionState.denied
         : PermissionState.granted;
-  final store = MemoryPrayerStore(region: jakarta);
+  final store = MemoryPrayerStore(region: jakarta)..on.addAll(preOn);
   setup(
     tester,
     region: jakarta,
@@ -164,5 +165,20 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text(note), findsNothing);
+  });
+
+  tp('failure on initial load still shows the stored switches ON', (
+    tester,
+  ) async {
+    final sched = ThrowingScheduler()..failAll = true;
+    await pump(tester, scale: 1.3, scheduler: sched, preOn: {PrayerName.isya});
+    final isya = sw('Pengingat Isya');
+    await reveal(tester, isya);
+    expect(tester.widget<SwitchListTile>(isya).value, isTrue);
+    expect(
+      find.text('Pengingat gagal dijadwalkan. Coba buka ulang Nura.'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
   });
 }
