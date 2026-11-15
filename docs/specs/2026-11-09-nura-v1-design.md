@@ -228,22 +228,30 @@ CREATE TABLE last_read (
 
 CREATE TABLE prayer_location (
   id        INTEGER PRIMARY KEY CHECK (id = 1),
-  source    TEXT NOT NULL CHECK (source IN ('gps','city')),
-  label     TEXT NOT NULL,
-  lat       REAL NOT NULL,
-  lng       REAL NOT NULL,
-  city_key  TEXT NOT NULL          -- kunci kota di cities.json (kota terdekat jika GPS)
-  -- RENCANA Fase 5 (keputusan 2026-11-15): diganti migrasi baru ke model provinsi + kabupaten/kota (nama persis dari API equran.id, bukan kode) plus zona waktu wilayah; lat/lng tidak lagi wajib. Lihat 7.3
+  provinsi  TEXT NOT NULL,         -- nama persis dari API equran.id; zona waktu diturunkan dari provinsi
+  kabkota   TEXT NOT NULL,
+  source    TEXT NOT NULL CHECK (source IN ('city','gps'))
 );
 
 CREATE TABLE prayer_day (
   date      TEXT NOT NULL,          -- yyyy-MM-dd
-  city_key  TEXT NOT NULL,
+  provinsi  TEXT NOT NULL,
+  kabkota   TEXT NOT NULL,
   imsak TEXT, subuh TEXT, terbit TEXT, dhuha TEXT,
-  dzuhur TEXT, ashar TEXT, maghrib TEXT, isya TEXT,   -- HH:mm waktu lokal
+  dzuhur TEXT, ashar TEXT, maghrib TEXT, isya TEXT,   -- HH:mm waktu lokal wilayah
   source    TEXT NOT NULL CHECK (source IN ('api','calc')),
+  fetched_at INTEGER NOT NULL,      -- epoch ms
+  PRIMARY KEY (date, provinsi, kabkota)
+);
+
+CREATE TABLE prayer_month (
+  provinsi  TEXT NOT NULL,
+  kabkota   TEXT NOT NULL,
+  year      INTEGER NOT NULL,
+  month     INTEGER NOT NULL,
+  status    TEXT NOT NULL CHECK (status IN ('ok','none')),   -- none = API tidak punya data bulan itu
   fetched_at INTEGER NOT NULL,
-  PRIMARY KEY (date, city_key)
+  PRIMARY KEY (provinsi, kabkota, year, month)
 );
 
 CREATE TABLE audio_download (
@@ -257,7 +265,7 @@ CREATE TABLE audio_download (
 );
 ```
 
-Migrasi memakai `PRAGMA user_version`, dengan satu fungsi migrasi per versi.
+Migrasi memakai `PRAGMA user_version`, dengan satu fungsi migrasi per versi. Skema di atas adalah `user_version` 2 (migrasi v2 menghapus dan membuat ulang `prayer_location` dan `prayer_day`, yang belum pernah dipakai, dan menambah `prayer_month`).
 
 ## 5. Arsitektur Aplikasi
 
@@ -306,7 +314,6 @@ lib/
       online_service.dart        sakelar dan cek koneksi; gerbang semua request
       audio_player_service.dart  just_audio, antrian per ayat
       notification_service.dart  penjadwalan pengingat sholat dan notifikasi harian
-      location_service.dart      GPS sekali ambil, cari kota terdekat
       home_widget_service.dart   merender gambar widget (Flutter) untuk 7 hari ke depan dan menulisnya ke widget
     modules/
       onboarding/  home/  quran_list/  quran_detail/  juz/
@@ -378,27 +385,28 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 ### 7.1 Sumber
 
 - **API** (diputuskan 2026-11-15: equran.id v2, `https://equran.id/api/v2/shalat`, dokumentasi `https://equran.id/apidev/shalat`; syarat layanan belum dibaca, wajib dibaca sebelum rilis): ambil sekali per bulan per wilayah (bulan berjalan, bulan berikutnya bila perlu) lalu simpan ke `prayer_day` dengan `source = 'api'`. Rate limit tidak didokumentasikan: batasi permintaan, jangan polling.
-- **Perhitungan offline** (`adhan`): Subuh 20°, Isya 18°, Asar mazhab Syafi'i, plus penyesuaian dari setting. Simpan dengan `source = 'calc'`.
+- **Perhitungan offline** (`adhan`): Subuh 20°, Isya 18°, Asar mazhab Syafi'i. Ihtiyat bawaan (keputusan 2026-11-15, Q5): +3 menit untuk subuh, dzuhur, ashar, maghrib, isya dan -3 menit untuk terbit, diukur terhadap API pada November 2026 untuk Jakarta dan Bontang (selisih akhir maksimal 1 menit). Catatan: metode Singapore di `adhan` sudah menambah +1 menit pada dzuhur, jadi ihtiyat efektif dzuhur terhadap waktu astronomis adalah +4 (konstanta kita +3 di atas metode). Penyesuaian dari setting (`prayer_adjust_*`) ditambahkan di atasnya. Imsak = subuh (setelah ihtiyat) - 10 menit. Dhuha tidak dihitung (aturan belum ditetapkan). Kalkulator hanya aktif bila koordinat wilayah ada. Simpan dengan `source = 'calc'`.
 
 ### 7.2 Alur
 
 1. Saat jadwal dibutuhkan untuk tanggal D di kota K: cek `prayer_day(D, K)`.
 2. Jika ada dan `source = 'api'`, pakai.
 3. Jika tidak ada atau `source = 'calc'`, dan `prayerSyncEnabled` serta ada koneksi: ambil dari API untuk bulan D, simpan, lalu pakai.
-4. Jika API gagal atau tidak diizinkan: hitung offline, simpan sebagai `calc`, dan tampilkan label "perkiraan".
-5. Sinkron ulang otomatis saat aplikasi dibuka jika sisa jadwal `api` kurang dari 7 hari.
+4. Jika API gagal atau tidak diizinkan: hitung offline bila koordinat wilayah tersedia (Q4), simpan sebagai `calc`, dan tampilkan label "perkiraan". Bila koordinat tidak tersedia (keadaan v1), tampilkan "Butuh internet untuk jadwal pertama".
+5. Saat aplikasi dibuka (dan saat wilayah berganti): ambil bulan berjalan bila belum ada, dan bulan berikutnya bila belum ada. Tidak ada sinkron di latar belakang di v1.
 
 ### 7.3 Lokasi
 
 - Model lokasi (keputusan 2026-11-15): provinsi + kabupaten/kota dengan nama persis dari API, bukan koordinat. Skema `prayer_location` disesuaikan lewat migrasi `user.db` baru saat Fase 5. Dokumentasi API menyebut 34 provinsi, Indonesia kini 38: cek saat Fase 5.
 - Notifikasi dijadwalkan dalam zona waktu wilayah (WIB/WITA/WIT), bukan zona perangkat.
-- Pilihan kota: daftar dari `meta/cities.json`, dengan pencarian nama.
-- GPS ke wilayah terdekat dan cadangan offline butuh koordinat per kab/kota (Q4). Bila belum ada: cadangan memakai GPS perangkat jika diizinkan; tanpa keduanya tampilkan "butuh internet untuk jadwal pertama".
-- GPS: ambil posisi sekali, lalu cari kota terdekat di `cities.json` (jarak haversine). Kota itu dipakai untuk API, sedangkan koordinat GPS dipakai untuk perhitungan offline.
+- Pilihan wilayah: daftar dari snapshot `data-source/meta/prayer_regions.json` (keputusan 2026-11-15), dibuat skrip `tool/fetch_prayer_regions.dart` dari API (berisi `fetched_at`) dan dijalankan ulang sebelum rilis; dengan pencarian nama. Snapshot dipakai agar pemilih jalan offline.
+- Zona waktu: dipetakan per provinsi ke WIB/WITA/WIT dengan offset tetap (Indonesia tanpa DST); respons API tidak memuat zona waktu.
+- Bila wilayah tersimpan dijawab 404 oleh API (mis. API berubah ke 38 provinsi), pengguna diminta memilih ulang wilayah dan jadwal serta notifikasi lama dihentikan; tidak gagal diam-diam.
+- Tidak ada GPS dan tidak ada izin lokasi di v1 (keputusan 2026-11-15; paket `geolocator` ditunda). Cadangan `adhan` memakai koordinat wilayah dan baru aktif bila koordinat per kab/kota tersedia (Q4).
 
 ### 7.4 Notifikasi
 
-- `flutter_local_notifications`, dijadwalkan untuk 7 hari ke depan dari `prayer_day`.
+- `flutter_local_notifications`, dijadwalkan dari `prayer_day` sampai akhir data tersimpan, maksimal 30 hari dari hari ini. Pada hari terakhir data tersimpan dikirim satu notifikasi "Buka Nura untuk memperbarui jadwal sholat.".
 - Penjadwalan ulang terjadi saat aplikasi dibuka, setelah HP restart (receiver `BOOT_COMPLETED`), dan saat lokasi atau setting notifikasi berubah.
 - Setiap waktu sholat punya sakelar sendiri. Suara pakai bunyi notifikasi bawaan.
 - Android 12 ke atas: minta izin alarm tepat waktu dengan penjelasan. Jika ditolak, pakai alarm tidak tepat waktu dan tampilkan keterangan di layar Sholat.
@@ -446,8 +454,7 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 | Hasil kosong (pencarian, bookmark) | `UiState.empty` dengan teks penjelas. |
 | Tidak ada koneksi atau sakelar mati | Kontrol online dinonaktifkan dengan keterangan. Tidak ada dialog error. |
 | Request API gagal | Audio: berhenti dan tampilkan snackbar. Jadwal: pakai fallback perhitungan. |
-| Izin lokasi ditolak | Arahkan ke pilihan kota manual. |
-| Izin notifikasi atau alarm tepat ditolak | Tampilkan keterangan dan tautan ke pengaturan sistem. |
+| Izin notifikasi atau alarm tepat ditolak | Tampilkan keterangan (tanpa tautan di v1; tautan ke pengaturan sistem direncanakan kemudian). |
 | `user.db` gagal migrasi | Cadangkan file lama, buat baru, dan beri tahu pengguna bahwa bookmark mungkin hilang. |
 
 ## 10. Pengujian
@@ -476,7 +483,7 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 | 7. Fitur online | Sakelar, audio streaming, unduhan | Audio jalan online dan dari unduhan saat offline |
 | 8. Polish | Onboarding, Sumber & Atribusi, ikon, uji perangkat, persiapan Play Store | Siap rilis, terblokir oleh Q6 dan Q7 |
 
-Fase 2 dan seterusnya membutuhkan Fase 1. Fase 5 membutuhkan `cities.json`. Fase 6 untuk ayat membutuhkan `daily_ayah.json`.
+Fase 2 dan seterusnya membutuhkan Fase 1. Fase 5 membutuhkan snapshot `meta/prayer_regions.json` (dibuat `tool/fetch_prayer_regions.dart`). Fase 6 untuk ayat membutuhkan `daily_ayah.json`.
 
 ## 12. Pertanyaan Terbuka yang Memengaruhi Spec
 
@@ -484,8 +491,8 @@ Fase 2 dan seterusnya membutuhkan Fase 1. Fase 5 membutuhkan `cities.json`. Fase
 |---|---|---|
 | Q2 | Nama aplikasi Nura (Play Store, DJKI) | Fase 8 |
 | Q3 | Penyedia API audio dan jadwal, beserta syarat penggunaannya. Jadwal: diputuskan equran.id v2 (2026-11-15), syarat layanan belum dibaca (wajib sebelum rilis). Audio belum diputuskan | Fase 7, rilis |
-| Q4 | Sumber `surah_info.json`, `juz.json`, dan `cities.json` | Fase 1 (revelation), 2 (juz), 5 |
-| Q5 | Nilai ihtiyat dan parameter perhitungan offline | Fase 5 |
+| Q4 | Sumber `surah_info.json`, `juz.json`, dan koordinat per kab/kota (pengganti `cities.json`; hanya untuk cadangan offline) | Fase 1 (revelation), 2 (juz), 5 |
+| Q5 | Nilai ihtiyat dan parameter perhitungan offline. Diputuskan 2026-11-15: +3 menit prayer, -3 menit terbit | Fase 5 |
 | Q6 | Ketentuan tashih LPMQ dan lisensi font Arab (LPMQ Isep Misbah; cadangan KFGQPC Uthmanic Script Hafs) | Rilis |
 | Q7 | Lisensi teks terjemahan hadis | Rilis |
 | Q8 | Verifikasi data ke sumber asli | Sebelum rilis |

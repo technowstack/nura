@@ -62,6 +62,7 @@ Catatan jalur: `docs/design/HANDOFF-flutter.md` menyebut `lib/core/theme/`. Di p
 
 ## Development setup
 
+- Android SDK platform 37 terpasang (`compileSdk` 37, diminta `flutter_local_notifications` 23.0.2) dan Flutter 3.44 atau lebih baru (`pubspec.lock` memuat `flutter: >=3.44.0`).
 - Linux: `sudo apt install libsqlite3-dev`. Dibutuhkan oleh `flutter test` dan skrip `tool/`, karena paket `sqlite3` memuat SQLite dari sistem di host (mencari `libsqlite3.so`).
 
 ## Perintah

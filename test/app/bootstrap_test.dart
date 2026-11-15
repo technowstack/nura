@@ -9,7 +9,12 @@ import 'package:nura/app/app_bootstrap.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/theme/theme_controller.dart';
 import 'package:nura/app/core/theme/theme_mode_setting.dart';
+import 'package:nura/app/core/prayer_clock.dart';
+import 'package:nura/app/data/models/prayer_regions.dart';
+import 'package:nura/app/data/repositories/default_prayer_repository.dart';
 import 'package:nura/app/data/repositories/hadith_repository.dart';
+import 'package:nura/app/data/repositories/prayer_repository.dart';
+import 'package:nura/app/services/online_service.dart';
 import 'package:nura/app/data/repositories/isolate_hadith_repository.dart';
 import 'package:nura/app/data/repositories/isolate_search_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
@@ -84,6 +89,25 @@ void main() {
     expect(Get.find<UserRepository>(), isA<UserRepository>());
     expect(Get.find<HadithRepository>(), isA<IsolateHadithRepository>());
     expect(Get.find<SearchRepository>(), isA<IsolateSearchRepository>());
+  });
+
+  test('bootstrap registers the prayer services', () async {
+    await ready();
+    expect(Get.find<PrayerRepository>(), isA<DefaultPrayerRepository>());
+    expect(Get.find<PrayerRegions>().provinces, isNotEmpty);
+    expect(Get.isRegistered<OnlineService>(), isTrue);
+    expect(Get.isRegistered<PrayerClock>(), isTrue);
+  });
+
+  test('failed region load registers nothing', () async {
+    final r = await bootstrap(
+      installer: installer(),
+      dataDir: tmp,
+      loadRegions: () async => throw StateError('boom'),
+    );
+    expect(r, isA<BootstrapFailure>());
+    expect(Get.isRegistered<PrayerRepository>(), isFalse);
+    expect(Get.isRegistered<UserDatabase>(), isFalse);
   });
 
   test('search worker starts after the hadith worker', () async {

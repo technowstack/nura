@@ -15,7 +15,7 @@ void main() {
     file = File('${tmp.path}/user.db');
   });
 
-  test('fresh open creates all v1 tables and sets user_version 1', () {
+  test('fresh open creates all tables and sets user_version 2', () {
     final db = UserDatabase.open(file);
     addTearDown(db.close);
     final tables = db.raw
@@ -30,11 +30,12 @@ void main() {
         'last_read',
         'prayer_location',
         'prayer_day',
+        'prayer_month',
         'audio_download',
       ]),
     );
-    expect(db.schemaVersion, 1);
-    expect(userSchemaVersion, 1);
+    expect(db.schemaVersion, 2);
+    expect(userSchemaVersion, 2);
     expect(db.raw.select('PRAGMA foreign_keys').single.values.single, 1);
   });
 
@@ -97,6 +98,61 @@ void main() {
     expect(raw.select('PRAGMA user_version').single.values.single, 0);
     expect(
       raw.select("SELECT name FROM sqlite_master WHERE type='table'"),
+      isEmpty,
+    );
+  });
+  test('v1 to v2 keeps user data and reshapes prayer tables', () {
+    final all = userMigrationsForTest;
+    final v1 = UserDatabase.open(file, migrations: all.sublist(0, 1));
+    v1.raw.execute(
+      "INSERT INTO bookmark (kind, ref_a, ref_b, created_at) VALUES ('ayah','2',255,5)",
+    );
+    v1.raw.execute(
+      "INSERT INTO last_read (kind, ref_a, ref_b, updated_at) VALUES ('ayah','1',3,9)",
+    );
+    v1.close();
+    final db = UserDatabase.open(file);
+    addTearDown(db.close);
+    expect(db.schemaVersion, 2);
+    expect(db.raw.select('SELECT ref_b FROM bookmark').single['ref_b'], 255);
+    expect(db.raw.select('SELECT ref_b FROM last_read').single['ref_b'], 3);
+    final cols = db.raw
+        .select('PRAGMA table_info(prayer_location)')
+        .map((r) => r['name']);
+    expect(cols, containsAll(['provinsi', 'kabkota']));
+    expect(db.raw.select('SELECT * FROM prayer_month'), isEmpty);
+  });
+
+  test('failed v2 migration leaves v1 intact', () {
+    final all = userMigrationsForTest;
+    UserDatabase.open(file, migrations: all.sublist(0, 1))
+      ..raw.execute(
+        "INSERT INTO bookmark (kind, ref_a, ref_b, created_at) VALUES ('ayah','2',255,5)",
+      )
+      ..close();
+    expect(
+      () => UserDatabase.open(
+        file,
+        migrations: [
+          all[0],
+          (db) {
+            all[1](db);
+            throw StateError('boom');
+          },
+        ],
+      ),
+      throwsA(isA<StateError>()),
+    );
+    final raw = sqlite3.open(file.path);
+    addTearDown(raw.dispose);
+    expect(raw.select('PRAGMA user_version').single.values.single, 1);
+    expect(raw.select('SELECT * FROM bookmark'), hasLength(1));
+    final cols = raw
+        .select('PRAGMA table_info(prayer_location)')
+        .map((r) => r['name']);
+    expect(cols, contains('city_key'));
+    expect(
+      raw.select("SELECT name FROM sqlite_master WHERE name = 'prayer_month'"),
       isEmpty,
     );
   });

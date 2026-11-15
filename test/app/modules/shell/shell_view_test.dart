@@ -1,18 +1,36 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:nura/app/core/prayer_clock.dart';
+import 'package:nura/app/data/models/prayer_regions.dart';
 import 'package:nura/app/data/repositories/hadith_repository.dart';
+import 'package:nura/app/data/repositories/prayer_repository.dart';
+import 'package:nura/app/data/sources/user_database.dart';
+import 'package:nura/app/services/online_service.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/modules/shell/views/shell_view.dart';
+import '../../../support/fake_prayer.dart';
 import '../../../support/fake_repositories.dart';
 
 void main() {
   setUp(() {
     Get.reset();
+    final tmp = Directory.systemTemp.createTempSync('nura_shell_');
+    final db = UserDatabase.open(File('${tmp.path}/user.db'));
+    addTearDown(() {
+      db.close();
+      tmp.deleteSync(recursive: true);
+    });
     Get.put<QuranRepository>(FakeQuranRepository());
     Get.put<UserRepository>(FakeUserRepository());
     Get.put<HadithRepository>(FakeHadithRepository());
+    Get.put<PrayerRepository>(FakePrayerRepository());
+    Get.put<PrayerClock>(FakeClock(DateTime.utc(2026, 11, 15)));
+    Get.put<PrayerRegions>(PrayerRegions({}));
+    Get.put<OnlineService>(OnlineService(db, probe: () async => false));
   });
   tearDown(Get.reset);
 
@@ -33,6 +51,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Segera hadir'), findsNothing);
     expect(find.text('Daftar kitab belum tersedia'), findsOneWidget);
+    await tester.tap(find.text('Sholat'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Pilih wilayah untuk melihat jadwal sholat'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Latin 130% at 360x640 does not throw', (tester) async {

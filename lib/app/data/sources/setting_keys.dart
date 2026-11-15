@@ -9,4 +9,14 @@ abstract final class SettingKeys {
   static const showTranslation = 'show_translation';
   static const translationFontScale = 'translation_font_scale';
   static const qariId = 'qari_id';
+  static const notifyFajr = 'notify_fajr';
+  static const prayerAdjustFajr = 'prayer_adjust_fajr';
+  static const notifyDhuhr = 'notify_dhuhr';
+  static const prayerAdjustDhuhr = 'prayer_adjust_dhuhr';
+  static const notifyAsr = 'notify_asr';
+  static const prayerAdjustAsr = 'prayer_adjust_asr';
+  static const notifyMaghrib = 'notify_maghrib';
+  static const prayerAdjustMaghrib = 'prayer_adjust_maghrib';
+  static const notifyIsha = 'notify_isha';
+  static const prayerAdjustIsha = 'prayer_adjust_isha';
 }
