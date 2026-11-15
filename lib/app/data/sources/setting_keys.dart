@@ -19,4 +19,7 @@ abstract final class SettingKeys {
   static const prayerAdjustMaghrib = 'prayer_adjust_maghrib';
   static const notifyIsha = 'notify_isha';
   static const prayerAdjustIsha = 'prayer_adjust_isha';
+  static const dailyHadithSource = 'daily_hadith_source';
+  static const dailyNotifyEnabled = 'daily_notify_enabled';
+  static const dailyNotifyTime = 'daily_notify_time';
 }
