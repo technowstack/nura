@@ -27,6 +27,7 @@ flutter:
   assets:
     - assets/db/content.db
     - assets/db/content.version
+    - data-source/meta/prayer_regions.json
     - assets/fonts/PlusJakartaSans/OFL.txt
   fonts:
     - family: Plus Jakarta Sans
