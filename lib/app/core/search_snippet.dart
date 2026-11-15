@@ -40,18 +40,23 @@ Snippet buildSnippet(String text, List<String> tokens) {
 /// [tokens] (Arabic mode): matching runs on the normalized form, while the
 /// window and highlights are offsets into the original [text].
 Snippet buildArabicSnippet(String text, List<String> tokens) {
-  final n = normalizeArabicWithOffsets(text);
   final matches = <TextRange>[];
-  for (final t in tokens) {
-    if (t.isEmpty) continue;
-    for (var i = n.text.indexOf(t); i >= 0; i = n.text.indexOf(t, i + 1)) {
-      final start = n.offsets[i];
-      var end = n.offsets[i + t.length - 1] + 1;
-      // Absorb harakat/waqf marks attached after the last matched letter.
-      while (end < text.length && _isStripped(text[end])) {
-        end++;
+  // Both index forms (plain and small-alef-as-alif) can hold the match.
+  for (final n in [
+    normalizeArabicWithOffsets(text),
+    normalizeArabicVariantWithOffsets(text),
+  ]) {
+    for (final t in tokens) {
+      if (t.isEmpty) continue;
+      for (var i = n.text.indexOf(t); i >= 0; i = n.text.indexOf(t, i + 1)) {
+        final start = n.offsets[i];
+        var end = n.offsets[i + t.length - 1] + 1;
+        // Absorb harakat/waqf marks attached after the last matched letter.
+        while (end < text.length && _isStripped(text[end])) {
+          end++;
+        }
+        matches.add(TextRange(start: start, end: end));
       }
-      matches.add(TextRange(start: start, end: end));
     }
   }
   return _assemble(text, matches);
@@ -91,6 +96,47 @@ bool _isStripped(String ch) => _normalizeChar(ch).isEmpty;
     }
     out.write(mapped);
     offsets.add(i);
+  }
+  return (text: out.toString(), offsets: offsets);
+}
+
+/// Equals `normalizeArabicVariantForSearch(text)`, with the same offset map
+/// as [normalizeArabicWithOffsets]. A small alef and the waw it absorbs
+/// become one alif that maps to the waw, so a highlight ending there covers
+/// the whole written word.
+({String text, List<int> offsets}) normalizeArabicVariantWithOffsets(
+  String text,
+) {
+  final out = StringBuffer();
+  final offsets = <int>[];
+  var pendingSpace = -1;
+
+  void emit(String mapped, int at) {
+    if (mapped == ' ') {
+      if (offsets.isNotEmpty && pendingSpace < 0) pendingSpace = at;
+      return;
+    }
+    if (mapped.isEmpty) return;
+    if (pendingSpace >= 0) {
+      out.write(' ');
+      offsets.add(pendingSpace);
+      pendingSpace = -1;
+    }
+    out.write(mapped);
+    offsets.add(at);
+  }
+
+  for (var i = 0; i < text.length; i++) {
+    if (text.codeUnitAt(i) != 0x670) {
+      emit(_normalizeChar(text[i]), i);
+      continue;
+    }
+    if (daggerWawPattern.matchAsPrefix(text, i) != null) {
+      emit('ا', i + 1);
+      i++; // the waw is absorbed
+    } else {
+      emit('ا', i);
+    }
   }
   return (text: out.toString(), offsets: offsets);
 }

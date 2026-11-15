@@ -107,6 +107,29 @@ void main() {
     expect(count('hadith_fts_docsize'), count('hadith'));
   });
 
+  test('ayah_fts finds a small-alef word by both spellings (Q13)', () {
+    // Fixture 1:3 has ٱلرَّحْمَٰنِ: plain form الرحمن, small alef as alif الرحمان.
+    final id = db
+        .select(
+          'SELECT id FROM ayah WHERE surah_number = 1 AND ayah_number = 3',
+        )
+        .first['id'];
+    for (final word in ['الرحمن', 'الرحمان']) {
+      final hits = db.select(
+        'SELECT rowid FROM ayah_fts WHERE ayah_fts MATCH ?',
+        ['arab:"$word"'],
+      );
+      expect(hits.map((r) => r['rowid']), contains(id), reason: word);
+    }
+    // Hadith text is indexed with the plain form only.
+    expect(
+      db.select('SELECT rowid FROM hadith_fts WHERE hadith_fts MATCH ?', [
+        'arab:"الرحمان"',
+      ]),
+      isEmpty,
+    );
+  });
+
   test('FTS finds a diacritized source word by its literal bare form', () {
     // Fixture 1:2 starts with اَلْحَمْدُ; the query is typed without harakat.
     final hits = db.select(

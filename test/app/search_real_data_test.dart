@@ -74,17 +74,31 @@ void main() {
         greaterThan(_ftsCount('hadith', 'arab : "${q.tokens.single}"')),
       );
       expect((await _repo.searchHadith(q)).hasMore, isTrue);
-      // The Quran text uses Uthmani rasm (الصلوة), which the imla'i spelling
-      // does not match; the Uthmani spelling does (see docs/STATUS.md).
-      final uthmani = await _all('الصلوة', hadith: false);
-      expect(uthmani, hasLength(_ftsCount('ayah', 'arab : "الصلوه"*')));
-      expect(uthmani, isNotEmpty);
-      // Pinned limit: the modern spelling finds 0 ayat, while the Uthmani
-      // spelling الصلوة finds 55. Owner decision pending, see docs/STATUS.md.
-      expect(
-        await _all('\u0627\u0644\u0635\u0644\u0627\u0629', hadith: false),
-        isEmpty,
-      );
+    });
+
+    // Q13: ayah_fts also holds the small-alef-as-alif form, so imla'i
+    // spellings find Uthmani text. Counts measured on content.db (ayat).
+    test('Arabic imla\'i spelling finds Uthmani ayat (Q13)', () async {
+      const expected = {
+        'الصلاة': 55,
+        'الصلوة': 55, // the Uthmani spelling keeps working
+        'الزكاة': 26,
+        'الحياة': 62,
+        'السماوات': 180,
+        'إبراهيم': 40,
+        'الكتاب': 151,
+        // Must not shrink: they never carried a small alef problem.
+        'الرحمن': 45,
+        'هذا': 183,
+        'ذلك': 312,
+      };
+      for (final e in expected.entries) {
+        expect(
+          await _all(e.key, hadith: false),
+          hasLength(e.value),
+          reason: e.key,
+        );
+      }
     });
   });
 
