@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -121,8 +122,21 @@ void main() {
       expect(w.maxLines, isNull);
       expect(w.overflow, isNot(TextOverflow.ellipsis));
     }
-    final trRect = t.getRect(find.text(tr));
-    expect(trRect.bottom, inInclusiveRange(0, 640)); // last chars on screen
+    expect(p.pixels, p.maxScrollExtent);
+    for (final text in [arab, tr]) {
+      final rp = t.renderObject<RenderParagraph>(find.text(text));
+      expect(rp.didExceedMaxLines, isFalse);
+      // The end of the text is really laid out (caret at its last offset).
+      final local = rp.getOffsetForCaret(
+        TextPosition(offset: text.length),
+        Rect.zero,
+      );
+      expect(local.dy, inInclusiveRange(0, rp.size.height));
+      // Arabic has scrolled out above; only the translation ends on screen.
+      if (text == tr) {
+        expect(rp.localToGlobal(local).dy, inInclusiveRange(0, 640));
+      }
+    }
     expect(find.text(_note), findsOneWidget);
     expect(t.getRect(find.text('Berikutnya')).bottom, lessThanOrEqualTo(640));
   });
@@ -350,5 +364,22 @@ void main() {
     repo.hadith = [_h(1, arab: 'ب' * 300, tr: 'Kata kata ' * 80)];
     await pump(t, 1, scale: 1.3);
     expect(t.takeException(), isNull);
+  });
+
+  testWidgets('result arriving after close changes nothing', (t) async {
+    await pump(t, 1);
+    final gate = Completer<void>();
+    repo.hadithGates[2] = gate;
+    final slow = ctl().goTo(next: true);
+    await t.pump();
+    final c = ctl();
+    final before = c.state.value;
+    Get.delete<HadithDetailController>();
+    gate.complete();
+    await slow;
+    await t.pump();
+    expect(t.takeException(), isNull);
+    expect(identical(c.state.value, before), isTrue);
+    expect(c.hasNext.value, isTrue);
   });
 }
