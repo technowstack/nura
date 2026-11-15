@@ -7,6 +7,8 @@ import '../modules/hadith_list/bindings/hadith_list_binding.dart';
 import '../modules/hadith_list/views/hadith_list_view.dart';
 import '../modules/quran_detail/bindings/quran_detail_binding.dart';
 import '../modules/quran_detail/views/quran_detail_view.dart';
+import '../modules/search/bindings/search_binding.dart';
+import '../modules/search/views/search_view.dart';
 import '../modules/shell/views/shell_view.dart';
 import '../modules/onboarding/onboarding_view.dart';
 import 'app_routes.dart';
@@ -31,6 +33,7 @@ List<GetPage<dynamic>> appPages(BootstrapSuccess ready) => [
     page: HadithDetailView.new,
     binding: HadithDetailBinding(),
   ),
+  GetPage(name: Routes.search, page: SearchView.new, binding: SearchBinding()),
   GetPage(
     name: Routes.onboarding,
     page: () => OnboardingView(user: ready.user),

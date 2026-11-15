@@ -65,6 +65,20 @@ void main() {
   SearchResultsController make([SearchScope scope = SearchScope.quran]) =>
       Get.put(SearchResultsController(SearchArgs(scope)));
 
+  test('books lists the nine hadith slugs in sort order', () {
+    expect(SearchResultsController.books.keys, [
+      'bukhari',
+      'muslim',
+      'abu-daud',
+      'tirmidzi',
+      'nasai',
+      'ibnu-majah',
+      'ahmad',
+      'malik',
+      'darimi',
+    ]);
+  });
+
   testWidgets('starts with the initial hint and no repository call', (
     tester,
   ) async {

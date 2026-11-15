@@ -9,6 +9,7 @@ import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/modules/hadith_books/bindings/hadith_books_binding.dart';
 import 'package:nura/app/modules/hadith_books/views/hadith_books_view.dart';
 import 'package:nura/app/modules/hadith_list/hadith_list_args.dart';
+import 'package:nura/app/modules/search/search_args.dart';
 import 'package:nura/app/routes/app_routes.dart';
 
 import '../../../support/fake_repositories.dart';
@@ -65,6 +66,13 @@ void main() {
             page: () {
               routeArgs = Get.arguments;
               return const Scaffold(body: Text('stub list'));
+            },
+          ),
+          GetPage(
+            name: Routes.search,
+            page: () {
+              routeArgs = Get.arguments;
+              return const Scaffold(body: Text('stub search'));
             },
           ),
         ],
@@ -140,5 +148,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('Shahih Bukhari'), findsOneWidget);
+  });
+
+  testWidgets('search icon opens search with hadith scope', (tester) async {
+    await pump(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Cari'));
+    await tester.pumpAndSettle();
+    expect(find.text('stub search'), findsOneWidget);
+    expect((routeArgs as SearchArgs).scope, SearchScope.hadith);
   });
 }

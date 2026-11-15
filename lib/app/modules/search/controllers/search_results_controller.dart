@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:nura/content_pipeline/content_schema.dart';
 
 import '../../../core/format_thousands.dart';
 import '../../../core/search_query.dart';
@@ -38,6 +39,9 @@ class SearchResultsController extends GetxController {
   static const initialHint =
       'Cari kata dalam terjemahan Indonesia atau teks Arab.';
   static const tooShortHint = 'Ketik minimal 2 huruf';
+
+  /// Hadith books for the book filter: slug to name, in `sort_order`.
+  static const books = hadithBookNames;
 
   /// Text for the view's empty state (`UiEmpty`).
   static const emptyText = 'Tidak ada hasil';
