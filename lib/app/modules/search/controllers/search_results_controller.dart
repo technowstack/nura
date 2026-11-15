@@ -39,6 +39,9 @@ class SearchResultsController extends GetxController {
       'Cari kata dalam terjemahan Indonesia atau teks Arab.';
   static const tooShortHint = 'Ketik minimal 2 huruf';
 
+  /// Text for the view's empty state (`UiEmpty`).
+  static const emptyText = 'Tidak ada hasil';
+
   final Rx<SearchScope> scope;
   final bookSlug = RxnString();
 
@@ -78,8 +81,10 @@ class SearchResultsController extends GetxController {
   }
 
   void setBook(String? slug) {
+    if (bookSlug.value == slug) return;
     bookSlug.value = slug;
-    _run();
+    // Ayah search ignores the book filter.
+    if (scope.value == SearchScope.hadith) _run();
   }
 
   void retry() => _run();

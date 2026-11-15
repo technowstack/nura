@@ -215,6 +215,71 @@ void main() {
     expect(repo.calls, hasLength(3));
     expect(repo.calls.last.bookSlug, 'muslim');
     expect(repo.calls.last.query.tokens, ['sabar']);
+    c.setBook('muslim'); // same value: no call
+    await tester.pump();
+    expect(repo.calls, hasLength(3));
+  });
+
+  testWidgets('setBook in quran scope stores the book without a call', (
+    tester,
+  ) async {
+    final c = make();
+    c.onQueryChanged('sabar');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    c.setBook('muslim');
+    await tester.pump();
+    expect(c.bookSlug.value, 'muslim');
+    expect(repo.calls, hasLength(1));
+    c.setScope(SearchScope.hadith);
+    await tester.pump();
+    expect(repo.calls.last.bookSlug, 'muslim');
+  });
+
+  testWidgets('a stale loadMore reply is discarded after a new query', (
+    tester,
+  ) async {
+    repo.ayahPage = SearchPage(
+      hits: [_ayah(1, 1, 1, 'Al-Fatihah')],
+      hasMore: true,
+    );
+    final c = make();
+    c.onQueryChanged('lama');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    final gate = Completer<void>();
+    repo.gate = gate;
+    repo.ayahPage = SearchPage(
+      hits: [_ayah(2, 1, 2, 'Al-Fatihah')],
+      hasMore: false,
+    );
+    final more = c.loadMore();
+    await tester.pump();
+    expect(c.loadingMore.value, isTrue);
+    repo.ayahPage = SearchPage(
+      hits: [_ayah(50, 3, 7, 'Ali Imran')],
+      hasMore: true,
+    );
+    c.onQueryChanged('baru');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    gate.complete();
+    await more;
+    await tester.pump();
+    final s = _sections(c);
+    expect(s.single.title, 'Ali Imran');
+    expect(s.single.items.map((e) => e.hit.rowId), [50]);
+    expect(c.loadingMore.value, isFalse);
+    expect(c.hasMore.value, isTrue);
+    final before = repo.calls.length;
+    await c.loadMore(); // not blocked by the stale request's _busy
+    expect(repo.calls, hasLength(before + 1));
+    expect(repo.calls.last.afterRowId, 50);
+    expect(repo.calls.last.query.tokens, ['baru']);
+  });
+
+  test('empty state text comes from the controller', () {
+    expect(SearchResultsController.emptyText, 'Tidak ada hasil');
   });
 
   testWidgets('setScope before typing makes no call', (tester) async {
