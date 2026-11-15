@@ -55,6 +55,7 @@ data-source/
     juz.json                     batas 30 juz
     cities.json                  kota: nama, provinsi, lat, lng, id kota di API jadwal
     daily_ayah.json              daftar kurasi ayat harian (disusun pemilik proyek)
+  patches/                       (rencana, Q12) teks lengkap untuk entri yang terpotong di sumber, dengan sumber dan lisensi tiap teks (bagian 3.6)
   CHECKSUMS.sha256               mencakup semua file di atas
   README.md
 
@@ -185,6 +186,16 @@ Test `test/tool/` menjalankan verifikasi pada subset data sebagai fixture, terma
 Pakai `sqlite3` dan `sqlite3_flutter_libs`. Library SQLite dibundel bersama aplikasi, jadi FTS5 pasti tersedia di semua versi Android. SQLite bawaan Android tidak menjamin FTS5. Skrip di `tool/` juga memakai paket `sqlite3`, jadi pembuat dan pembaca database memakai mesin yang sama.
 
 Paket `sqlite3` bersifat sinkron. Query yang berat (pencarian, daftar panjang) dijalankan di isolate terpisah.
+
+### 3.6 Patch teks sumber (rencana, belum dikerjakan; Q12)
+
+Sebagian teks hadis terpotong di JSON sumber pada batas 16.384 byte UTF-8 (19 hadis; daftar dan aturan deteksi di `docs/plans/2026-11-15-nura-phase3-hadith.md`). Rencana perbaikan, dikerjakan **sebelum rilis** dan bergantung pada Q7 (lisensi teks hadis):
+
+- Teks lengkap disimpan di file patch terpisah di `data-source/patches/`, lengkap dengan sumber dan lisensi tiap teks. JSON asli di `data-source/` tidak diubah dan checksumnya tetap.
+- Builder menerapkan patch saat membuat `content.db`, hanya untuk entri yang disebut patch. Kolom dan entri lain tidak berubah.
+- Verifier memeriksa JSON asli dan patch masing-masing: teks di `content.db` sama dengan patch untuk entri yang dipatch dan sama dengan JSON asli untuk semua entri lain; patch ikut `CHECKSUMS.sha256`; patch tanpa sumber atau lisensi menggagalkan verifikasi.
+- Sampai itu selesai, UI menampilkan catatan bahwa teks terpotong di sumber (Fase 3) dan teks tidak diubah. Teks lengkap tidak boleh diambil dari sumber mana pun sebelum Q7 jelas.
+- Pekerjaan ini menyentuh sumber data, builder, dan verifier, jadi butuh persetujuan pemilik proyek saat dikerjakan (AGENTS.md).
 
 ## 4. Database Pengguna (`user.db`)
 
@@ -475,5 +486,6 @@ Fase 2 dan seterusnya membutuhkan Fase 1. Fase 5 membutuhkan `cities.json`. Fase
 | Q7 | Lisensi teks terjemahan hadis | Rilis |
 | Q8 | Verifikasi data ke sumber asli | Sebelum rilis |
 | Q9 | Daftar kurasi `daily_ayah.json` (disusun pemilik proyek) | Fase 6 |
+| Q12 | Patch teks hadis yang terpotong di sumber (bagian 3.6); bergantung pada Q7 | Sebelum rilis |
 
 Jika `surah_info.json` belum tersedia di Fase 1, kolom `revelation` diizinkan sementara bernilai `''` dan UI tidak menampilkannya. Verifikasi menandainya sebagai peringatan, bukan kegagalan, sampai file tersedia.

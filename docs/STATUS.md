@@ -2,7 +2,7 @@
 
 Terakhir diperbarui: 2026-11-13
 
-Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<nama>`), lalu `merge --no-ff` ke `main` setelah review akhir. Fase 1 dikerjakan di `rebuild/nura` dan sudah di-merge lokal ke `main` (merge commit `7b0340c`). Belum di-push.
+Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<nama>`), lalu `merge --no-ff` ke `main` setelah review akhir. Fase 1 dikerjakan di `rebuild/nura` dan sudah di-merge lokal ke `main` (merge commit `7b0340c`). `main` sudah di-push ke `origin` (2026-11-15).
 
 ## Ringkasan Kondisi
 
@@ -44,7 +44,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 |---|---|
 | Fondasi (struktur, paket, pipeline data, user.db) | Selesai (2026-11-10): pipeline data, `ContentDatabase`/installer, `user.db` dengan migrasi, bootstrap, DI, tema, route awal. Installer tidak lagi membaca 112 MB per start (hanya asset `content.version`), salinan memakai streaming native di Android. Uji manual di perangkat asli: pemilik proyek melaporkan aplikasi berjalan (rincian per langkah belum dicatat) |
 | Al-Qur'an offline (surah, detail, tafsir, juz, bookmark, last read, cari) | Selesai (lulus uji perangkat oleh pemilik proyek, di-merge ke `main`): daftar surah, tab Juz (kosong sampai `juz.json` ada, Q4), baca surah dengan Basmalah dari DB, bottom sheet tafsir, pengaturan baca (ukuran Arab 20–40, sakelar terjemahan, tema), bookmark, last read otomatis (debounce 3 detik). Belum: pencarian (Fase 4), bagikan, audio |
-| Hadis (kitab, daftar, detail, cari, bookmark) | Belum mulai |
+| Hadis (kitab, daftar, detail, cari, bookmark) | Fase 3 dikerjakan di `feat/phase-3-hadith`. **UI sementara** (layar hadis belum didesain, menunggu putaran desain 2): view dibuat tipis dan logika ada di controller dan repository, supaya desain baru hanya mengganti tampilan. Pencarian di Fase 4 |
 | Jadwal sholat dan notifikasi | Belum mulai |
 | 1 Hari 1 Ayat/Hadis (kartu dan notifikasi harian) | Belum mulai |
 | Widget layar depan Android (dirender sebagai gambar dari Flutter) | Belum mulai |
@@ -91,7 +91,10 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | 2026-11-13 | Tombol "Bagikan" ayat dan audio tidak masuk Fase 2 |
 | 2026-11-13 | Judul layar baca: judul = nama Latin, subjudul = arti + jumlah ayat (contoh "Pembukaan · 7 ayat"). Menggantikan subjudul `<Nama Latin> · <n> ayat` dari brief desain |
 | 2026-11-13 | Font Plus Jakarta Sans dibundel (OFL). Zip font tidak di-commit (`assets/fonts/*.zip` di-`.gitignore`). LPMQ tetap belum didaftarkan sampai Q6 selesai |
-| 2026-11-13 | Fase 2 lulus uji perangkat (pemilik proyek, perangkat fisik) dan di-merge `--no-ff` ke `main`. Tidak di-push |
+| 2026-11-13 | Fase 2 lulus uji perangkat (pemilik proyek, perangkat fisik) dan di-merge `--no-ff` ke `main`. Di-push ke `origin/main` pada 2026-11-15 setelah pemilik proyek memastikan repo privat |
+| 2026-11-15 | Remote `origin` diganti ke `git@github.com:technowstack/nura.git` (GitHub mengabarkan repo dipindah dari `alquran`) |
+| 2026-11-15 | Fase 3 (Hadis): Task 6–9 jalan dengan UI sementara memakai komponen yang ada. View tipis, logika di controller dan repository, agar desain putaran 2 hanya mengganti tampilan. Semua asumsi di plan disetujui (last read hadis tidak ada, pratinjau tiga baris, navigasi menurut urutan baris, tab Bookmark gabungan, bookmark dan salin tanpa bagikan/audio) |
+| 2026-11-15 | Q12 (hadis terpotong di sumber): Fase 3 menampilkan catatan "terpotong di sumber" di detail dan tidak mengubah teks. Perbaikan adalah pekerjaan sebelum rilis: teks lengkap di file patch terpisah `data-source/patches/` dengan sumber dan lisensi tiap teks, JSON asli tidak diubah, builder menerapkan patch, verifier memeriksa JSON asli dan patch masing-masing (spec 3.6). Bergantung pada Q7. Tidak ada teks yang diambil dari sumber mana pun sekarang |
 
 ## Pertanyaan Terbuka
 
@@ -105,16 +108,16 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | Q7 | Konfirmasi lisensi teks terjemahan hadis | Rilis |
 | Q8 | Verifikasi isi `data-source/` ke sumber asli (hadis: `gadingnst/hadith-api`). Assets asli sebelum dipindah tidak tersedia untuk dibandingkan. Tugas terpisah | Integritas data, rilis |
 | Q9 | Daftar kurasi `data-source/meta/daily_ayah.json` (disusun pemilik proyek) | 1 Hari 1 Ayat (Fase 6) |
-| Q12 | 19 hadis terpotong di JSON sumber pada batas 16.384 byte UTF-8 (diukur 2026-11-15): 19 teks Arab dan 7 terjemahan putus di tengah kata, mis. Bukhari 2529 dan 4066, Muslim 3372, 4973, 4974, Ahmad 18152, Darimi 1778 (hanya Arab). Daftar lengkap dan aturan deteksi ada di `docs/plans/2026-11-15-nura-phase3-hadith.md`. Terkait Q8. Usulan: ambil teks lengkap ke-19 hadis dari sumber asli dan tambahkan ke `data-source/` (mengubah sumber data dan checksum, butuh keputusan pemilik proyek) | Integritas data, rilis |
+| Q12 | 19 hadis terpotong di JSON sumber pada batas 16.384 byte UTF-8 (diukur 2026-11-15): 19 teks Arab dan 7 terjemahan putus di tengah kata, mis. Bukhari 2529 dan 4066, Muslim 3372, 4973, 4974, Ahmad 18152, Darimi 1778 (hanya Arab). Daftar lengkap dan aturan deteksi ada di `docs/plans/2026-11-15-nura-phase3-hadith.md`. Terkait Q8. Diputuskan 2026-11-15: Fase 3 hanya menampilkan catatan terpotong dan tidak mengubah teks; perbaikannya lewat file patch terpisah `data-source/patches/` (sumber dan lisensi per teks, JSON asli tidak diubah, builder menerapkan patch, verifier memeriksa keduanya; spec 3.6). Bergantung pada Q7: jangan mengambil teks dari sumber mana pun sebelum lisensi jelas | Integritas data, rilis (setelah Q7) |
 
 ## Langkah Berikutnya
 
 1. Uji perangkat Fase 2: LULUS (2026-11-13, dilakukan pemilik proyek di perangkat fisik). Tanda waqaf pada font fallback sistem: belum dilaporkan (bahan untuk Q6, mohon dicatat di sini). Waktu first-run dan memori salinan native Fase 1 belum dilaporkan.
 2. Tindak lanjut dari pemilik proyek: last read sebaiknya hanya menghitung ayat yang minimal separuh kartunya terlihat. Saat ini kartu yang hanya tampak sebagian ikut dihitung sebagai ayat terlihat.
-3. Fase 2 di-merge `--no-ff` ke `main` pada 2026-11-13 (SHA merge ada di `git log`). Jangan push sebelum pemilik proyek memastikan repo privat (merge Fase 1 `7b0340c` dan merge Fase 2 belum di-push).
+3. Fase 2 di-merge `--no-ff` ke `main` pada 2026-11-13 (SHA merge ada di `git log`). Sudah di-push ke `origin/main` pada 2026-11-15 setelah pemilik proyek memastikan repo privat. Remote `origin` kini `git@github.com:technowstack/nura.git`.
 4. Tindak lanjut kode: bungkus `SqliteException` di `SqliteUserRepository` menjadi error domain (seperti `ContentUnavailable`); bersihkan `SettingKeys.arabicFontScale`/`translationFontScale` yang tidak terpakai. Dari review akhir Fase 2: pelacakan last read baru aktif setelah gulir sentuh pertama (gulir lewat scrollbar, keyboard, dan pembaca layar belum menyimpan posisi); `ROLLBACK` telanjang di `toggleBookmark` bisa menutupi galat asli; batas tinggi sheet 90% dihitung sekali saat dibuka (tidak mengikuti rotasi); judul app bar layar baca mengulang nama Latin (menunggu keputusan pemilik); sisa catatan kualitas tes kecil dari tiap task tidak dibawa ke sini.
 5. Data meta (Q4: `juz.json`, info surah) dicari paralel.
-6. Siapkan putaran desain 2 (hadis, jadwal sholat, pengaturan, ikon). Fase 3 (Hadis): rencana ada di `docs/plans/2026-11-15-nura-phase3-hadith.md` (branch `feat/phase-3-hadith`), menunggu jawaban atas 12 keputusan terbuka di bagian awalnya; layar hadis belum didesain, jadi hasil UI-nya sementara.
+6. Siapkan putaran desain 2 (hadis, jadwal sholat, pengaturan, ikon). Fase 3 (Hadis): rencana ada di `docs/plans/2026-11-15-nura-phase3-hadith.md` (branch `feat/phase-3-hadith`), keputusan pemilik 2026-11-15 sudah masuk; layar hadis (Task 6–9) dibangun sebagai UI sementara sampai desain putaran 2 ada.
 7. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
 
 ## Catatan Teknis
