@@ -37,7 +37,7 @@ class SearchResultsController extends GetxController {
   static const _pageSize = 30;
   static const _debounce = Duration(milliseconds: 300);
   static const initialHint =
-      'Cari kata dalam terjemahan Indonesia atau teks Arab.';
+      'Ketik minimal 2 huruf, misalnya sabar atau ikhlas.';
   static const tooShortHint = 'Ketik minimal 2 huruf';
 
   /// Hadith books for the book filter: slug to name, in `sort_order`.

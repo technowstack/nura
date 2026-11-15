@@ -235,7 +235,7 @@ class _SearchFieldState extends State<_SearchField> {
       textInputAction: TextInputAction.search,
       onChanged: widget.onChanged,
       decoration: InputDecoration(
-        hintText: 'Cari ayat atau hadis',
+        hintText: "Cari kata di Al-Qur'an dan hadis",
         prefixIcon: const Icon(Icons.search),
         suffixIcon: value.text.isEmpty
             ? null

@@ -249,6 +249,15 @@ void main() {
       matching: find.byWidgetPredicate((w) => w is Text && w.textSpan != null),
     );
 
+    testWidgets('owner-approved wording is pinned', (tester) async {
+      await pump(tester);
+      expect(find.text("Cari kata di Al-Qur'an dan hadis"), findsOneWidget);
+      expect(
+        find.text('Ketik minimal 2 huruf, misalnya sabar atau ikhlas.'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('initial hint, then too-short hint', (tester) async {
       await pump(tester);
       expect(find.text(SearchResultsController.initialHint), findsOneWidget);
