@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
-import '../../../core/errors.dart';
 import '../../../core/format_thousands.dart';
 import '../../../core/ui_state.dart';
 import '../../../data/models/hadith_book.dart';
@@ -41,7 +41,9 @@ class HadithBooksController extends GetxController {
               for (final b in rows)
                 HadithBookItem(b, '${formatThousands(b.hadithCount)} hadis'),
             ]);
-    } on ContentUnavailable {
+    } on Object catch (e) {
+      // Any failure (incl. mapping errors from the worker) must leave loading.
+      debugPrint('HadithBooksController: books unavailable: $e');
       books.value = const UiError('Konten tidak dapat dibaca.');
     }
   }

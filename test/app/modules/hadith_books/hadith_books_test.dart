@@ -104,6 +104,19 @@ void main() {
     expect(find.text('Shahih Bukhari'), findsOneWidget);
   });
 
+  testWidgets('unexpected exception shows ErrorState and retry recovers', (
+    tester,
+  ) async {
+    repo.failure = StateError('x');
+    await pump(tester);
+    await tester.pumpAndSettle();
+    expect(find.byType(ErrorState), findsOneWidget);
+    repo.failure = null;
+    await tester.tap(find.text('Coba lagi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Shahih Bukhari'), findsOneWidget);
+  });
+
   testWidgets('empty list shows EmptyState', (tester) async {
     repo.books = const [];
     await pump(tester);

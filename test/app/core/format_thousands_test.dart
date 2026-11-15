@@ -8,6 +8,9 @@ void main() {
     expect(formatThousands(1000), '1.000');
     expect(formatThousands(6638), '6.638');
     expect(formatThousands(38102), '38.102');
+    expect(formatThousands(999999), '999.999');
+    expect(formatThousands(1000000), '1.000.000');
+    expect(formatThousands(-1000), '-1.000');
     expect(formatThousands(1234567), '1.234.567');
   });
 }
