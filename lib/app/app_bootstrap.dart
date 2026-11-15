@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import 'core/widgets/daily_widget_image.dart';
 import 'core/prayer_clock.dart';
 import 'core/theme/theme_controller.dart';
 import 'data/repositories/daily_content_repository.dart';
@@ -30,9 +32,13 @@ import 'data/sources/prayer_api_client.dart';
 import 'data/sources/prayer_calculator.dart';
 import 'data/sources/prayer_regions_source.dart';
 import 'data/sources/region_coordinates.dart';
+import 'data/sources/widget_storage.dart';
 import 'data/sources/user_database.dart';
+import 'services/daily_link_router.dart';
 import 'services/daily_notifier.dart';
+import 'services/daily_refresher.dart';
 import 'services/flutter_local_notifications_scheduler.dart';
+import 'services/home_widget_service.dart';
 import 'services/notification_scheduler.dart';
 import 'services/online_service.dart';
 import 'services/prayer_notifier.dart';
@@ -144,6 +150,32 @@ Future<BootstrapResult> bootstrap({
       ),
       permanent: true,
     );
+    final widgets = HomeWidgetService(
+      repository: Get.find<DailyContentRepository>(),
+      settings: Get.find<DailySettingsStore>(),
+      storage: const HomeWidgetStorage(),
+      directory: Directory('${dataDir.path}/widget'),
+      render: renderDailyImage,
+      now: DateTime.now,
+      // Capped so 56 bitmaps stay within memory on dense screens.
+      pixelRatio: () => min(
+        PlatformDispatcher.instance.views.firstOrNull?.devicePixelRatio ?? 2.0,
+        3.0,
+      ),
+    );
+    final notifier = Get.find<DailyNotifier>();
+    final router = DailyLinkRouter.platform();
+    scheduler.onTap = router.onNotificationTap;
+    Get.put<HomeWidgetService>(widgets, permanent: true);
+    Get.put<DailyRefresher>(
+      DailyRefresher(
+        renderWidgets: widgets.refresh,
+        reschedule: notifier.reschedule,
+        now: DateTime.now,
+      ),
+      permanent: true,
+    );
+    Get.put<DailyLinkRouter>(router, permanent: true);
     // Lazy so the stored mode is read when the app first builds.
     Get.lazyPut<ThemeController>(ThemeController.new, fenix: true);
     return BootstrapSuccess(content, user);

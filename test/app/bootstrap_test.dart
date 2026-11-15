@@ -27,6 +27,9 @@ import 'package:nura/app/data/sources/content_db_installer.dart';
 import 'package:nura/app/data/sources/setting_keys.dart';
 import 'package:nura/app/data/sources/user_database.dart';
 import 'package:nura/app/nura_app.dart';
+import 'package:nura/app/services/daily_link_router.dart';
+import 'package:nura/app/services/daily_refresher.dart';
+import 'package:nura/app/services/home_widget_service.dart';
 
 import '../support/fixture_db.dart';
 import '../support/fake_repositories.dart';
@@ -105,6 +108,9 @@ void main() {
     await ready();
     expect(Get.find<DailyContentRepository>(), isA<DailyContentRepository>());
     expect(Get.find<DailySettingsStore>(), isA<DailySettingsStore>());
+    expect(Get.find<HomeWidgetService>(), isA<HomeWidgetService>());
+    expect(Get.find<DailyRefresher>(), isA<DailyRefresher>());
+    expect(Get.find<DailyLinkRouter>(), isA<DailyLinkRouter>());
   });
 
   test('failed region load registers nothing', () async {
@@ -118,6 +124,9 @@ void main() {
     expect(Get.isRegistered<UserDatabase>(), isFalse);
     expect(Get.isRegistered<DailyContentRepository>(), isFalse);
     expect(Get.isRegistered<DailySettingsStore>(), isFalse);
+    expect(Get.isRegistered<HomeWidgetService>(), isFalse);
+    expect(Get.isRegistered<DailyRefresher>(), isFalse);
+    expect(Get.isRegistered<DailyLinkRouter>(), isFalse);
   });
 
   test('search worker starts after the hadith worker', () async {
