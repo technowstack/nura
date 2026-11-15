@@ -228,7 +228,11 @@ void main() {
 
   test('start times out with ContentUnavailable', () async {
     await expectLater(
-      IsolateSearchRepository.start(db.file, timeout: Duration.zero),
+      IsolateSearchRepository.start(
+        db.file,
+        timeout: const Duration(milliseconds: 50),
+        entry: _silentWorker,
+      ),
       throwsA(isA<ContentUnavailable>()),
     );
   });
@@ -278,4 +282,9 @@ void main() {
     );
     expect(describe(searchPageFromMap(searchPageToMap(page))), describe(page));
   });
+}
+
+// Worker stub that stays alive but never replies, to force the start timeout.
+void _silentWorker(List<Object> init) {
+  ReceivePort();
 }

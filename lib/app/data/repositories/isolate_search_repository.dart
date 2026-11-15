@@ -25,11 +25,13 @@ class IsolateSearchRepository implements SearchRepository {
   static Future<IsolateSearchRepository> start(
     File contentDb, {
     @visibleForTesting Duration timeout = const Duration(seconds: 10),
+    @visibleForTesting
+    void Function(List<Object>) entry = searchWorkerMain,
   }) async {
     final repo = IsolateSearchRepository._();
     try {
       repo._isolate = await Isolate.spawn<List<Object>>(
-        searchWorkerMain,
+        entry,
         [repo._replies.sendPort, contentDb.path],
         onExit: repo._exitPort.sendPort,
         onError: repo._exitPort.sendPort,
