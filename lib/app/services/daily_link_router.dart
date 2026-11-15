@@ -20,35 +20,43 @@ class DailyLinkRouter {
   DailyLinkRouter({
     required DailyOpen open,
     required VoidCallback goHome,
+    required VoidCallback popToRoot,
     required Stream<Uri?> clicks,
     required Future<Uri?> Function() initialLink,
   }) : _open = open,
        _goHome = goHome,
+       _popToRoot = popToRoot,
        _clicks = clicks,
        _initialLink = initialLink;
 
   factory DailyLinkRouter.platform() => DailyLinkRouter(
     open: (route, args) => unawaited(Get.toNamed<void>(route, arguments: args)),
     goHome: _homeViaGet,
+    popToRoot: _popViaGet,
     clicks: HomeWidget.widgetClicked,
     initialLink: HomeWidget.initiallyLaunchedFromHomeWidget,
   );
 
   final DailyOpen _open;
   final VoidCallback _goHome;
+  final VoidCallback _popToRoot;
   final Stream<Uri?> _clicks;
   final Future<Uri?> Function() _initialLink;
   StreamSubscription<Uri?>? _sub;
 
-  static void _homeViaGet() {
-    if (Get.isRegistered<ShellController>()) {
-      Get.find<ShellController>().select(0);
-    }
+  static void _popViaGet() {
     try {
       Get.until((route) => route.isFirst);
     } on Object catch (e) {
       debugPrint('DailyLinkRouter: cannot pop to root: $e');
     }
+  }
+
+  static void _homeViaGet() {
+    if (Get.isRegistered<ShellController>()) {
+      Get.find<ShellController>().select(0);
+    }
+    _popViaGet();
   }
 
   /// Subscribes early; the cold-start link waits for the first frame so the
@@ -74,8 +82,10 @@ class DailyLinkRouter {
     if (link == null || link.isEmpty) return;
     switch (parseDailyLink(link)) {
       case AyahLink(:final surah, :final ayah):
+        _popToRoot();
         _open(Routes.surah, SurahArgs(surah, ayah));
       case HadithLink(:final slug, :final number):
+        _popToRoot();
         _open(Routes.hadithDetail, HadithDetailArgs(slug, number));
       case null:
         break;

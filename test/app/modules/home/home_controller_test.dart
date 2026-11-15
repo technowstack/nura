@@ -106,7 +106,10 @@ void main() {
       renders = 0;
       Get.put(
         DailyRefresher(
-          renderWidgets: () async => renders++,
+          renderWidgets: () async {
+            renders++;
+            return true;
+          },
           reschedule: () async {},
           now: () => clock,
         ),

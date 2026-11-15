@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 /// Keeps the daily widget images and notifications current: runs both after
@@ -9,14 +10,14 @@ import 'package:flutter/widgets.dart';
 /// equals the date of the last successful run, unless forced.
 class DailyRefresher with WidgetsBindingObserver {
   DailyRefresher({
-    required Future<void> Function() renderWidgets,
+    required Future<bool> Function() renderWidgets,
     required Future<void> Function() reschedule,
     required DateTime Function() now,
   }) : _renderWidgets = renderWidgets,
        _reschedule = reschedule,
        _now = now;
 
-  final Future<void> Function() _renderWidgets;
+  final Future<bool> Function() _renderWidgets;
   final Future<void> Function() _reschedule;
   final DateTime Function() _now;
 
@@ -49,7 +50,8 @@ class DailyRefresher with WidgetsBindingObserver {
     final watch = Stopwatch()..start();
     var ok = true;
     try {
-      await _renderWidgets();
+      // False = some entry failed; the run is retried by the next trigger.
+      if (!await _renderWidgets()) ok = false;
     } on Object catch (e) {
       ok = false;
       debugPrint('DailyRefresher: widgets failed: $e');
@@ -63,6 +65,6 @@ class DailyRefresher with WidgetsBindingObserver {
       debugPrint('DailyRefresher: notifications failed: $e');
     }
     if (ok) _lastOk = today;
-    debugPrint('daily refresh ${watch.elapsedMilliseconds} ms');
+    if (kDebugMode) debugPrint('daily refresh ${watch.elapsedMilliseconds} ms');
   }
 }

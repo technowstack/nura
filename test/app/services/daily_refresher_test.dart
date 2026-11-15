@@ -1,8 +1,14 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nura/app/services/daily_refresher.dart';
+import 'package:nura/app/services/home_widget_service.dart';
+
+import '../../support/fake_daily.dart';
+import '../../support/fake_widget_storage.dart';
 
 void main() {
   late List<String> log;
@@ -17,6 +23,7 @@ void main() {
       await gate?.future;
       log.add('widgets:end');
       if (widgetFailure case final f?) throw f;
+      return true;
     },
     reschedule: () async {
       log.add('notify');
@@ -123,5 +130,37 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
     expect(log, isEmpty);
+  });
+
+  test('a failed widget render is retried on the same date', () async {
+    final dir = Directory.systemTemp.createTempSync('nura_ref');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    var failRender = true;
+    final widgets = HomeWidgetService(
+      repository: FakeDailyContentRepository(),
+      settings: FakeDailySettingsStore(),
+      storage: FakeWidgetStorage(),
+      directory: dir,
+      render:
+          (c, {required dp, required pixelRatio, required brightness}) async {
+            if (failRender) throw StateError('render');
+            return Uint8List(1);
+          },
+      now: () => clock,
+      pixelRatio: () => 1,
+    );
+    var notifies = 0;
+    final r = DailyRefresher(
+      renderWidgets: widgets.refresh,
+      reschedule: () async => notifies++,
+      now: () => clock,
+    );
+    await r.refresh();
+    expect(notifies, 1);
+    failRender = false;
+    await r.refresh();
+    expect(notifies, 2);
+    await r.refresh();
+    expect(notifies, 2);
   });
 }

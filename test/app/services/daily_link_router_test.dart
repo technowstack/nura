@@ -16,6 +16,7 @@ void main() {
 
   DailyLinkRouter make() => DailyLinkRouter(
     open: (route, args) => opened.add((route, args)),
+    popToRoot: () => opened.add(('popToRoot', 0)),
     goHome: () => homes++,
     clicks: clicks.stream,
     initialLink: () async => initial,
@@ -31,15 +32,15 @@ void main() {
 
   test('ayah link opens the surah at that ayah', () {
     make().handle('nura://ayah/94/6');
-    expect(opened.single.$1, Routes.surah);
-    final a = opened.single.$2 as SurahArgs;
+    expect(opened.map((e) => e.$1), ['popToRoot', Routes.surah]);
+    final a = opened.last.$2 as SurahArgs;
     expect((a.surah, a.ayah), (94, 6));
   });
 
   test('hadith link opens the hadith detail', () {
     make().handle('nura://hadith/bukhari/34');
-    expect(opened.single.$1, Routes.hadithDetail);
-    final a = opened.single.$2 as HadithDetailArgs;
+    expect(opened.map((e) => e.$1), ['popToRoot', Routes.hadithDetail]);
+    final a = opened.last.$2 as HadithDetailArgs;
     expect((a.slug, a.number), ('bukhari', 34));
   });
 
@@ -65,7 +66,7 @@ void main() {
     expect(opened, isEmpty);
     await tester.pumpWidget(const SizedBox());
     await tester.pump();
-    expect(opened.single.$1, Routes.hadithDetail);
+    expect(opened.last.$1, Routes.hadithDetail);
     r.dispose();
   });
 
@@ -73,11 +74,11 @@ void main() {
     final r = make()..start();
     clicks.add(Uri.parse('nura://ayah/94/5'));
     clicks.add(null);
-    expect(opened.length, 1);
+    expect(opened.length, 2);
     r.dispose();
     expect(clicks.hasListener, isFalse);
     clicks.add(Uri.parse('nura://ayah/94/4'));
-    expect(opened.length, 1);
+    expect(opened.length, 2);
   });
 
   test('daily notification tap goes to Beranda; others are ignored', () {

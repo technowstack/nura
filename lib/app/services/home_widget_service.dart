@@ -70,16 +70,19 @@ class HomeWidgetService {
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
-  Future<void> _inFlight = Future<void>.value();
+  Future<bool> _inFlight = Future<bool>.value(true);
 
   /// Never throws; failures are logged and the remaining entries continue.
   /// Runs are serialized so two runs never share the same temp file.
-  Future<void> refresh() {
+  /// Completes with true only when every entry was written or intentionally
+  /// skipped.
+  Future<bool> refresh() {
     final run = _inFlight.then((_) async {
       try {
-        await _refresh();
+        return await _refresh();
       } catch (e) {
         debugPrint('HomeWidgetService.refresh failed: $e');
+        return false;
       }
     });
     _inFlight = run;
@@ -91,7 +94,7 @@ class HomeWidgetService {
       for (final t in _sizes.keys) 'daily_${kind}_${date}_${b.name}_$t',
   ];
 
-  Future<void> _refresh() async {
+  Future<bool> _refresh() async {
     final n = _now();
     final today = DateTime(n.year, n.month, n.day);
     final wanted = <String>{};
@@ -159,6 +162,7 @@ class HomeWidgetService {
     if (!failed) {
       await _guard(() => _storage.save(_updatedKey, _now().toIso8601String()));
     }
+    return !failed;
   }
 
   Future<bool> _write(
