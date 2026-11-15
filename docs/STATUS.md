@@ -105,6 +105,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | Q7 | Konfirmasi lisensi teks terjemahan hadis | Rilis |
 | Q8 | Verifikasi isi `data-source/` ke sumber asli (hadis: `gadingnst/hadith-api`). Assets asli sebelum dipindah tidak tersedia untuk dibandingkan. Tugas terpisah | Integritas data, rilis |
 | Q9 | Daftar kurasi `data-source/meta/daily_ayah.json` (disusun pemilik proyek) | 1 Hari 1 Ayat (Fase 6) |
+| Q12 | 19 hadis terpotong di JSON sumber pada batas 16.384 byte UTF-8 (diukur 2026-11-15): 19 teks Arab dan 7 terjemahan putus di tengah kata, mis. Bukhari 2529 dan 4066, Muslim 3372, 4973, 4974, Ahmad 18152, Darimi 1778 (hanya Arab). Daftar lengkap dan aturan deteksi ada di `docs/plans/2026-11-15-nura-phase3-hadith.md`. Terkait Q8. Usulan: ambil teks lengkap ke-19 hadis dari sumber asli dan tambahkan ke `data-source/` (mengubah sumber data dan checksum, butuh keputusan pemilik proyek) | Integritas data, rilis |
 
 ## Langkah Berikutnya
 
@@ -113,7 +114,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 3. Fase 2 di-merge `--no-ff` ke `main` pada 2026-11-13 (SHA merge ada di `git log`). Jangan push sebelum pemilik proyek memastikan repo privat (merge Fase 1 `7b0340c` dan merge Fase 2 belum di-push).
 4. Tindak lanjut kode: bungkus `SqliteException` di `SqliteUserRepository` menjadi error domain (seperti `ContentUnavailable`); bersihkan `SettingKeys.arabicFontScale`/`translationFontScale` yang tidak terpakai. Dari review akhir Fase 2: pelacakan last read baru aktif setelah gulir sentuh pertama (gulir lewat scrollbar, keyboard, dan pembaca layar belum menyimpan posisi); `ROLLBACK` telanjang di `toggleBookmark` bisa menutupi galat asli; batas tinggi sheet 90% dihitung sekali saat dibuka (tidak mengikuti rotasi); judul app bar layar baca mengulang nama Latin (menunggu keputusan pemilik); sisa catatan kualitas tes kecil dari tiap task tidak dibawa ke sini.
 5. Data meta (Q4: `juz.json`, info surah) dicari paralel.
-6. Siapkan putaran desain 2 (hadis, jadwal sholat, pengaturan, ikon) sebelum Fase 3.
+6. Siapkan putaran desain 2 (hadis, jadwal sholat, pengaturan, ikon). Fase 3 (Hadis): rencana ada di `docs/plans/2026-11-15-nura-phase3-hadith.md` (branch `feat/phase-3-hadith`), menunggu jawaban atas 12 keputusan terbuka di bagian awalnya; layar hadis belum didesain, jadi hasil UI-nya sementara.
 7. Clone baru: jalankan `tool/prepare_content.sh` sebelum `flutter run`/`build`/`test`.
 
 ## Catatan Teknis
