@@ -235,7 +235,7 @@ class PrayerNotifier {
           prayerNotificationId(day.date, p.index),
           at,
           'Waktu ${_label(p)}',
-          'Pukul $hhmm ${region.zone.label}',
+          'Pukul $hhmm ${region.zone.label} · ${region.kabkota}',
           exact: exact,
         ),
       );

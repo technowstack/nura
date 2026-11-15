@@ -67,7 +67,7 @@ void main() {
     );
     expect(
       r.sched.pending[prayerNotificationId('2026-11-15', 0)]?.body,
-      'Pukul 04:30 WIB',
+      'Pukul 04:30 WIB · Kota Jakarta',
     );
   });
 
@@ -129,7 +129,7 @@ void main() {
     await r.notifier.reschedule();
     final s = r.sched.pending[prayerNotificationId('2026-11-15', 0)];
     expect(s?.at, DateTime.utc(2026, 11, 14, 19, 30)); // 04:30 WIT
-    expect(s?.body, 'Pukul 04:30 WIT');
+    expect(s?.body, 'Pukul 04:30 WIT · Kota Jayapura');
   });
 
   test('notification permission denied: cancel only', () async {
