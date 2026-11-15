@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/models/bookmark.dart';
+import 'package:nura/app/data/models/hadith.dart';
 import 'package:nura/app/data/models/juz.dart';
 import 'package:nura/app/data/models/last_read.dart';
 import 'package:nura/app/data/models/reading_prefs.dart';
@@ -117,6 +118,37 @@ class FakeUserRepository implements UserRepository {
   Set<int> bookmarkedAyahsOf(int surahNumber) => {
     ...?ayahBookmarks[surahNumber],
   };
+
+  /// Newest first, as the real repository returns them.
+  final List<HadithBookmark> hadithBookmarks = [];
+
+  @override
+  bool toggleHadithBookmark(HadithRef ref) {
+    _check();
+    final before = hadithBookmarks.length;
+    hadithBookmarks.removeWhere((b) => b.ref == ref);
+    if (hadithBookmarks.length < before) return false;
+    hadithBookmarks.insert(
+      0,
+      HadithBookmark(ref: ref, createdAt: DateTime(2000, 1, 1, 0, 0, ++_tick)),
+    );
+    return true;
+  }
+
+  @override
+  List<HadithBookmark> listHadithBookmarks() {
+    _check();
+    return List.of(hadithBookmarks);
+  }
+
+  @override
+  Set<int> bookmarkedHadithNumbers(String slug) {
+    _check();
+    return {
+      for (final b in hadithBookmarks)
+        if (b.ref.slug == slug) b.ref.number,
+    };
+  }
 
   @override
   Set<int> bookmarkedSurahNumbers() => bookmarkedSurahs;

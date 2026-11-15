@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/theme/theme_mode_setting.dart';
 import 'package:nura/app/data/models/ayah.dart';
+import 'package:nura/app/data/models/hadith.dart';
 import 'package:nura/app/data/repositories/sqlite_user_repository.dart';
 import 'package:nura/app/data/sources/user_database.dart';
 
@@ -183,6 +184,101 @@ void main() {
         throwsA(isA<FormatException>()),
       );
       expect(make(db).toggleBookmark(const AyahRef(1, 1)), isTrue);
+    });
+  });
+
+  group('hadith bookmarks', () {
+    const b5 = HadithRef('bukhari', 5);
+
+    test('toggle twice gives true then false, one row at most', () {
+      expect(repo.toggleHadithBookmark(b5), isTrue);
+      expect(rows('bookmark'), 1);
+      expect(repo.toggleHadithBookmark(b5), isFalse);
+      expect(rows('bookmark'), 0);
+    });
+
+    test('five rapid toggles end true with one row', () {
+      var last = false;
+      for (var i = 0; i < 5; i++) {
+        last = repo.toggleHadithBookmark(b5);
+      }
+      expect(last, isTrue);
+      expect(rows('bookmark'), 1);
+    });
+
+    test('hyphenated slugs round-trip', () {
+      repo.toggleHadithBookmark(const HadithRef('abu-daud', 7));
+      repo.toggleHadithBookmark(const HadithRef('ibnu-majah', 9));
+      expect(repo.listHadithBookmarks().map((b) => b.ref).toList(), const [
+        HadithRef('ibnu-majah', 9),
+        HadithRef('abu-daud', 7),
+      ]);
+    });
+
+    test('ayah and hadith with same ref_b stay independent', () {
+      repo.toggleBookmark(const AyahRef(2, 5));
+      repo.toggleHadithBookmark(b5);
+      expect(repo.listBookmarks().map((b) => b.ref).toList(), const [
+        AyahRef(2, 5),
+      ]);
+      expect(repo.listHadithBookmarks().map((b) => b.ref).toList(), const [b5]);
+      expect(repo.bookmarkedAyahNumbers(2), {5});
+      expect(repo.bookmarkedSurahNumbers(), {2});
+      expect(repo.toggleHadithBookmark(b5), isFalse);
+      expect(repo.bookmarkedAyahNumbers(2), {5});
+    });
+
+    test('list is newest first, ties by id descending, UTC', () {
+      repo.toggleHadithBookmark(const HadithRef('bukhari', 1));
+      repo.toggleHadithBookmark(const HadithRef('muslim', 2));
+      final l = repo.listHadithBookmarks();
+      expect(l.map((b) => b.ref.number).toList(), [2, 1]);
+      expect(l.first.createdAt.isUtc, isTrue);
+      expect(l.first.createdAt.isAfter(l.last.createdAt), isTrue);
+
+      final fixed = SqliteUserRepository(
+        db,
+        now: () => DateTime.fromMillisecondsSinceEpoch(9000, isUtc: true),
+      );
+      fixed.toggleHadithBookmark(const HadithRef('tirmidzi', 3));
+      fixed.toggleHadithBookmark(const HadithRef('nasai', 4));
+      expect(fixed.listHadithBookmarks().take(2).map((b) => b.ref.number), [
+        4,
+        3,
+      ]);
+    });
+
+    test('bookmarkedHadithNumbers only covers that slug', () {
+      repo.toggleHadithBookmark(const HadithRef('bukhari', 5));
+      repo.toggleHadithBookmark(const HadithRef('bukhari', 8));
+      repo.toggleHadithBookmark(const HadithRef('muslim', 5));
+      expect(repo.bookmarkedHadithNumbers('bukhari'), {5, 8});
+      expect(repo.bookmarkedHadithNumbers('abu-daud'), isEmpty);
+    });
+
+    test('persists after reopening', () {
+      repo.toggleHadithBookmark(const HadithRef('abu-daud', 7));
+      db.close();
+      final db2 = UserDatabase.open(file);
+      addTearDown(db2.close);
+      expect(
+        make(db2).listHadithBookmarks().single.ref,
+        const HadithRef('abu-daud', 7),
+      );
+    });
+
+    test('closed database throws UserDataUnavailable', () {
+      final closed = UserDatabase.open(File('${tmp.path}/closed2.db'))..close();
+      final r = make(closed);
+      expect(
+        () => r.toggleHadithBookmark(b5),
+        throwsA(isA<UserDataUnavailable>()),
+      );
+      expect(r.listHadithBookmarks, throwsA(isA<UserDataUnavailable>()));
+      expect(
+        () => r.bookmarkedHadithNumbers('bukhari'),
+        throwsA(isA<UserDataUnavailable>()),
+      );
     });
   });
 }
