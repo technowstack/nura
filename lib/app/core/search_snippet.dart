@@ -21,38 +21,32 @@ const int _windowSize = 100;
 /// Builds a snippet of [text] centred on the earliest case-insensitive
 /// occurrence of any of [tokens] (translation mode, spec 5.5).
 Snippet buildSnippet(String text, List<String> tokens) {
-  // shortcut: lowercasing assumed length-preserving (true for Indonesian text).
-  final lower = text.toLowerCase();
-  final needles = [
+  // Matching on the original text keeps offsets valid even where lowercasing
+  // changes string length (e.g. U+0130 on the web).
+  final matches = <TextRange>[
     for (final t in tokens)
-      if (t.isNotEmpty) t.toLowerCase(),
+      if (t.isNotEmpty)
+        for (final m in RegExp(
+          RegExp.escape(t),
+          caseSensitive: false,
+        ).allMatches(text))
+          TextRange(start: m.start, end: m.end),
   ];
+  return _assemble(text, matches);
+}
 
-  var first = -1;
-  var firstEnd = 0;
-  for (final n in needles) {
-    final i = lower.indexOf(n);
-    if (i >= 0 && (first < 0 || i < first)) {
-      first = i;
-      firstEnd = i + n.length;
-    }
-  }
-
-  final range = first < 0
+/// Windows [text] around the earliest of [matches] (ranges in [text]) and
+/// returns the merged matches that fit inside the window.
+Snippet _assemble(String text, List<TextRange> matches) {
+  matches.sort((a, b) => a.start.compareTo(b.start));
+  final range = matches.isEmpty
       ? snippetWindow(text, 0, 0)
-      : snippetWindow(text, first, firstEnd);
-  final cut = text.substring(range.start, range.end);
+      : snippetWindow(text, matches.first.start, matches.first.end);
 
-  final spans = <TextRange>[];
-  final cutLower = lower.substring(range.start, range.end);
-  for (final n in needles) {
-    for (var i = cutLower.indexOf(n); i >= 0; i = cutLower.indexOf(n, i + 1)) {
-      spans.add(TextRange(start: i, end: i + n.length));
-    }
-  }
-  spans.sort((a, b) => a.start.compareTo(b.start));
   final merged = <TextRange>[];
-  for (final s in spans) {
+  for (final m in matches) {
+    if (m.start < range.start || m.end > range.end) continue;
+    final s = TextRange(start: m.start - range.start, end: m.end - range.start);
     if (merged.isNotEmpty && s.start < merged.last.end) {
       if (s.end > merged.last.end) {
         merged[merged.length - 1] = TextRange(
@@ -66,7 +60,7 @@ Snippet buildSnippet(String text, List<String> tokens) {
   }
 
   return Snippet(
-    text: cut,
+    text: text.substring(range.start, range.end),
     highlights: merged,
     cutStart: range.start > 0,
     cutEnd: range.end < text.length,
@@ -82,7 +76,8 @@ TextRange snippetWindow(String text, int matchStart, int matchEnd) {
 
   final center = (matchStart + matchEnd) ~/ 2;
   var start = (center - _windowSize ~/ 2).clamp(0, len - _windowSize);
-  var end = start + _windowSize;
+  final windowEnd = start + _windowSize;
+  var end = windowEnd;
 
   bool isSpace(int i) => text.codeUnitAt(i) == 0x20;
 
@@ -96,5 +91,8 @@ TextRange snippetWindow(String text, int matchStart, int matchEnd) {
       end--;
     }
   }
+  // No space to trim to (e.g. no match and a space-free head): keep the raw
+  // window rather than an empty one.
+  if (end <= start) end = windowEnd;
   return TextRange(start: start, end: end);
 }

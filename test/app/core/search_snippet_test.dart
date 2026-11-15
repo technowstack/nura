@@ -75,4 +75,29 @@ void main() {
     final s3 = buildSnippet(base, ['nomatch']);
     expect(s3.cutEnd, isTrue);
   });
+
+  test('no-match fallback without spaces is never empty', () {
+    final text = 'x' * 150;
+    final s = buildSnippet(text, ['zzz']);
+    expect(s.text, 'x' * 100);
+    expect(s.highlights, isEmpty);
+    expect(s.cutStart, isFalse);
+    expect(s.cutEnd, isTrue);
+
+    final short = buildSnippet('x' * 60, ['zzz']);
+    expect(short.text, 'x' * 60);
+    expect(short.cutEnd, isFalse);
+  });
+
+  test('length-changing lowercase keeps highlight offsets on the original', () {
+    const text = '\u0130\u0130\u0130 Sabar dan sabar';
+    // The Dart VM lowercases length-preservingly, but JS (web) turns U+0130
+    // into two code units; offsets must come from the original text.
+    final s = buildSnippet(text, ['sabar']);
+    expect(s.text, text);
+    expect(s.highlights.map((r) => [r.start, r.end]).toList(), [
+      [4, 9],
+      [14, 19],
+    ]);
+  });
 }
