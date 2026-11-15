@@ -162,6 +162,9 @@ class HomeWidgetService {
     if (!failed) {
       await _guard(() => _storage.save(_updatedKey, _now().toIso8601String()));
     }
+    // Providers only redraw on their own schedule unless told to.
+    if (present.isNotEmpty) await _guard(_storage.notifyWidgets);
+    
     return !failed;
   }
 

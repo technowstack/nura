@@ -7,6 +7,12 @@ class FakeWidgetStorage implements WidgetStorage {
   final Set<String> failingKeys = {};
   bool failAll = false;
 
+  int notifies = 0;
+  bool failNotify = false;
+
+  /// Number of saved daily entries seen at each notify.
+  final List<int> entriesAtNotify = [];
+
   @override
   Future<void> save(String key, String? value) async {
     if (failAll || failingKeys.contains(key)) throw StateError('save $key');
@@ -15,6 +21,17 @@ class FakeWidgetStorage implements WidgetStorage {
     } else {
       data[key] = value;
     }
+  }
+
+  @override
+  Future<void> notifyWidgets() async {
+    notifies++;
+    entriesAtNotify.add(
+      data.keys
+          .where((k) => k.startsWith('daily_') && k.contains('_20'))
+          .length,
+    );
+    if (failNotify) throw StateError('notify');
   }
 
   @override

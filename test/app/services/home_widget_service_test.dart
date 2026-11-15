@@ -117,6 +117,32 @@ void main() {
     expect(body.startsWith('Dia berkata "ya"\nlalu'), isTrue);
   });
 
+  test('notifies the widgets exactly once, after the entries are written', () async {
+    await service.refresh();
+    expect(storage.notifies, 1);
+    expect(storage.entriesAtNotify.single, 56);
+  });
+
+  test('no notify when nothing was written', () async {
+    repo.withAyah = false;
+    repo.withHadith = false;
+    await service.refresh();
+    expect(storage.notifies, 0);
+  });
+
+  test('a throwing notify neither throws nor changes the result', () async {
+    storage.failNotify = true;
+    expect(await service.refresh(), isTrue);
+    expect(storage.notifies, 1);
+  });
+
+  test('a source change ends with a notify', () async {
+    await service.refresh();
+    settings.hadithSource = HadithSource.allBooks;
+    await service.refresh();
+    expect(storage.notifies, 2);
+  });
+
   test('window crosses month and year boundary', () async {
     clock = DateTime(2026, 12, 29, 23, 59);
     await service.refresh();
