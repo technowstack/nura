@@ -25,6 +25,16 @@ void main() {
     expect(s.prayerSyncEnabled, isFalse);
   });
 
+  test('setPrayerSyncEnabled persists true and false', () {
+    final s = OnlineService(db, probe: () async => true);
+    s.setPrayerSyncEnabled(true);
+    expect(db.getSetting(SettingKeys.prayerSyncEnabled), 'true');
+    expect(s.prayerSyncEnabled, isTrue);
+    s.setPrayerSyncEnabled(false);
+    expect(db.getSetting(SettingKeys.prayerSyncEnabled), 'false');
+    expect(s.prayerSyncEnabled, isFalse);
+  });
+
   test('canReach delegates to the probe', () async {
     expect(await OnlineService(db, probe: () async => false).canReach(), false);
     expect(await OnlineService(db, probe: () async => true).canReach(), true);

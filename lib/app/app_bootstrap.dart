@@ -1,9 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import 'core/prayer_clock.dart';
 import 'core/theme/theme_controller.dart';
+import 'data/repositories/default_prayer_repository.dart';
+import 'data/repositories/prayer_repository.dart';
+import 'data/repositories/prayer_store.dart';
+import 'data/repositories/sqlite_prayer_store.dart';
 import 'data/repositories/hadith_repository.dart';
 import 'data/repositories/isolate_hadith_repository.dart';
 import 'data/repositories/isolate_search_repository.dart';
@@ -14,7 +20,12 @@ import 'data/repositories/sqlite_user_repository.dart';
 import 'data/repositories/user_repository.dart';
 import 'data/sources/content_database.dart';
 import 'data/sources/content_db_installer.dart';
+import 'data/sources/prayer_api_client.dart';
+import 'data/sources/prayer_calculator.dart';
+import 'data/sources/prayer_regions_source.dart';
+import 'data/sources/region_coordinates.dart';
 import 'data/sources/user_database.dart';
+import 'services/online_service.dart';
 
 sealed class BootstrapResult {
   const BootstrapResult();
@@ -47,6 +58,8 @@ Future<BootstrapResult> bootstrap({
   @visibleForTesting
   Future<IsolateSearchRepository> Function(File) startSearch =
       IsolateSearchRepository.start,
+  @visibleForTesting
+  Future<PrayerRegions> Function() loadRegions = _defaultLoadRegions,
 }) async {
   ContentDatabase? content;
   UserDatabase? user;
@@ -58,12 +71,31 @@ Future<BootstrapResult> bootstrap({
     hadith = await startHadith(content.file);
     search = await startSearch(content.file);
     user = UserDatabase.open(File('${dataDir.path}/user.db'));
+    final regions = await loadRegions();
+    final online = OnlineService(user);
+    final store = SqlitePrayerStore(user);
+    const clock = PrayerClock();
     Get.put<ContentDatabase>(content, permanent: true);
     Get.put<UserDatabase>(user, permanent: true);
     Get.put<QuranRepository>(SqliteQuranRepository(content), permanent: true);
     Get.put<UserRepository>(SqliteUserRepository(user), permanent: true);
     Get.put<HadithRepository>(hadith, permanent: true);
     Get.put<SearchRepository>(search, permanent: true);
+    Get.put<PrayerRegions>(regions, permanent: true);
+    Get.put<PrayerClock>(clock, permanent: true);
+    Get.put<OnlineService>(online, permanent: true);
+    Get.put<PrayerStore>(store, permanent: true);
+    Get.put<PrayerRepository>(
+      DefaultPrayerRepository(
+        store: store,
+        api: PrayerApiClient(defaultPrayerHttp),
+        online: online,
+        clock: clock,
+        calculator: const AdhanPrayerCalculator(),
+        coordinates: const NoRegionCoordinates(),
+      ),
+      permanent: true,
+    );
     // Lazy so the stored mode is read when the app first builds.
     Get.lazyPut<ThemeController>(ThemeController.new, fenix: true);
     return BootstrapSuccess(content, user);
@@ -78,3 +110,5 @@ Future<BootstrapResult> bootstrap({
     return BootstrapFailure(e);
   }
 }
+
+Future<PrayerRegions> _defaultLoadRegions() => loadPrayerRegions(rootBundle);
