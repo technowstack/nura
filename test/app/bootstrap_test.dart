@@ -8,6 +8,8 @@ import 'package:get/get.dart';
 import 'package:nura/app/app_bootstrap.dart';
 import 'package:nura/app/core/theme/theme_controller.dart';
 import 'package:nura/app/core/theme/theme_mode_setting.dart';
+import 'package:nura/app/data/repositories/hadith_repository.dart';
+import 'package:nura/app/data/repositories/isolate_hadith_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/data/sources/content_database.dart';
@@ -44,6 +46,9 @@ void main() {
     final s = r as BootstrapSuccess;
     addTearDown(s.content.close);
     addTearDown(s.user.close);
+    addTearDown(
+      () => (Get.find<HadithRepository>() as IsolateHadithRepository).close(),
+    );
     if (onboardingDone != null) {
       s.user.setSetting(SettingKeys.onboardingDone, onboardingDone);
     }
@@ -63,7 +68,26 @@ void main() {
     expect(Get.isRegistered<UserDatabase>(), isTrue);
     expect(Get.find<QuranRepository>(), isA<QuranRepository>());
     expect(Get.find<UserRepository>(), isA<UserRepository>());
+    expect(Get.find<HadithRepository>(), isA<IsolateHadithRepository>());
   });
+
+  test(
+    'failed bootstrap closes the hadith worker and registers nothing',
+    () async {
+      Directory('${tmp.path}/user.db').createSync();
+      IsolateHadithRepository? started;
+      final r = await bootstrap(
+        installer: installer(),
+        dataDir: tmp,
+        startHadith: (f) async =>
+            started = await IsolateHadithRepository.start(f),
+      );
+      expect(r, isA<BootstrapFailure>());
+      expect(started, isNotNull);
+      await started?.exited.timeout(const Duration(seconds: 5));
+      expect(Get.isRegistered<HadithRepository>(), isFalse);
+    },
+  );
 
   test('bootstrap returns failure when installer throws', () async {
     final r = await bootstrap(
