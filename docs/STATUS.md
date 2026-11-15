@@ -163,7 +163,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 
 ## Catatan Teknis
 
-- Fase 6 (2026-11-15, branch `feat/phase-6-daily`): `flutter test` 690 lulus, `flutter analyze` bersih, `flutter build apk --debug` berhasil. Penyegaran 56 gambar berjalan berurutan dengan jeda antar fase; durasi dicatat di log (`daily refresh <ms> ms`).
+- Fase 6 (2026-11-15, branch `feat/phase-6-daily`): `flutter test` 698 lulus, `flutter analyze` bersih, `flutter build apk --debug` berhasil. Penyegaran 56 gambar berjalan berurutan dengan jeda antar fase; durasi dicatat di log (`daily refresh <ms> ms`).
 
 - Fase 4 (2026-11-15, branch `feat/phase-4-search`): `flutter test` 399 lulus, `flutter analyze` bersih. `test/app/search_real_data_test.dart` (dan `test/app/core/search_snippet_arabic_test.dart`) membaca `assets/db/content.db` asli: tes ini **gagal** (tidak dilewati) bila `tool/prepare_content.sh` belum dijalankan. Hasil diukur pada data asli: "sabar" = 91 ayat dan 256 hadis; 19 hadis terpotong semuanya bisa ditemukan lewat kata Arab terakhirnya (minimal 2 huruf). Waktu acuan desktop (bukan angka perangkat; Linux, lewat isolate, halaman pertama semua hadis): "qzxv" (tanpa hasil, pindai penuh) 22–24 ms, "an" 1–2 ms, "yang dan" 0–1 ms, `ال` 40–41 ms. Ambang tes 1000 ms per halaman.
 - Fase 5 (2026-11-15, branch `feat/phase-5-prayer`): `flutter test` 552 lulus, `flutter analyze` bersih, `flutter build apk --debug` berhasil (Task 7). Review akhir branch (opus) menemukan satu hal penting (404 provinsi tidak dikenal tidak memicu pilih ulang wilayah) dan sudah diperbaiki; catatan kecil yang ditunda ada di bawah.
