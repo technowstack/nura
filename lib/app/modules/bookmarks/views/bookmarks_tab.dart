@@ -5,8 +5,10 @@ import '../../../core/ui_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../routes/app_routes.dart';
+import '../../hadith_detail/hadith_detail_args.dart';
 import '../../quran_detail/surah_args.dart';
 import '../controllers/bookmarks_controller.dart';
+import '../controllers/bookmark_item.dart';
 import '../widgets/bookmark_tile.dart';
 
 class BookmarksTab extends GetView<BookmarksController> {
@@ -33,11 +35,16 @@ class BookmarksTab extends GetView<BookmarksController> {
         itemBuilder: (_, i) => BookmarkTile(
           item: value[i],
           onTap: () async {
-            final ref = value[i].bookmark.ref;
-            await Get.toNamed(
-              Routes.surah,
-              arguments: SurahArgs(ref.surah, ref.ayah),
-            );
+            await switch (value[i]) {
+              AyahBookmarkItem(:final ref) => Get.toNamed<void>(
+                Routes.surah,
+                arguments: SurahArgs(ref.surah, ref.ayah),
+              ),
+              HadithBookmarkItem(:final ref) => Get.toNamed<void>(
+                Routes.hadithDetail,
+                arguments: HadithDetailArgs(ref.slug, ref.number),
+              ),
+            };
             controller.load();
             onReturn?.call();
           },
