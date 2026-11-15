@@ -90,9 +90,26 @@ void main() {
       tester,
       days: {'2026-11-15': const DayResult(DayOutcome.needsInternet)},
     );
-    expect(find.text('Butuh internet untuk jadwal pertama'), findsOneWidget);
+    expect(
+      find.text(
+        'Aktifkan sinkron jadwal online untuk mengunduh jadwal sholat.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Butuh internet untuk jadwal pertama'), findsNothing);
     expect(find.text('Sinkron jadwal online'), findsOneWidget);
     expect(find.byType(NextPrayerCard), findsNothing);
+  });
+
+  tp('needsInternet with sync on keeps the original message', (tester) async {
+    final h = await pumpView(
+      tester,
+      days: {'2026-11-15': const DayResult(DayOutcome.needsInternet)},
+    );
+    h.repo.syncEnabled = true;
+    await h.c.reload();
+    await tester.pump();
+    expect(find.text('Butuh internet untuk jadwal pertama'), findsOneWidget);
   });
 
   tp('unknownRegion asks to choose again and offers the picker', (

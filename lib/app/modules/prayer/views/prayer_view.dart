@@ -63,7 +63,7 @@ class PrayerView extends GetView<PrayerController> {
         ] else ...[
           Padding(
             padding: const EdgeInsets.all(NuraSpace.s16),
-            child: Text(_message(s.outcome), style: Get.textTheme.titleMedium),
+            child: Text(_message(s), style: Get.textTheme.titleMedium),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: NuraSpace.s16),
@@ -169,8 +169,11 @@ class PrayerView extends GetView<PrayerController> {
     ];
   }
 
-  String _message(DayOutcome o) => switch (o) {
-    DayOutcome.needsInternet => 'Butuh internet untuk jadwal pertama',
+  String _message(PrayerScreen s) => switch (s.outcome) {
+    DayOutcome.needsInternet =>
+      s.syncEnabled
+          ? 'Butuh internet untuk jadwal pertama'
+          : 'Aktifkan sinkron jadwal online untuk mengunduh jadwal sholat.',
     DayOutcome.unknownRegion =>
       'Wilayah tidak dikenali server. Pilih wilayah lagi.',
     DayOutcome.noRegion => 'Pilih wilayah untuk melihat jadwal sholat',
