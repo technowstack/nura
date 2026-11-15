@@ -7,6 +7,7 @@ import '../../../core/ui_state.dart';
 import '../../../data/models/daily_content.dart';
 import '../../../data/repositories/daily_content_repository.dart';
 import '../../../data/repositories/daily_settings_store.dart';
+import '../../../services/daily_notifier.dart';
 
 /// Today's cards; at least one of them is non-null.
 class DailyCards {
@@ -23,8 +24,21 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   final DailyContentRepository _repo = Get.find();
   final DailySettingsStore _settings = Get.find();
 
+  final DailyNotifier? _notifier = Get.isRegistered<DailyNotifier>()
+      ? Get.find<DailyNotifier>()
+      : null;
+
   final cards = Rx<UiState<DailyCards>>(const UiLoading());
   late final hadithSource = Rx<HadithSource>(_settings.hadithSource);
+
+  late final notifyOn = Rx<bool>(_settings.notifyEnabled);
+  late final notifyTime = Rx<String>(_settings.notifyTime);
+
+  /// The notification permission was refused when turning the switch on.
+  final notifyDenied = false.obs;
+
+  /// Every daily notification failed to schedule.
+  final notifyFailed = false.obs;
 
   Timer? _midnight;
 
@@ -55,6 +69,32 @@ class HomeController extends GetxController with WidgetsBindingObserver {
       debugPrint('HomeController: cannot save hadith source: $e');
     }
     refreshForToday();
+    unawaited(_reschedule(() => _notifier?.reschedule()));
+  }
+
+  Future<void> setNotify(bool on) => _reschedule(() async {
+    final ok = await _notifier?.setEnabled(on) ?? true;
+    if (!ok) notifyDenied.value = true;
+  });
+
+  /// [hhmm] is a valid 24h `HH:mm`.
+  Future<void> setNotifyTime(String hhmm) =>
+      _reschedule(() => _notifier?.setTime(hhmm));
+
+  /// Failures never reach the UI; the switch state is re-read on every path.
+  Future<void> _reschedule(Future<void>? Function() action) async {
+    notifyDenied.value = false;
+    try {
+      await action();
+      notifyFailed.value = false;
+    } on DailyScheduleException catch (e) {
+      notifyFailed.value = true;
+      debugPrint('HomeController: $e');
+    } on Object catch (e) {
+      debugPrint('HomeController: daily notifications failed: $e');
+    }
+    notifyOn.value = _settings.notifyEnabled;
+    notifyTime.value = _settings.notifyTime;
   }
 
   void refreshForToday() {

@@ -31,6 +31,7 @@ import 'data/sources/prayer_calculator.dart';
 import 'data/sources/prayer_regions_source.dart';
 import 'data/sources/region_coordinates.dart';
 import 'data/sources/user_database.dart';
+import 'services/daily_notifier.dart';
 import 'services/flutter_local_notifications_scheduler.dart';
 import 'services/notification_scheduler.dart';
 import 'services/online_service.dart';
@@ -133,6 +134,14 @@ Future<BootstrapResult> bootstrap({
     );
     Get.put<DailySettingsStore>(
       SqliteDailySettingsStore(user),
+      permanent: true,
+    );
+    Get.put<DailyNotifier>(
+      DailyNotifier(
+        scheduler: scheduler,
+        repository: Get.find<DailyContentRepository>(),
+        store: Get.find<DailySettingsStore>(),
+      ),
       permanent: true,
     );
     // Lazy so the stored mode is read when the app first builds.

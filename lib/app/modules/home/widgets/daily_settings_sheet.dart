@@ -21,6 +21,26 @@ class DailySettingsSheet extends GetView<HomeController> {
     (HadithSource.allBooks, 'Sembilan kitab'),
   ];
 
+  Future<void> _pickTime(BuildContext context) async {
+    final parts = controller.notifyTime.value
+        .split(':')
+        .map(int.parse)
+        .toList();
+    final t = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: parts[0], minute: parts[1]),
+      builder: (c, child) => MediaQuery(
+        data: MediaQuery.of(c).copyWith(alwaysUse24HourFormat: true),
+        child: child ?? const SizedBox.shrink(),
+      ),
+    );
+    if (t == null) return;
+    await controller.setNotifyTime(
+      '${t.hour.toString().padLeft(2, '0')}:'
+      '${t.minute.toString().padLeft(2, '0')}',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
@@ -56,7 +76,34 @@ class DailySettingsSheet extends GetView<HomeController> {
                   'derajat yang beragam.',
                   style: text.bodySmall,
                 ),
-              // Notification switch and time are added with the reminder.
+              const SizedBox(height: NuraSpace.s8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Notifikasi harian'),
+                value: controller.notifyOn.value,
+                onChanged: controller.setNotify,
+              ),
+              if (controller.notifyDenied.value)
+                Text(
+                  'Izin notifikasi ditolak, jadi pengingat tidak dikirim. '
+                  'Aktifkan izin notifikasi Nura di pengaturan sistem.',
+                  style: text.bodySmall,
+                ),
+              if (controller.notifyFailed.value)
+                Text(
+                  'Notifikasi harian gagal dijadwalkan. Coba buka ulang Nura.',
+                  style: text.bodySmall,
+                ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                minTileHeight: 48,
+                enabled: controller.notifyOn.value,
+                title: const Text('Jam notifikasi'),
+                trailing: Text(controller.notifyTime.value),
+                onTap: controller.notifyOn.value
+                    ? () => _pickTime(context)
+                    : null,
+              ),
             ],
           );
         }),
