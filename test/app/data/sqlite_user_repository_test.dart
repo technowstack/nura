@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/theme/theme_mode_setting.dart';
 import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/repositories/sqlite_user_repository.dart';
@@ -126,5 +127,62 @@ void main() {
       repo.setThemeMode(m);
       expect(repo.getThemeMode(), m);
     }
+  });
+
+  group('UserDataUnavailable', () {
+    test('every public method throws it on a closed database', () {
+      final closed = UserDatabase.open(File('${tmp.path}/closed.db'))..close();
+      final r = make(closed);
+      final calls = <String, void Function()>{
+        'toggleBookmark': () => r.toggleBookmark(const AyahRef(1, 1)),
+        'listBookmarks': r.listBookmarks,
+        'bookmarkedAyahNumbers': () => r.bookmarkedAyahNumbers(1),
+        'bookmarkedSurahNumbers': r.bookmarkedSurahNumbers,
+        'getLastRead': r.getLastRead,
+        'setLastRead': () => r.setLastRead(const AyahRef(1, 1)),
+        'getReadingPrefs': r.getReadingPrefs,
+        'setArabicFontSize': () => r.setArabicFontSize(30),
+        'setShowTranslation': () => r.setShowTranslation(false),
+        'getThemeMode': r.getThemeMode,
+        'setThemeMode': () => r.setThemeMode(ThemeMode.dark),
+      };
+      calls.forEach((name, call) {
+        expect(call, throwsA(isA<UserDataUnavailable>()), reason: name);
+      });
+    });
+
+    test('mid-toggle failure rethrows the original error, toggle recovers', () {
+      var fail = true;
+      final r = SqliteUserRepository(
+        db,
+        now: () {
+          if (fail) throw const FormatException('clock');
+          return DateTime.fromMillisecondsSinceEpoch(1000, isUtc: true);
+        },
+      );
+      expect(
+        () => r.toggleBookmark(const AyahRef(1, 1)),
+        throwsA(isA<FormatException>()),
+      );
+      fail = false;
+      expect(r.toggleBookmark(const AyahRef(1, 1)), isTrue);
+      expect(rows('bookmark'), 1);
+    });
+
+    test('a failing ROLLBACK does not mask the original error', () {
+      // Clock rolls the transaction back itself, so the repo's ROLLBACK fails.
+      final r = SqliteUserRepository(
+        db,
+        now: () {
+          db.raw.execute('ROLLBACK');
+          throw const FormatException('clock');
+        },
+      );
+      expect(
+        () => r.toggleBookmark(const AyahRef(1, 1)),
+        throwsA(isA<FormatException>()),
+      );
+      expect(make(db).toggleBookmark(const AyahRef(1, 1)), isTrue);
+    });
   });
 }
