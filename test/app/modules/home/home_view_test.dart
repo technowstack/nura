@@ -1,0 +1,215 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:nura/app/core/errors.dart';
+import 'package:nura/app/core/theme/app_theme.dart';
+import 'package:nura/app/core/theme/nura_text_styles.dart';
+import 'package:nura/app/data/models/daily_content.dart';
+import 'package:nura/app/data/repositories/daily_content_repository.dart';
+import 'package:nura/app/data/repositories/daily_settings_store.dart';
+import 'package:nura/app/modules/hadith_detail/hadith_detail_args.dart';
+import 'package:nura/app/modules/home/bindings/home_binding.dart';
+import 'package:nura/app/modules/home/controllers/home_controller.dart';
+import 'package:nura/app/modules/home/home_view.dart';
+import 'package:nura/app/modules/quran_detail/surah_args.dart';
+import 'package:nura/app/routes/app_routes.dart';
+
+import '../../../support/fake_daily.dart';
+
+const _notice =
+    'Kitab selain Bukhari dan Muslim memuat hadis dengan derajat yang beragam.';
+
+void main() {
+  late FakeDailyContentRepository repo;
+  late FakeDailySettingsStore store;
+  Object? routeArgs;
+  String? routeName;
+
+  setUp(() {
+    Get.reset();
+    routeArgs = null;
+    routeName = null;
+    repo = FakeDailyContentRepository();
+    store = FakeDailySettingsStore();
+    Get.put<DailyContentRepository>(repo);
+    Get.put<DailySettingsStore>(store);
+  });
+  tearDown(Get.reset);
+
+  GetPage<dynamic> stub(String name) => GetPage(
+    name: name,
+    page: () {
+      routeName = name;
+      routeArgs = Get.arguments;
+      return const Scaffold(body: Text('stub'));
+    },
+  );
+
+  Future<void> pump(
+    WidgetTester tester, {
+    double scale = 1,
+    ThemeData? theme,
+  }) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    HomeBinding().dependencies();
+    await tester.pumpWidget(
+      GetMaterialApp(
+        theme: theme ?? AppTheme.light,
+        builder: (c, child) => MediaQuery(
+          data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(scale)),
+          child: child ?? const SizedBox.shrink(),
+        ),
+        home: const HomeView(dataVersion: 'v1'),
+        getPages: [stub(Routes.surah), stub(Routes.hadithDetail)],
+      ),
+    );
+    await tester.pump();
+  }
+
+  // Runs before the framework's pending-timer check, unlike tearDown.
+  void tw(String name, Future<void> Function(WidgetTester) body) =>
+      testWidgets(name, (tester) async {
+        await body(tester);
+        await tester.pumpWidget(const SizedBox.shrink());
+        Get.delete<HomeController>(force: true);
+      });
+
+  tw('ayah card above hadith card, labels and references visible', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.text('Ayat hari ini'), findsOneWidget);
+    expect(find.text('Hadis hari ini'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Ayat hari ini')).dy,
+      lessThan(tester.getTopLeft(find.text('Hadis hari ini')).dy),
+    );
+    expect(find.text('QS. Asy-Syarh: 15'), findsOneWidget);
+    expect(find.text('HR. Shahih Bukhari No. 15'), findsOneWidget);
+    expect(find.text('Baca selengkapnya'), findsOneWidget);
+    expect(find.textContaining('data_version v1'), findsOneWidget);
+  });
+
+  tw('ayah hidden leaves no gap above the hadith card', (tester) async {
+    repo.withAyah = false;
+    await pump(tester);
+    expect(find.text('Ayat hari ini'), findsNothing);
+    final card = find.ancestor(
+      of: find.text('Hadis hari ini'),
+      matching: find.byType(Card),
+    );
+    final header = find.text('Beranda');
+    final gap = tester.getTopLeft(card).dy - tester.getBottomLeft(header).dy;
+    expect(gap, lessThan(40));
+  });
+
+  tw('both empty shows the empty text', (tester) async {
+    repo.withAyah = false;
+    repo.withHadith = false;
+    await pump(tester);
+    expect(find.text('Belum ada konten harian'), findsOneWidget);
+  });
+
+  tw('error shows retry that recovers', (tester) async {
+    repo.failure = const ContentUnavailable('x');
+    await pump(tester);
+    expect(find.text('Konten harian tidak dapat dibaca'), findsOneWidget);
+    repo.failure = null;
+    await tester.tap(find.text('Coba lagi'));
+    await tester.pump();
+    expect(find.text('Hadis hari ini'), findsOneWidget);
+  });
+
+  tw('hadith reference and Baca selengkapnya open the detail', (tester) async {
+    await pump(tester);
+    for (final label in ['HR. Shahih Bukhari No. 15', 'Baca selengkapnya']) {
+      await tester.ensureVisible(find.text(label));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(label));
+      await tester.pumpAndSettle();
+      expect(routeName, Routes.hadithDetail);
+      final args = routeArgs as HadithDetailArgs;
+      expect((args.slug, args.number), ('bukhari', 15));
+      Get.back<void>();
+      await tester.pumpAndSettle();
+      routeName = null;
+    }
+  });
+
+  tw('ayah reference and card open the surah at that ayah', (tester) async {
+    await pump(tester);
+    for (final target in [
+      find.text('QS. Asy-Syarh: 15'),
+      find.text('Ayat hari 15'),
+    ]) {
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+      expect(routeName, Routes.surah);
+      final args = routeArgs as SurahArgs;
+      expect((args.surah, args.ayah), (94, 15));
+      Get.back<void>();
+      await tester.pumpAndSettle();
+      routeName = null;
+    }
+  });
+
+  tw('arabic is rendered right-to-left with the Arabic style', (tester) async {
+    await pump(tester);
+    final t = tester.widget<Text>(find.text(fakeAyah(15).arab));
+    expect(t.textDirection, TextDirection.rtl);
+    expect(t.style?.fontFamily, nuraArabicFont);
+  });
+
+  tw('tap targets are at least 48dp', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byTooltip('Pengaturan harian'));
+    await tester.pumpAndSettle();
+    for (final f in [
+      find.byTooltip('Pengaturan harian'),
+      find.widgetWithText(TextButton, 'HR. Shahih Bukhari No. 15'),
+      find.widgetWithText(TextButton, 'Baca selengkapnya'),
+      find.widgetWithText(ListTile, 'Sembilan kitab'),
+    ]) {
+      expect(tester.getSize(f.first).height, greaterThanOrEqualTo(48));
+      expect(tester.getSize(f.first).width, greaterThanOrEqualTo(48));
+    }
+  });
+
+  tw('settings sheet toggles the notice and persists the source', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.byTooltip('Pengaturan harian'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pengaturan harian'), findsOneWidget);
+    expect(find.text(_notice), findsNothing);
+    await tester.tap(find.text('Sembilan kitab'));
+    await tester.pumpAndSettle();
+    expect(find.text(_notice), findsOneWidget);
+    expect(store.hadithSource, HadithSource.allBooks);
+    expect(find.text('Hadis hari 15 (all)'), findsOneWidget);
+    await tester.tap(find.text('Bukhari dan Muslim'));
+    await tester.pumpAndSettle();
+    expect(find.text(_notice), findsNothing);
+    expect(store.hadithSource, HadithSource.defaultBm);
+  });
+
+  for (final dark in [false, true]) {
+    tw('130% text at 360x640 has no overflow (dark=$dark)', (tester) async {
+      await pump(
+        tester,
+        scale: 1.3,
+        theme: dark ? AppTheme.dark : AppTheme.light,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byTooltip('Pengaturan harian'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sembilan kitab'));
+      await tester.pumpAndSettle();
+      expect(find.text(_notice), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+}

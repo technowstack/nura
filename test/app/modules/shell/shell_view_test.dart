@@ -12,6 +12,10 @@ import 'package:nura/app/services/online_service.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/modules/shell/views/shell_view.dart';
+import 'package:nura/app/data/repositories/daily_content_repository.dart';
+import 'package:nura/app/data/repositories/daily_settings_store.dart';
+import 'package:nura/app/modules/home/controllers/home_controller.dart';
+import '../../../support/fake_daily.dart';
 import '../../../support/fake_prayer.dart';
 import '../../../support/fake_repositories.dart';
 
@@ -24,6 +28,8 @@ void main() {
       db.close();
       tmp.deleteSync(recursive: true);
     });
+    Get.put<DailyContentRepository>(FakeDailyContentRepository());
+    Get.put<DailySettingsStore>(FakeDailySettingsStore());
     Get.put<QuranRepository>(FakeQuranRepository());
     Get.put<UserRepository>(FakeUserRepository());
     Get.put<HadithRepository>(FakeHadithRepository());
@@ -57,6 +63,8 @@ void main() {
       find.text('Pilih wilayah untuk melihat jadwal sholat'),
       findsOneWidget,
     );
+    // Cancels the midnight timer before the pending-timer check.
+    Get.delete<HomeController>(force: true);
   });
 
   testWidgets('Latin 130% at 360x640 does not throw', (tester) async {
@@ -77,5 +85,6 @@ void main() {
     await tester.tap(find.text('Sholat'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+    Get.delete<HomeController>(force: true);
   });
 }
