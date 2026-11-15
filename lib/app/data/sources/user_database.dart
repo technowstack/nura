@@ -52,8 +52,49 @@ CREATE TABLE audio_download (
 ''');
 }
 
+/// v1 prayer tables were never used (always empty), so they are replaced by
+/// the province + kab/kota model and a per-month cache marker.
+void _migrateToV2(Database db) {
+  db.execute('''
+DROP TABLE prayer_location;
+DROP TABLE prayer_day;
+CREATE TABLE prayer_location (
+  id        INTEGER PRIMARY KEY CHECK (id = 1),
+  provinsi  TEXT NOT NULL,
+  kabkota   TEXT NOT NULL,
+  source    TEXT NOT NULL CHECK (source IN ('city','gps'))
+);
+CREATE TABLE prayer_day (
+  date      TEXT NOT NULL,
+  provinsi  TEXT NOT NULL,
+  kabkota   TEXT NOT NULL,
+  imsak TEXT, subuh TEXT, terbit TEXT, dhuha TEXT,
+  dzuhur TEXT, ashar TEXT, maghrib TEXT, isya TEXT,
+  source    TEXT NOT NULL CHECK (source IN ('api','calc')),
+  fetched_at INTEGER NOT NULL,
+  PRIMARY KEY (date, provinsi, kabkota)
+);
+CREATE TABLE prayer_month (
+  provinsi  TEXT NOT NULL,
+  kabkota   TEXT NOT NULL,
+  year      INTEGER NOT NULL,
+  month     INTEGER NOT NULL,
+  status    TEXT NOT NULL CHECK (status IN ('ok','none')),
+  fetched_at INTEGER NOT NULL,
+  PRIMARY KEY (provinsi, kabkota, year, month)
+);
+''');
+}
+
 /// Index i migrates the schema from version i to i + 1.
-final List<void Function(Database)> _migrations = [_migrateToV1];
+final List<void Function(Database)> _migrations = [
+  _migrateToV1,
+  _migrateToV2,
+];
+
+/// The real migration list, for tests that stop at or fail after a version.
+@visibleForTesting
+List<void Function(Database)> get userMigrationsForTest => _migrations;
 
 /// Schema version this app build expects in user.db.
 final int userSchemaVersion = _migrations.length;
