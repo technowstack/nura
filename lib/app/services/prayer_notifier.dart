@@ -58,6 +58,17 @@ class PrayerPermissionStatus {
   final bool exactDenied;
 }
 
+/// Every schedule() call of one run failed (a systematic failure).
+class PrayerScheduleException implements Exception {
+  const PrayerScheduleException(this.count, this.firstError);
+
+  final int count;
+  final Object firstError;
+
+  @override
+  String toString() => 'PrayerScheduleException: $count failed: $firstError';
+}
+
 /// Rebuilds the prayer notifications from the cached times.
 class PrayerNotifier {
   PrayerNotifier({
@@ -120,8 +131,23 @@ class PrayerNotifier {
     return run;
   }
 
+  int _attempted = 0;
+  int _failed = 0;
+  Object? _firstError;
+
   Future<void> _run() async {
+    _attempted = 0;
+    _failed = 0;
+    _firstError = null;
     await _scheduler.cancelPrayer();
+    await _build();
+    final first = _firstError;
+    if (_attempted > 0 && _failed == _attempted && first != null) {
+      throw PrayerScheduleException(_failed, first);
+    }
+  }
+
+  Future<void> _build() async {
     final region = _repo.region;
     if (region == null) return;
     if (await _scheduler.notificationPermission() == PermissionState.denied) {
@@ -182,9 +208,12 @@ class PrayerNotifier {
 
   /// One failing item must not abort the rest of the window.
   Future<void> _safely(Future<void> Function() f) async {
+    _attempted++;
     try {
       await f();
     } on Object catch (e) {
+      _failed++;
+      _firstError ??= e;
       debugPrint('PrayerNotifier: schedule failed: $e');
     }
   }

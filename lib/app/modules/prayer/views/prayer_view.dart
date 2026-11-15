@@ -103,7 +103,9 @@ class PrayerView extends GetView<PrayerController> {
         ),
       ),
     Obx(() {
-      final note = controller.notifyDenied.value
+      final note = controller.remindersFailed.value
+          ? 'Pengingat gagal dijadwalkan. Coba buka ulang Nura.'
+          : controller.notifyDenied.value
           ? 'Izin notifikasi ditolak, jadi pengingat tidak dikirim. '
                 'Aktifkan izin notifikasi Nura di pengaturan sistem.'
           : controller.exactDenied.value

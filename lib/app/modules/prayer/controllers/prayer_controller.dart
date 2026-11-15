@@ -75,6 +75,9 @@ class PrayerController extends GetxController with WidgetsBindingObserver {
   /// Exact alarms are denied while reminders are on.
   final exactDenied = false.obs;
 
+  /// The last reschedule failed for every notification.
+  final remindersFailed = false.obs;
+
   final screen = Rx<UiState<PrayerScreen>>(const UiLoading());
 
   /// `HH:MM:SS` until the next prayer; empty when there is none.
@@ -128,7 +131,11 @@ class PrayerController extends GetxController with WidgetsBindingObserver {
     if (n == null) return;
     try {
       await n.reschedule();
+      remindersFailed.value = false;
       await _refreshNotify(n);
+    } on PrayerScheduleException catch (e) {
+      remindersFailed.value = true;
+      debugPrint('PrayerController: $e');
     } on Object catch (e) {
       debugPrint('PrayerController: notifications failed: $e');
     }
@@ -149,8 +156,13 @@ class PrayerController extends GetxController with WidgetsBindingObserver {
     if (n == null) return;
     try {
       final ok = await n.setEnabled(p, v);
+      remindersFailed.value = false;
       await _refreshNotify(n);
       if (!ok) notifyDenied.value = true;
+    } on PrayerScheduleException catch (e) {
+      remindersFailed.value = true;
+      await _refreshNotify(n);
+      debugPrint('PrayerController: $e');
     } on Object catch (e) {
       debugPrint('PrayerController: switch failed: $e');
     }

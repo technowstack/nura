@@ -59,6 +59,23 @@ class RecordingScheduler implements NotificationScheduler {
   }
 }
 
+class ThrowingScheduler extends RecordingScheduler {
+  int? failId;
+  bool failAll = false;
+
+  @override
+  Future<void> schedule(
+    int id,
+    DateTime utcInstant,
+    String title,
+    String body, {
+    required bool exact,
+  }) async {
+    if (failAll || id == failId) throw StateError('boom');
+    await super.schedule(id, utcInstant, title, body, exact: exact);
+  }
+}
+
 class MemoryPrayerStore implements PrayerStore {
   MemoryPrayerStore({this.region});
 

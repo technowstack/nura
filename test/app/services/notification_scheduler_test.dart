@@ -5,11 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nura/app/data/models/prayer_day.dart';
 import 'package:nura/app/data/repositories/prayer_repository.dart';
 import 'package:nura/app/services/flutter_local_notifications_scheduler.dart';
+import 'package:nura/app/services/prayer_notifier.dart';
 
 import '../../support/fake_notifications.dart';
 import '../../support/prayer_harness.dart';
 import '../../support/fake_prayer.dart';
-import 'package:nura/app/services/prayer_notifier.dart';
 
 class FakePlugin extends Fake implements FlutterLocalNotificationsPlugin {
   int initCalls = 0;
@@ -49,22 +49,6 @@ class GatedScheduler extends RecordingScheduler {
     log.add('cancel-start');
     await gate.future;
     await super.cancelPrayer();
-  }
-}
-
-class ThrowingScheduler extends RecordingScheduler {
-  int? failId;
-
-  @override
-  Future<void> schedule(
-    int id,
-    DateTime utcInstant,
-    String title,
-    String body, {
-    required bool exact,
-  }) async {
-    if (id == failId) throw StateError('boom');
-    await super.schedule(id, utcInstant, title, body, exact: exact);
   }
 }
 
@@ -141,5 +125,26 @@ void main() {
       prayerNotificationId('2026-11-17', 0),
       prayerNotificationId('2026-11-17', 9),
     ]);
+  });
+
+  test('all schedule calls failing throws PrayerScheduleException', () async {
+    final sched = ThrowingScheduler()..failAll = true;
+    final store = MemoryPrayerStore(region: jakarta)..on.add(PrayerName.subuh);
+    final repo = FakePrayerRepository(region: jakarta);
+    for (final d in ['2026-11-15', '2026-11-16']) {
+      store.days[d] = fullDay(d);
+      repo.days[d] = DayResult(DayOutcome.api, fullDay(d));
+    }
+    final n = PrayerNotifier(
+      scheduler: sched,
+      repository: repo,
+      store: store,
+      clock: FakeClock(DateTime.utc(2026, 11, 14, 17)),
+    );
+    await expectLater(n.reschedule(), throwsA(isA<PrayerScheduleException>()));
+    // The chain recovers: a later success does not throw.
+    sched.failAll = false;
+    await n.reschedule();
+    expect(sched.pending, isNotEmpty);
   });
 }

@@ -18,11 +18,12 @@ Future<(RecordingScheduler, MemoryPrayerStore)> pump(
   double scale = 1,
   PermissionState exact = PermissionState.granted,
   PermissionState afterRequest = PermissionState.granted,
+  RecordingScheduler? scheduler,
 }) async {
   tester.view.physicalSize = const Size(360, 640);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  final sched = RecordingScheduler()
+  final sched = (scheduler ?? RecordingScheduler())
     ..exactState = exact
     ..notifAfterRequest = afterRequest
     ..notif = afterRequest == PermissionState.denied
@@ -140,5 +141,28 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(tester.takeException(), isNull);
+  });
+
+  tp('all schedules failing shows the note; a later success clears it', (
+    tester,
+  ) async {
+    final sched = ThrowingScheduler()..failAll = true;
+    await pump(tester, scale: 1.3, scheduler: sched);
+    final isya = sw('Pengingat Isya');
+    await reveal(tester, isya);
+    await tester.tap(isya);
+    await tester.pump();
+    await tester.pump();
+    const note = 'Pengingat gagal dijadwalkan. Coba buka ulang Nura.';
+    await reveal(tester, find.text(note));
+    expect(find.text(note), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    sched.failAll = false;
+    final ashar = sw('Pengingat Ashar');
+    await reveal(tester, ashar);
+    await tester.tap(ashar);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(note), findsNothing);
   });
 }
