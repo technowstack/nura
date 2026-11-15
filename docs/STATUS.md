@@ -114,6 +114,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | Q12 | 19 hadis terpotong di JSON sumber pada batas 16.384 byte UTF-8 (diukur 2026-11-15): 19 teks Arab dan 7 terjemahan putus di tengah kata, mis. Bukhari 2529 dan 4066, Muslim 3372, 4973, 4974, Ahmad 18152, Darimi 1778 (hanya Arab). Daftar lengkap dan aturan deteksi ada di `docs/plans/2026-11-15-nura-phase3-hadith.md`. Terkait Q8. Diputuskan 2026-11-15: Fase 3 hanya menampilkan catatan terpotong dan tidak mengubah teks; perbaikannya lewat file patch terpisah `data-source/patches/` (sumber dan lisensi per teks, JSON asli tidak diubah, builder menerapkan patch, verifier memeriksa keduanya; spec 3.6). Bergantung pada Q7: jangan mengambil teks dari sumber mana pun sebelum lisensi jelas | Integritas data, rilis (setelah Q7) |
 
 ## Langkah Berikutnya
+0. Fase 4 (Pencarian): rencana ada di `docs/plans/2026-11-15-nura-phase4-search.md` (branch `feat/phase-4-search`, belum dikerjakan). Menunggu keputusan D1 (spec 5.5 "substring" vs awalan kata lewat FTS) dari pemilik proyek sebelum Task 4.
 
 1. Uji perangkat Fase 2: LULUS (2026-11-13, dilakukan pemilik proyek di perangkat fisik). Tanda waqaf pada font fallback sistem: belum dilaporkan (bahan untuk Q6, mohon dicatat di sini). Waktu first-run dan memori salinan native Fase 1 belum dilaporkan.
 2. Tindak lanjut dari pemilik proyek: last read sebaiknya hanya menghitung ayat yang minimal separuh kartunya terlihat. Saat ini kartu yang hanya tampak sebagian ikut dihitung sebagai ayat terlihat.
