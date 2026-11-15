@@ -76,6 +76,17 @@ void main() {
       );
     });
 
+    test('rejects any quotation mark inside the matan body', () {
+      final ar = _ar(_arBody);
+      expect(extractMatan(ar, _tr('$_body "kata" lagi')), isNull);
+      expect(extractMatan(ar, _tr('$_body “kata” lagi')), isNull);
+      expect(extractMatan(ar, _tr('$_body ”kata lagi')), isNull);
+      // Only the delimiters are quotes, or a single quote inside: accepted.
+      expect(extractMatan(ar, _tr(_body)), isNotNull);
+      expect(extractMatan(ar, 'Dari [A] $_sal bersabda: “$_body”'), isNotNull);
+      expect(extractMatan(ar, _tr("$_body 'kata' lagi")), isNotNull);
+    });
+
     test('rejects missing key phrases and short matan', () {
       expect(extractMatan(_ar(_arBody), 'tanpa kutipan'), isNull);
       expect(extractMatan('tanpa kunci $_arBody', _tr(_body)), isNull);

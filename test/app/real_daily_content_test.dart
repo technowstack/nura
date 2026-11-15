@@ -34,14 +34,28 @@ void main() {
   };
 
   test('candidate counts match the measured facts', () {
-    expect(count('default'), 1271);
-    expect(count('all'), 5102);
+    expect(count('default'), 1141);
+    expect(count('all'), 4544);
   });
 
   test('misaligned examples are in neither list', () {
     for (final n in [112, 274, 660, 915, 1175]) {
       expect(keys('default'), isNot(contains('bukhari:$n')));
       expect(keys('all'), isNot(contains('bukhari:$n')));
+    }
+  });
+
+  test('dialogue and commentary examples are in neither list', () {
+    for (final k in [
+      'muslim:3554',
+      'bukhari:3730',
+      'bukhari:5255',
+      'bukhari:6015',
+      'bukhari:835',
+      'muslim:2598',
+    ]) {
+      expect(keys('default'), isNot(contains(k)));
+      expect(keys('all'), isNot(contains(k)));
     }
   });
 

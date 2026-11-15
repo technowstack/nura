@@ -38,6 +38,11 @@ final _arabKey = RegExp('صلي الله عليه وسلم( (قال|يقول|ق�
 
 bool _isQuote(int unit) => unit == 0x22 || unit == 0x201D;
 
+// A matan is one uninterrupted quotation; any inner quotation mark (ASCII,
+// U+201C, U+201D) means a second speaker, dialogue or commentary. The single
+// quote is not one: genuine matan uses it.
+final _innerQuote = RegExp('["\u201C\u201D]');
+
 /// Translation matan range, or null when the text does not have the form
 /// `... shallallahu 'alaihi wasallam bersabda: "matan"`.
 ({int start, int end})? _translationMatan(String t) {
@@ -66,6 +71,7 @@ bool _isQuote(int unit) => unit == 0x22 || unit == 0x201D;
   }
   final body = t.substring(start, end);
   if (body.contains('[') || body.contains(']')) return null;
+  if (_innerQuote.hasMatch(body)) return null;
   if (_secondSpeech.hasMatch(body)) return null;
   if (body.length < _minMatanLength) return null;
   return (start: start, end: end);
