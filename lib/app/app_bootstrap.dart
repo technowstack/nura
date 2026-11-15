@@ -7,9 +7,13 @@ import 'package:get/get.dart';
 
 import 'core/prayer_clock.dart';
 import 'core/theme/theme_controller.dart';
+import 'data/repositories/daily_content_repository.dart';
+import 'data/repositories/daily_settings_store.dart';
 import 'data/repositories/default_prayer_repository.dart';
 import 'data/repositories/prayer_repository.dart';
 import 'data/repositories/prayer_store.dart';
+import 'data/repositories/sqlite_daily_content_repository.dart';
+import 'data/repositories/sqlite_daily_settings_store.dart';
 import 'data/repositories/sqlite_prayer_store.dart';
 import 'data/repositories/hadith_repository.dart';
 import 'data/repositories/isolate_hadith_repository.dart';
@@ -121,6 +125,14 @@ Future<BootstrapResult> bootstrap({
         store: store,
         clock: clock,
       ),
+      permanent: true,
+    );
+    Get.put<DailyContentRepository>(
+      SqliteDailyContentRepository(content),
+      permanent: true,
+    );
+    Get.put<DailySettingsStore>(
+      SqliteDailySettingsStore(user),
       permanent: true,
     );
     // Lazy so the stored mode is read when the app first builds.
