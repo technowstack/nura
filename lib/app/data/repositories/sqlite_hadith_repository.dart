@@ -101,6 +101,15 @@ class SqliteHadithRepository implements HadithRepository {
 
   @override
   Future<HadithRef?> neighbor(HadithRef ref, {required bool next}) async {
+    final known = _select(
+      'SELECT 1 FROM hadith WHERE book_slug = ? AND number = ?',
+      [ref.slug, ref.number],
+    );
+    if (known.isEmpty) {
+      throw ContentUnavailable(
+        'Hadis ${ref.slug} ${ref.number} tidak ditemukan',
+      );
+    }
     final rows = _select(
       'SELECT number FROM hadith WHERE book_slug = ? AND number '
       '${next ? '>' : '<'} ? ORDER BY number ${next ? 'ASC' : 'DESC'} LIMIT 1',

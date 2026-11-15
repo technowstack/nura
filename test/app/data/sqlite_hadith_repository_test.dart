@@ -164,6 +164,20 @@ void main() {
     );
   });
 
+  test('neighbor of unknown ref throws; real ends still null', () async {
+    open({'a': seq(3)});
+    expect(
+      repo.neighbor(const HadithRef('a', 99), next: true),
+      throwsA(isA<ContentUnavailable>()),
+    );
+    expect(
+      repo.neighbor(const HadithRef('zz', 1), next: false),
+      throwsA(isA<ContentUnavailable>()),
+    );
+    expect(await repo.neighbor(const HadithRef('a', 3), next: true), isNull);
+    expect(await repo.neighbor(const HadithRef('a', 1), next: false), isNull);
+  });
+
   test('closed database throws ContentUnavailable everywhere', () async {
     open({'a': seq(2)});
     db.close();
