@@ -16,6 +16,7 @@ void main() {
   late Object? widgetFailure;
   late Object? notifyFailure;
   Completer<void>? gate;
+  var offsetMin = 420;
 
   DailyRefresher make() => DailyRefresher(
     renderWidgets: () async {
@@ -30,6 +31,7 @@ void main() {
       if (notifyFailure case final f?) throw f;
     },
     now: () => clock,
+    utcOffset: (_) => Duration(minutes: offsetMin),
   );
 
   setUp(() {
@@ -38,6 +40,7 @@ void main() {
     widgetFailure = null;
     notifyFailure = null;
     gate = null;
+    offsetMin = 420;
   });
 
   test('runs widgets then notifications', () async {
@@ -92,6 +95,17 @@ void main() {
       expect(log, isNotEmpty);
     },
   );
+
+  test('a time-zone change on the same date triggers a run', () async {
+    final r = make();
+    await r.refresh();
+    log.clear();
+    await r.refresh();
+    expect(log, isEmpty);
+    offsetMin = -600;
+    await r.refresh();
+    expect(log, isNotEmpty);
+  });
 
   test('a failed run does not count as done', () async {
     final r = make();

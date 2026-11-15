@@ -13,16 +13,20 @@ class DailyRefresher with WidgetsBindingObserver {
     required Future<bool> Function() renderWidgets,
     required Future<void> Function() reschedule,
     required DateTime Function() now,
+    @visibleForTesting Duration Function(DateTime)? utcOffset,
   }) : _renderWidgets = renderWidgets,
        _reschedule = reschedule,
-       _now = now;
+       _now = now,
+       _utcOffset = utcOffset ?? ((d) => d.timeZoneOffset);
 
   final Future<bool> Function() _renderWidgets;
   final Future<void> Function() _reschedule;
   final DateTime Function() _now;
+  final Duration Function(DateTime) _utcOffset;
 
   Future<void> _inFlight = Future<void>.value();
-  DateTime? _lastOk;
+  // Local date plus UTC offset, so a time-zone change on the same date reruns.
+  String? _lastOk;
 
   /// Never delays the first frame: the first run starts after it.
   void start() {
@@ -45,7 +49,7 @@ class DailyRefresher with WidgetsBindingObserver {
 
   Future<void> _run(bool force) async {
     final n = _now();
-    final today = DateTime(n.year, n.month, n.day);
+    final today = '${n.year}-${n.month}-${n.day}|${_utcOffset(n).inMinutes}';
     if (!force && _lastOk == today) return;
     final watch = Stopwatch()..start();
     var ok = true;
