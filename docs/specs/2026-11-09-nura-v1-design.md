@@ -454,8 +454,7 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 | Hasil kosong (pencarian, bookmark) | `UiState.empty` dengan teks penjelas. |
 | Tidak ada koneksi atau sakelar mati | Kontrol online dinonaktifkan dengan keterangan. Tidak ada dialog error. |
 | Request API gagal | Audio: berhenti dan tampilkan snackbar. Jadwal: pakai fallback perhitungan. |
-| Izin lokasi ditolak | Arahkan ke pilihan kota manual. |
-| Izin notifikasi atau alarm tepat ditolak | Tampilkan keterangan dan tautan ke pengaturan sistem. |
+| Izin notifikasi atau alarm tepat ditolak | Tampilkan keterangan (tanpa tautan di v1; tautan ke pengaturan sistem direncanakan kemudian). |
 | `user.db` gagal migrasi | Cadangkan file lama, buat baru, dan beri tahu pengguna bahwa bookmark mungkin hilang. |
 
 ## 10. Pengujian
