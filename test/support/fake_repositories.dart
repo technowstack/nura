@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/data/models/ayah.dart';
@@ -219,6 +221,12 @@ class FakeHadithRepository implements HadithRepository {
   int listPageCalls = 0;
   Set<int> failPageCalls = {};
 
+  /// `afterNumber` of every listPage call, in order.
+  final List<int> afterNumbers = [];
+
+  /// When set, listPage waits for it after reading its page (slow request).
+  Completer<void>? pageGate;
+
   void _check() {
     final f = failure;
     if (f != null) throw f;
@@ -237,6 +245,7 @@ class FakeHadithRepository implements HadithRepository {
     int limit = 30,
   }) async {
     listPageCalls++;
+    afterNumbers.add(afterNumber);
     if (failPageCalls.contains(listPageCalls)) {
       throw const ContentUnavailable('page');
     }
@@ -245,10 +254,16 @@ class FakeHadithRepository implements HadithRepository {
     final rest = (summaries[slug] ?? const <HadithSummary>[])
         .where((h) => h.ref.number > afterNumber)
         .toList();
-    return HadithPage(
+    final page = HadithPage(
       items: rest.take(limit).toList(),
       hasMore: rest.length > limit,
     );
+    final gate = pageGate;
+    if (gate != null) {
+      pageGate = null; // only the first call after setting is slow
+      await gate.future;
+    }
+    return page;
   }
 
   @override

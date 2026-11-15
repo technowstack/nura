@@ -42,6 +42,9 @@ class HadithListController extends GetxController {
   Set<int> _marked = {};
   bool _busy = false;
 
+  /// Bumped by load(); a request from an older generation changes no state.
+  int _gen = 0;
+
   @override
   void onInit() {
     super.onInit();
@@ -55,6 +58,8 @@ class HadithListController extends GetxController {
     super.onClose();
   }
 
+  // shortcut: assumes one page (30 rows >= 56 px) overflows the viewport, so a
+  // scroll event always happens; revisit if page size or viewport changes.
   void _onScroll() {
     // After a failure only the retry row reloads, scrolling must not loop.
     if (loadMoreFailed.value) return;
@@ -64,15 +69,20 @@ class HadithListController extends GetxController {
   }
 
   void load() {
+    _gen++;
+    _busy = false;
+    loadingMore.value = false;
     items.value = const UiLoading();
     hasMore.value = false;
     loadMoreFailed.value = false;
     _loaded.clear();
     // Deferred so the loading state is rendered before the data.
-    Future.microtask(_first);
+    final gen = _gen;
+    Future.microtask(() => _first(gen));
   }
 
-  Future<void> _first() async {
+  Future<void> _first(int gen) async {
+    if (gen != _gen || isClosed) return;
     if (args.slug.isEmpty) {
       items.value = const UiError('Kitab tidak ditemukan.');
       return;
@@ -80,21 +90,23 @@ class HadithListController extends GetxController {
     _busy = true;
     try {
       final page = await _hadith.listPage(args.slug, limit: _pageSize);
+      if (gen != _gen || isClosed) return;
       _loaded.addAll(page.items);
       hasMore.value = page.hasMore;
       _readMarkers();
       _publish();
     } on Object catch (e) {
+      if (gen != _gen || isClosed) return;
       debugPrint('HadithListController: list unavailable: $e');
       items.value = const UiError('Konten tidak dapat dibaca.');
-    } finally {
-      _busy = false;
     }
+    _busy = false;
   }
 
   Future<void> loadMore() async {
     if (_busy || !hasMore.value || _loaded.isEmpty) return;
     _busy = true;
+    final gen = _gen;
     loadingMore.value = true;
     loadMoreFailed.value = false;
     try {
@@ -103,16 +115,17 @@ class HadithListController extends GetxController {
         afterNumber: _loaded.last.ref.number,
         limit: _pageSize,
       );
+      if (gen != _gen || isClosed) return;
       _loaded.addAll(page.items);
       hasMore.value = page.hasMore && page.items.isNotEmpty;
       _publish();
     } on Object catch (e) {
+      if (gen != _gen || isClosed) return;
       debugPrint('HadithListController: next page failed: $e');
       loadMoreFailed.value = true;
-    } finally {
-      _busy = false;
-      loadingMore.value = false;
     }
+    _busy = false;
+    loadingMore.value = false;
   }
 
   /// Re-reads bookmark markers (e.g. after leaving the detail page).

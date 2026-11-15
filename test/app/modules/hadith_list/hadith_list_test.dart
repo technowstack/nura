@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -104,9 +106,10 @@ void main() {
     tester,
   ) async {
     await pump(tester);
-    await toEnd(tester);
-    expect(repo.listPageCalls, greaterThanOrEqualTo(2));
-    expect(count(), greaterThan(30));
+    await tester.drag(find.byType(ListView), const Offset(0, -1500));
+    await tester.pumpAndSettle();
+    expect(repo.listPageCalls, 2);
+    expect(count(), 60);
     final nums = [for (final i in list()) i.ref.number];
     expect(nums.toSet().length, nums.length);
   });
@@ -149,15 +152,63 @@ void main() {
   ) async {
     repo.failPageCalls = {2};
     await pump(tester);
-    await toEnd(tester);
+    await tester.drag(find.byType(ListView), const Offset(0, -1500));
+    await tester.pumpAndSettle();
     expect(count(), 30);
     expect(ctl().loadMoreFailed.value, isTrue);
     final retry = find.text('Gagal memuat, ketuk untuk mencoba lagi');
     expect(retry, findsOneWidget);
     await tester.tap(retry);
     await tester.pumpAndSettle();
-    expect(count(), greaterThanOrEqualTo(60));
+    expect(repo.listPageCalls, 3);
+    expect(count(), 60);
     expect(ctl().loadMoreFailed.value, isFalse);
+  });
+
+  testWidgets('keyset paging uses the last number, not the count', (
+    tester,
+  ) async {
+    repo.summaries = {
+      _slug: [
+        for (var i = 1; i <= 65; i++)
+          HadithSummary(
+            ref: HadithRef(_slug, i * 7),
+            preview: 'p$i',
+            length: 1,
+          ),
+      ],
+    };
+    await pump(tester);
+    await ctl().loadMore();
+    expect(repo.afterNumbers, [0, 210]);
+    expect(list()[30].numberLabel, 'No. 217');
+    final nums = [for (final i in list()) i.ref.number];
+    expect(nums, [for (var i = 1; i <= 60; i++) i * 7]);
+  });
+
+  testWidgets('load() during an in-flight loadMore drops the stale page', (
+    tester,
+  ) async {
+    await pump(tester);
+    final gate = Completer<void>();
+    repo.pageGate = gate;
+    final stale = ctl().loadMore();
+    await tester.pump();
+    expect(ctl().loadingMore.value, isTrue);
+    ctl().load();
+    await tester.pumpAndSettle();
+    gate.complete();
+    await stale;
+    await tester.pumpAndSettle();
+    expect(
+      [for (final i in list()) i.ref.number],
+      [for (var i = 1; i <= 30; i++) i],
+    );
+    expect(ctl().loadingMore.value, isFalse);
+    expect(ctl().loadMoreFailed.value, isFalse);
+    expect(ctl().hasMore.value, isTrue);
+    await ctl().loadMore(); // not stuck busy
+    expect(count(), 60);
   });
 
   testWidgets('empty book shows EmptyState', (tester) async {
@@ -203,24 +254,28 @@ void main() {
   testWidgets('markers follow bookmarks and refresh after detail', (
     tester,
   ) async {
+    final sem = tester.ensureSemantics();
     user.toggleHadithBookmark(const HadithRef(_slug, 2));
     await pump(tester);
-    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('Ditandai')), findsOneWidget);
     await tester.tap(find.text('No. 1'));
     await tester.pumpAndSettle();
     user.toggleHadithBookmark(const HadithRef(_slug, 3));
     Get.back();
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.bookmark), findsNWidgets(2));
+    expect(find.bySemanticsLabel(RegExp('Ditandai')), findsNWidgets(2));
+    sem.dispose();
   });
 
   testWidgets('user repository failure does not break the list', (
     tester,
   ) async {
+    final sem = tester.ensureSemantics();
     user.failure = StateError('db');
     await pump(tester);
     expect(find.text('No. 1'), findsOneWidget);
-    expect(find.byIcon(Icons.bookmark), findsNothing);
+    expect(find.bySemanticsLabel(RegExp('Ditandai')), findsNothing);
+    sem.dispose();
   });
 
   testWidgets('missing route arguments show an error, not another book', (
@@ -235,7 +290,8 @@ void main() {
     await pump(tester);
     await tester.tap(find.text('No. 2'));
     await tester.pumpAndSettle();
-    final a = detailArgs! as HadithDetailArgs;
+    expect(detailArgs, isA<HadithDetailArgs>());
+    final a = detailArgs as HadithDetailArgs;
     expect(a.slug, _slug);
     expect(a.number, 2);
   });
