@@ -228,22 +228,30 @@ CREATE TABLE last_read (
 
 CREATE TABLE prayer_location (
   id        INTEGER PRIMARY KEY CHECK (id = 1),
-  source    TEXT NOT NULL CHECK (source IN ('gps','city')),
-  label     TEXT NOT NULL,
-  lat       REAL NOT NULL,
-  lng       REAL NOT NULL,
-  city_key  TEXT NOT NULL          -- kunci kota di cities.json (kota terdekat jika GPS)
-  -- RENCANA Fase 5 (keputusan 2026-11-15): diganti migrasi baru ke model provinsi + kabupaten/kota (nama persis dari API equran.id, bukan kode) plus zona waktu wilayah; lat/lng tidak lagi wajib. Lihat 7.3
+  provinsi  TEXT NOT NULL,         -- nama persis dari API equran.id; zona waktu diturunkan dari provinsi
+  kabkota   TEXT NOT NULL,
+  source    TEXT NOT NULL CHECK (source IN ('city','gps'))
 );
 
 CREATE TABLE prayer_day (
   date      TEXT NOT NULL,          -- yyyy-MM-dd
-  city_key  TEXT NOT NULL,
+  provinsi  TEXT NOT NULL,
+  kabkota   TEXT NOT NULL,
   imsak TEXT, subuh TEXT, terbit TEXT, dhuha TEXT,
-  dzuhur TEXT, ashar TEXT, maghrib TEXT, isya TEXT,   -- HH:mm waktu lokal
+  dzuhur TEXT, ashar TEXT, maghrib TEXT, isya TEXT,   -- HH:mm waktu lokal wilayah
   source    TEXT NOT NULL CHECK (source IN ('api','calc')),
+  fetched_at INTEGER NOT NULL,      -- epoch ms
+  PRIMARY KEY (date, provinsi, kabkota)
+);
+
+CREATE TABLE prayer_month (
+  provinsi  TEXT NOT NULL,
+  kabkota   TEXT NOT NULL,
+  year      INTEGER NOT NULL,
+  month     INTEGER NOT NULL,
+  status    TEXT NOT NULL CHECK (status IN ('ok','none')),   -- none = API tidak punya data bulan itu
   fetched_at INTEGER NOT NULL,
-  PRIMARY KEY (date, city_key)
+  PRIMARY KEY (provinsi, kabkota, year, month)
 );
 
 CREATE TABLE audio_download (
@@ -257,7 +265,7 @@ CREATE TABLE audio_download (
 );
 ```
 
-Migrasi memakai `PRAGMA user_version`, dengan satu fungsi migrasi per versi.
+Migrasi memakai `PRAGMA user_version`, dengan satu fungsi migrasi per versi. Skema di atas adalah `user_version` 2 (migrasi v2 menghapus dan membuat ulang `prayer_location` dan `prayer_day`, yang belum pernah dipakai, dan menambah `prayer_month`).
 
 ## 5. Arsitektur Aplikasi
 
