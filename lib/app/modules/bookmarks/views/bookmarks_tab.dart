@@ -23,7 +23,8 @@ class BookmarksTab extends GetView<BookmarksController> {
       UiLoading() => const Center(child: CircularProgressIndicator()),
       UiEmpty() => const EmptyState(
         title: 'Belum ada bookmark',
-        description: 'Tandai ayat di layar baca agar mudah ditemukan lagi.',
+        description:
+            'Tandai ayat atau hadis di layar baca agar mudah ditemukan lagi.',
       ),
       UiError(:final message) => ErrorState(
         title: 'Gagal memuat',
