@@ -74,7 +74,7 @@ class PrayerView extends GetView<PrayerController> {
         SwitchListTile(
           value: s.syncEnabled,
           onChanged: controller.setSyncEnabled,
-          title: const Text('Sinkron jadwal online'),
+          title: const Text('Unduh jadwal sholat'),
           subtitle: const Text(
             'Unduh jadwal sholat dari internet. Jadwal tersimpan di perangkat.',
           ),
@@ -175,7 +175,7 @@ class PrayerView extends GetView<PrayerController> {
           ? 'Butuh internet untuk jadwal pertama'
           : 'Aktifkan sinkron jadwal online untuk mengunduh jadwal sholat.',
     DayOutcome.unknownRegion =>
-      'Wilayah tidak dikenali server. Pilih wilayah lagi.',
+      'Wilayah ini tidak lagi tersedia. Silakan pilih ulang.',
     DayOutcome.noRegion => 'Pilih wilayah untuk melihat jadwal sholat',
     DayOutcome.noData => 'Jadwal bulan ini belum tersedia',
     DayOutcome.api || DayOutcome.calc => 'Jadwal belum tersedia',

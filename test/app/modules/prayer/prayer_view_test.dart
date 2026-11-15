@@ -97,7 +97,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Butuh internet untuk jadwal pertama'), findsNothing);
-    expect(find.text('Sinkron jadwal online'), findsOneWidget);
+    expect(find.text('Unduh jadwal sholat'), findsOneWidget);
     expect(find.byType(NextPrayerCard), findsNothing);
   });
 
@@ -120,7 +120,7 @@ void main() {
       days: {'2026-11-15': const DayResult(DayOutcome.unknownRegion)},
     );
     expect(
-      find.text('Wilayah tidak dikenali server. Pilih wilayah lagi.'),
+      find.text('Wilayah ini tidak lagi tersedia. Silakan pilih ulang.'),
       findsOneWidget,
     );
     expect(find.text('Pilih wilayah'), findsOneWidget);
@@ -169,7 +169,7 @@ void main() {
     tester,
   ) async {
     final h = await pumpView(tester, days: {'2026-11-15': api('2026-11-15')});
-    final tile = find.widgetWithText(SwitchListTile, 'Sinkron jadwal online');
+    final tile = find.widgetWithText(SwitchListTile, 'Unduh jadwal sholat');
     expect(tester.getSize(tile).height, greaterThanOrEqualTo(48));
     await tester.ensureVisible(tile);
     await tester.pump();
