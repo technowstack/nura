@@ -8,6 +8,7 @@ import '../../../data/models/daily_content.dart';
 import '../../../data/repositories/daily_content_repository.dart';
 import '../../../data/repositories/daily_settings_store.dart';
 import '../../../services/daily_notifier.dart';
+import '../../../services/daily_refresher.dart';
 
 /// Today's cards; at least one of them is non-null.
 class DailyCards {
@@ -26,6 +27,10 @@ class HomeController extends GetxController with WidgetsBindingObserver {
 
   final DailyNotifier? _notifier = Get.isRegistered<DailyNotifier>()
       ? Get.find<DailyNotifier>()
+      : null;
+
+  final DailyRefresher? _refresher = Get.isRegistered<DailyRefresher>()
+      ? Get.find<DailyRefresher>()
       : null;
 
   final cards = Rx<UiState<DailyCards>>(const UiLoading());
@@ -70,6 +75,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     }
     refreshForToday();
     unawaited(_reschedule(() => _notifier?.reschedule()));
+    // Rewrites the widget images for the new source.
+    unawaited(_refresher?.refresh(force: true));
   }
 
   Future<void> setNotify(bool on) async {
@@ -127,6 +134,9 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void _armMidnight(DateTime day) {
     _midnight?.cancel();
     final next = DateTime(day.year, day.month, day.day + 1);
-    _midnight = Timer(next.difference(day), refreshForToday);
+    _midnight = Timer(next.difference(day), () {
+      refreshForToday();
+      unawaited(_refresher?.refresh());
+    });
   }
 }

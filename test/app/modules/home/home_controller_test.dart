@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -7,6 +9,7 @@ import 'package:nura/app/data/models/daily_content.dart';
 import 'package:nura/app/data/repositories/daily_content_repository.dart';
 import 'package:nura/app/data/repositories/daily_settings_store.dart';
 import 'package:nura/app/modules/home/controllers/home_controller.dart';
+import 'package:nura/app/services/daily_refresher.dart';
 
 import '../../../support/fake_daily.dart';
 
@@ -93,5 +96,48 @@ void main() {
     c.didChangeAppLifecycleState(AppLifecycleState.resumed);
     expect(repo.calls, before + 1);
     expect(cards(c).ayah?.reference, 'QS. Asy-Syarh: 16');
+  });
+
+  group('daily refresher', () {
+    late int renders;
+
+    // Built inside the test body so its futures live in the fake-async zone.
+    void putRefresher() {
+      renders = 0;
+      Get.put(
+        DailyRefresher(
+          renderWidgets: () async => renders++,
+          reschedule: () async {},
+          now: () => clock,
+        ),
+      );
+    }
+
+    tc('changing the source forces a refresh on the same date', (tester) async {
+      await tester.pumpWidget(const SizedBox());
+      putRefresher();
+      final c = make();
+      unawaited(Get.find<DailyRefresher>().refresh());
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(renders, 1);
+      c.setHadithSource(HadithSource.allBooks);
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(renders, 2);
+    });
+
+    tc('crossing midnight refreshes once for the new date', (tester) async {
+      await tester.pumpWidget(const SizedBox());
+      putRefresher();
+      make();
+      unawaited(Get.find<DailyRefresher>().refresh());
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
+      clock = DateTime(2026, 11, 16);
+      await tester.pump(const Duration(hours: 14));
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(renders, 2);
+    });
   });
 }
