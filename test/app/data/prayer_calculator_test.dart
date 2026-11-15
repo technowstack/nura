@@ -68,7 +68,7 @@ void main() {
   }
 
   test(
-    'adjustment user adjustment shifts exactly one prayer by 2 minutes beyond built-in',
+    'user adjustment shifts exactly one prayer by 2 minutes beyond built-in',
     () {
       const at = (lat: -6.2088, lng: 106.8456);
       final base = calc.calculate(_jakarta, '2026-11-05', at, 0);
@@ -97,5 +97,24 @@ void main() {
     a.forEach((k, v) {
       expect(_min(b[k] ?? '') - _min(v ?? ''), 120, reason: k);
     });
+  });
+
+  // Exact values pin kIhtiyatMinutes (+3 prayers, -3 terbit): the 2 minute
+  // tolerance alone would absorb a 1 minute change. Dzuhur stacks: adhan's
+  // Singapore method adds +1 itself, so dzuhur is +4 vs astronomical time.
+  test('golden times pin built-in ihtiyat (dzuhur stacks with method +1)', () {
+    const jk = (lat: -6.2088, lng: 106.8456);
+    const bt = (lat: 0.1333, lng: 117.5);
+    final golden = [
+      (_jakarta, jk, '2026-11-05', '04:08 05:23 11:40 14:57 17:50 19:02'),
+      (_jakarta, jk, '2026-11-20', '04:06 05:23 11:42 15:04 17:54 19:08'),
+      (_bontang, bt, '2026-11-05', '04:34 05:47 11:58 15:18 18:00 19:11'),
+      (_bontang, bt, '2026-11-20', '04:34 05:49 12:00 15:22 18:02 19:15'),
+    ];
+    for (final (region, at, date, want) in golden) {
+      final d = calc.calculate(region, date, at, 0);
+      final got = [d.subuh, d.terbit, d.dzuhur, d.ashar, d.maghrib, d.isya];
+      expect(got.join(' '), want, reason: '${region.kabkota} $date');
+    }
   });
 }

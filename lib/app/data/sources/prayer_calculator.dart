@@ -16,6 +16,9 @@ abstract interface class PrayerCalculator {
 /// Built-in ihtiyat (safety margin) in minutes, measured against the
 /// equran.id (Kemenag) times for Nov 2026 Jakarta and Bontang (owner
 /// decision Q5, 2026-11-15). Prayers get +3, sunrise gets -3.
+/// Dzuhur note: adhan's Singapore method already adds +1 to dzuhur
+/// (methodAdjustments, summed separately), so the effective dzuhur ihtiyat
+/// relative to astronomical time is +4, not +3.
 const kIhtiyatMinutes = (prayer: 3, terbit: -3);
 
 /// Offline calculation with the Singapore method (Fajr 20, Isha 18),
