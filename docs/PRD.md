@@ -57,10 +57,10 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 - Pencarian dalam satu kitab atau di semua kitab.
 
 ### 5.4 Jadwal Sholat
-- Jadwal lima waktu, plus imsak, terbit, dan dhuha, berdasarkan lokasi GPS atau kota yang dipilih.
+- Jadwal lima waktu, plus imsak, terbit, dan dhuha, berdasarkan wilayah (provinsi + kabupaten/kota) yang dipilih. Tidak ada GPS di v1.
 - Jadwal diambil dari API per bulan (bulan berjalan dan berikutnya) lalu disimpan di perangkat, sehingga bisa dibuka offline setelah sinkron.
 - Izin sinkron jadwal **terpisah** dari sakelar audio dan ditanyakan saat onboarding.
-- Jika belum ada jadwal tersimpan dan perangkat offline, jadwal dihitung offline dari koordinat (paket `adhan`, parameter Kemenag) dan diberi label **"perkiraan"**.
+- Jika belum ada jadwal tersimpan dan perangkat offline, tampil "Butuh internet untuk jadwal pertama". Cadangan hitung offline (paket `adhan`, parameter Kemenag, label **"perkiraan"**) disiapkan tetapi baru aktif bila koordinat wilayah tersedia (Q4).
 - Notifikasi pengingat per waktu sholat, bisa diatur masing-masing. Dijadwalkan dalam zona waktu wilayah terpilih (WIB/WITA/WIT), bukan zona waktu perangkat.
 - Keputusan (belum dikerjakan, Fase 5): sumber jadwal = API equran.id v2. Lokasi dipilih sebagai provinsi + kabupaten/kota (nama persis seperti di API), bukan koordinat. Jadwal diambil sekali per bulan per wilayah lalu disimpan.
 - Penanda waktu sholat berikutnya dan hitung mundur.

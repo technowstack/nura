@@ -4,9 +4,9 @@
 
 **Goal:** Jadwal sholat per wilayah (provinsi + kabupaten/kota) dari API equran.id v2, disimpan per bulan di `user.db`, tampil offline, dengan cadangan perhitungan offline berlabel "perkiraan", layar Sholat, dan notifikasi per waktu sholat dalam zona waktu wilayah.
 
-**Architecture:** `PrayerApiClient` (HTTP, fungsi `send` bisa disuntik, hanya dipanggil lewat `PrayerRepository` yang lebih dulu bertanya ke `OnlineService`) mengisi cache `prayer_day` + `prayer_month` di `user.db`. `PrayerRepository.dayFor(date)` menjalankan alur spec 7.2 dan menyerahkan ke `PrayerCalculator` (`adhan`) bila perlu. Daftar wilayah berupa snapshot asset (pemilih wilayah harus jalan offline), zona waktu dipetakan per provinsi dengan offset tetap (Indonesia tanpa DST). `PrayerNotifier` menjadwalkan 7 hari ke depan dari cache.
+**Architecture:** `PrayerApiClient` (HTTP, fungsi `send` bisa disuntik, hanya dipanggil lewat `PrayerRepository` yang lebih dulu bertanya ke `OnlineService`) mengisi cache `prayer_day` + `prayer_month` di `user.db`. `PrayerRepository.dayFor(date)` menjalankan alur spec 7.2 (cache, lalu API, lalu "Butuh internet untuk jadwal pertama"); `PrayerCalculator` (`adhan`) hanya dipakai bila koordinat wilayah tersedia lewat `RegionCoordinates` (Q4; di v1 belum ada sumbernya). Daftar wilayah berupa snapshot asset (pemilih wilayah harus jalan offline), zona waktu dipetakan per provinsi dengan offset tetap (Indonesia tanpa DST). `PrayerNotifier` menjadwalkan sampai akhir data tersimpan, maksimal 30 hari.
 
-**Tech Stack:** Flutter, GetX, `sqlite3` (`user.db`), `dart:io` `HttpClient` (tanpa paket HTTP), paket baru **menunggu persetujuan pemilik** (D3): `adhan`, `flutter_local_notifications`, `timezone`, `geolocator`, `connectivity_plus`. Tidak ada perubahan `content.db`.
+**Tech Stack:** Flutter, GetX, `sqlite3` (`user.db`), `dart:io` `HttpClient` (tanpa paket HTTP), paket baru yang disetujui pemilik (D3, 2026-11-15): `adhan`, `flutter_local_notifications` + `timezone`, `connectivity_plus`. `geolocator` ditunda: tidak ada izin lokasi di v1. Tidak ada perubahan `content.db`.
 
 **Spec:** `docs/specs/2026-11-09-nura-v1-design.md` (4, 6.1, 7, 9, 10, 11 Fase 5), `docs/PRD.md` 5.4, keputusan equran.id di `docs/STATUS.md`. Desain: `docs/design/HANDOFF-flutter.md` dan brief (komponen `NextPrayerCard`, onboarding langkah b dan c). Baca juga `AGENTS.md`.
 
@@ -16,6 +16,7 @@
 - Semua akses jaringan lewat `PrayerRepository` setelah `OnlineService.prayerSyncEnabled` dan koneksi diperiksa (AGENTS aturan 5). Kegagalan jaringan bukan error layar: pakai cadangan.
 - Data satu bulan kecil, jadi tanpa paging. Setiap layar menangani loading, kosong, dan error eksplisit; `null` tidak sampai ke UI.
 - Perubahan folder platform (`android/`) dicommit terpisah dari fitur (AGENTS aturan 8). Paket baru dan data baru diminta persetujuan dulu (D1, D3).
+- Tidak ada izin atau paket lokasi di v1 (keputusan D3). Notifikasi dan alarm adalah satu-satunya izin baru.
 - Satu topik per commit, Conventional Commits Inggris. Jangan push (dan sebelum push, konfirmasi langsung dari pemilik bahwa repo privat). Perbarui `docs/STATUS.md` di akhir.
 
 ## Fakta yang diukur (API equran.id v2, 2026-11-15)
@@ -40,30 +41,30 @@ Masukan atau kondisi yang disiratkan spec tetapi tidak dilatih tugas lain; tiap 
 2. **"Hari ini" menurut zona wilayah, bukan zona perangkat**: pukul 23.30 WIB di perangkat untuk wilayah WIT sudah hari berikutnya; hitung mundur, label, dan notifikasi memakai instan absolut dari offset wilayah (Task 4, 7).
 3. **Wilayah berganti nama di API (404 wilayah)**: tidak mengulang permintaan, tidak crash, pengguna diminta memilih ulang; 404 bulan tanpa data di-cache negatif 24 jam, bukan dipanggil tiap buka (Task 3, 4).
 4. **Respons janggal**: hari kurang atau berlebih, waktu bukan `HH:mm` (`24:00`, kosong, `--:--`), tanggal tidak berurutan: seluruh bulan ditolak, tidak disimpan separuh (Task 3).
-5. **Penjadwalan ulang notifikasi**: tanpa duplikat setelah dijadwalkan dua kali, waktu yang sudah lewat tidak dijadwalkan, izin alarm tepat ditolak memakai alarm tidak tepat, setelah restart dijadwalkan ulang (Task 7).
+5. **Penjadwalan ulang notifikasi**: tanpa duplikat setelah dijadwalkan dua kali, waktu yang sudah lewat tidak dijadwalkan, batas 30 hari, notifikasi pembaruan di hari terakhir data, izin alarm tepat ditolak memakai alarm tidak tepat, setelah restart dijadwalkan ulang (Task 7).
 
 ## Keputusan terbuka dan asumsi plan
 
-D1 dan D3 mengubah sumber data / dependensi dan **perlu persetujuan pemilik sebelum Task 1, 5, dan 7 dikerjakan**; sisanya diasumsikan dan bisa dikoreksi.
+D1, D3, D4, dan aturan notifikasi **diputuskan pemilik (2026-11-15)**; D2 dan D5–D10 memakai asumsi plan dan disetujui.
 
 | ID | Pertanyaan | Asumsi / rekomendasi |
 |---|---|---|
-| D1 | Daftar wilayah: snapshot atau ambil langsung dari API saat memilih? | **Snapshot** `data-source/meta/prayer_regions.json` (provinsi → kab/kota, dengan `fetched_at`), dibuat skrip `tool/fetch_prayer_regions.dart`, dipakai app sebagai asset. Alasan: onboarding memilih wilayah sebelum izin sinkron diberikan, jadi pemilih harus jalan offline; 517 nama hanya sekitar 15 KB. Berkas baru di `data-source/` dan `CHECKSUMS.sha256` diperbarui. Skrip yang sama dijalankan ulang untuk mendeteksi perubahan (provinsi baru, nama berubah, termasuk 4 provinsi Papua baru bila API menambahkannya). Alternatif (live) gagal offline |
+| D1 | Daftar wilayah: snapshot atau ambil langsung dari API saat memilih? | **Snapshot** `data-source/meta/prayer_regions.json` (provinsi → kab/kota, dengan `fetched_at`), dibuat skrip `tool/fetch_prayer_regions.dart`, dipakai app sebagai asset. Alasan: onboarding memilih wilayah sebelum izin sinkron diberikan, jadi pemilih harus jalan offline; 517 nama hanya sekitar 15 KB. Berkas baru di `data-source/` dan `CHECKSUMS.sha256` diperbarui. Skrip yang sama dijalankan ulang sebelum rilis untuk mendeteksi perubahan (provinsi baru, nama berubah, termasuk 4 provinsi Papua baru bila API menambahkannya). **Diputuskan.** Tambahan pemilik: bila wilayah tersimpan dijawab 404 (mis. API berubah ke 38 provinsi), pengguna diminta memilih ulang wilayah dan jadwal serta notifikasi lama dihentikan; tidak boleh gagal diam-diam |
 | D2 | Zona waktu wilayah | Tabel statis provinsi → WIB (+7) / WITA (+8) / WIT (+9), offset tetap tanpa basis data tz. WIB: Aceh, Sumut, Sumbar, Riau, Kepri, Jambi, Sumsel, Babel, Bengkulu, Lampung, Banten, DKI, Jabar, Jateng, DIY, Jatim, Kalbar, Kalteng. WITA: Bali, NTB, NTT, Kalsel, Kaltim, Kaltara, Sulut, Gorontalo, Sulteng, Sulsel, Sultra, Sulbar. WIT: Maluku, Maluku Utara, Papua, Papua Barat. Tes memastikan tiap provinsi di snapshot punya zona; skrip D1 gagal bila ada provinsi tanpa zona. Provinsi tidak dikenal saat runtime = wilayah tidak dapat dijadwalkan, pengguna diminta memilih ulang |
-| D3 | Paket baru (AGENTS: tanya dulu) | `adhan` (Dart murni, kecil), `flutter_local_notifications` (+ `timezone`, hanya untuk `TZDateTime` di lokasi `UTC`, tanpa data tz), `geolocator` (GPS untuk cadangan), `connectivity_plus` (sesuai spec 6.1). Tanpa paket HTTP (`dart:io`) dan tanpa `permission_handler` (izin lewat plugin masing-masing). `flutter_local_notifications` meminta desugaring di `android/app/build.gradle.kts` (commit platform terpisah). Tidak dipasang sebelum disetujui |
-| D4 | Cadangan offline saat koordinat wilayah (Q4) belum ada | Urutan: cache API → bila belum ada dan sinkron diizinkan + online: ambil API → bila gagal: `adhan` dengan koordinat GPS perangkat bila izin lokasi diberikan (label "perkiraan") → bila tidak: "Butuh internet untuk jadwal pertama". Koordinat per kab/kota (Q4) tidak dikarang; bila nanti ada, ditambahkan sebagai sumber koordinat kedua tanpa mengubah alur. GPS-ke-wilayah-terdekat ditunda sampai Q4 ada |
+| D3 | Paket baru (AGENTS: tanya dulu) | **Diputuskan:** `adhan`, `flutter_local_notifications` + `timezone` (hanya `TZDateTime` di lokasi `UTC`, tanpa data tz), `connectivity_plus` (spec 6.1). **`geolocator` ditunda: tidak ada izin lokasi di v1.** Tanpa paket HTTP (`dart:io`) dan tanpa `permission_handler`. `flutter_local_notifications` meminta desugaring di `android/app/build.gradle.kts` (commit platform terpisah) |
+| D4 | Cadangan offline | **Diputuskan:** urutan cache → API → "Butuh internet untuk jadwal pertama". Cadangan `adhan` disiapkan dan diuji, tetapi hanya aktif bila koordinat wilayah tersedia lewat `RegionCoordinates` (Q4; di v1 penyedianya kosong, jadi cadangan tidak aktif). Tidak ada GPS, izin lokasi, atau koordinat karangan. Bila Q4 terpenuhi, cukup mengisi penyedia koordinat tanpa mengubah alur |
 | D5 | Alarm tepat Android 12+ | `SCHEDULE_EXACT_ALARM` dengan permintaan izin + penjelasan (spec 7.4), bukan `USE_EXACT_ALARM` (kebijakan Play hanya untuk aplikasi alarm/kalender, berisiko). Ditolak: alarm tidak tepat + keterangan di layar Sholat |
 | D6 | Skema cache | Migrasi `user.db` v2: hapus dan buat ulang `prayer_location` dan `prayer_day` (keduanya kosong, belum pernah dipakai) dan tambah `prayer_month`. `prayer_location(id=1, provinsi, kabkota, source CHECK('city','gps'))` tanpa lat/lng wajib; `prayer_day(date, provinsi, kabkota, imsak..isya nullable, source CHECK('api','calc'), fetched_at, PK(date,provinsi,kabkota))`; `prayer_month(provinsi, kabkota, year, month, status CHECK('ok','none'), fetched_at, PK(...))`. Spec bagian 4 diperbarui |
-| D7 | Kebijakan sinkron | Hanya saat aplikasi dibuka atau wilayah berganti (tanpa WorkManager di v1): ambil bulan berjalan bila belum `ok`; ambil bulan berikutnya bila sisa hari `api` < 7 (spec 7.2.5); satu permintaan sekaligus per wilayah+bulan (single-flight); `status='none'` dicoba lagi setelah 24 jam; kegagalan jaringan dicoba lagi saat aplikasi dibuka berikutnya. Konsekuensi: notifikasi hanya terjadwal sejauh cache (maks 7 hari); pengguna yang tidak membuka aplikasi > 7 hari berhenti dapat pengingat (dicatat di STATUS) |
+| D7 | Kebijakan sinkron | **Diputuskan (diperbarui):** hanya saat aplikasi dibuka atau wilayah berganti (tanpa WorkManager di v1): ambil bulan berjalan bila belum `ok`; **ambil bulan berikutnya bila belum ada** (menggantikan aturan sisa < 7 hari); satu permintaan sekaligus per wilayah+bulan (single-flight); `status='none'` dicoba lagi setelah 24 jam; kegagalan jaringan dicoba lagi saat aplikasi dibuka berikutnya. **Notifikasi:** dijadwalkan sampai akhir data tersimpan, maksimal 30 hari dari hari ini; pada hari terakhir data tersimpan dikirim satu notifikasi "Buka Nura untuk memperbarui jadwal sholat." (asumsi: pukul 08:00 waktu wilayah, id deterministik, hanya bila hari itu masuk jendela 30 hari dan setidaknya satu pengingat sholat hidup). Sampai 150 jadwal tertunda (30 hari × 5) masih di bawah batas 500 alarm Android |
 | D8 | UI | Sementara (desain putaran 2 belum ada untuk daftar kota dan jadwal bulanan): tab Sholat = kartu waktu berikutnya + hitung mundur + daftar waktu hari ini + pemilih wilayah (provinsi lalu kab/kota, pencarian nama) + sakelar sinkron online + sakelar pengingat per waktu + keterangan izin. Logika di controller dan repository, view tipis. Jadwal bulanan dan kartu di Beranda tidak ada di Fase 5 (Beranda = Fase 6) |
-| D9 | Cadangan `adhan` | Subuh 20°, Isya 18°, Asar Syafi'i (spec 7.1): metode Singapore di `adhan`; penyesuaian per waktu dari setting (default 0; nilai ihtiyat Kemenag tetap Q5). Imsak = subuh −10 mnt, dhuha tidak dihitung (disimpan `NULL`, UI menyembunyikan baris) karena aturan Kemenag belum dipastikan (dari contoh API: terbit +28 mnt). Tes membandingkan dengan fixture API Jakarta dan Bontang, toleransi ±2 menit (spec 10) |
+| D9 | Cadangan `adhan` | Subuh 20°, Isya 18°, Asar Syafi'i (spec 7.1): metode Singapore di `adhan`, aktif hanya bila koordinat wilayah ada (D4); penyesuaian per waktu dari setting (default 0; nilai ihtiyat Kemenag tetap Q5). Imsak = subuh −10 mnt, dhuha tidak dihitung (disimpan `NULL`, UI menyembunyikan baris) karena aturan Kemenag belum dipastikan (dari contoh API: terbit +28 mnt). Tes membandingkan dengan fixture API Jakarta dan Bontang, toleransi ±2 menit (spec 10) |
 | D10 | Syarat layanan equran.id | Dibaca pemilik sebelum rilis (Q3); atribusi "equran.id" masuk layar Sumber & Atribusi (Fase 8). Selama pengembangan, batasi permintaan dan jangan polling |
 
 ---
 
 ### Task 1: Snapshot wilayah, zona waktu, model
 
-*(menunggu persetujuan D1)*
+*(D1 disetujui)*
 
 **Files:**
 - Create: `tool/fetch_prayer_regions.dart`, `data-source/meta/prayer_regions.json`, `lib/app/data/models/prayer_region.dart`, `lib/app/data/sources/prayer_regions_source.dart`
@@ -113,26 +114,24 @@ D1 dan D3 mengubah sumber data / dependensi dan **perlu persetujuan pemilik sebe
 - Test: `test/app/services/online_service_test.dart`, `test/app/data/prayer_repository_test.dart`; `FakePrayerApi` dan `FakeClock` di `test/support/`
 
 **Interfaces:**
-- Consumes: `PrayerStore`, `PrayerApiClient`, `PrayerCalculator` (Task 5; antarmukanya dibuat di sini dengan tiruan), `OnlineService`.
-- Produces: `class OnlineService { bool get prayerSyncEnabled; Future<bool> canReach(); }` (setting `prayer_sync_enabled`; `connectivity_plus` menunggu D3, sebelum itu `canReach` memakai tiruan yang selalu mencoba); `class PrayerClock { DateTime nowUtc(); String todayIn(PrayerZone z); DateTime instantOf(String date, String hhmm, PrayerZone z); }`; `enum DayOutcome { api, calc, needsInternet, unknownRegion, noLocation }`; `class DayResult { DayOutcome outcome; PrayerDay? day; }`; `Future<DayResult> dayFor(String date)`; `Future<void> syncIfNeeded()`.
+- Consumes: `PrayerStore`, `PrayerApiClient`, `PrayerCalculator` dan `RegionCoordinates` (antarmuka dibuat di sini, tiruan di tes; implementasi `adhan` di Task 5), `OnlineService`.
+- Produces: `class OnlineService { bool get prayerSyncEnabled; Future<bool> canReach(); }` (setting `prayer_sync_enabled`; memakai `connectivity_plus`, dibungkus agar bisa ditiru di tes); `class PrayerClock { DateTime nowUtc(); String todayIn(PrayerZone z); DateTime instantOf(String date, String hhmm, PrayerZone z); }`; `abstract interface class RegionCoordinates { ({double lat, double lng})? of(PrayerRegion r); }` (v1: implementasi yang selalu `null`); `enum DayOutcome { api, calc, needsInternet, unknownRegion }`; `class DayResult { DayOutcome outcome; PrayerDay? day; }`; `Future<DayResult> dayFor(String date)`; `Future<void> syncIfNeeded()`.
 
-- [ ] **Step 1: Write the failing tests** (klien dan jam tiruan): ada cache `api` → dipakai tanpa panggilan jaringan; cache kosong + sinkron mati → hitung (D4) atau `needsInternet`; cache kosong + sinkron hidup + online → satu panggilan, tersimpan, dipakai; dua `dayFor` bersamaan memicu **satu** permintaan; `UnknownRegion` → `unknownRegion` dan tidak diulang sampai wilayah diganti; `NoDataForMonth` → di-cache `none`, tidak dipanggil lagi dalam 24 jam, dicoba lagi sesudahnya; `Network` → cadangan `calc` berlabel perkiraan, dicoba lagi pada `syncIfNeeded` berikutnya; sisa hari `api` < 7 memicu bulan berikutnya (termasuk batas Des → Jan); pada 2026-11-15 16:30 UTC `todayIn(wib)` = `2026-11-15` (23:30), `todayIn(wita)` = `2026-11-16` (00:30), `todayIn(wit)` = `2026-11-16` (01:30); `instantOf('2026-11-01','04:09',wib)` = 2026-10-31 21:09 UTC dan hasil yang sesuai untuk wita (20:09 UTC) dan wit (19:09 UTC).
+- [ ] **Step 1: Write the failing tests** (klien dan jam tiruan): ada cache `api` → dipakai tanpa panggilan jaringan; cache kosong + sinkron mati atau gagal → `calc` bila `RegionCoordinates` mengembalikan koordinat, jika tidak `needsInternet`; cache kosong + sinkron hidup + online → satu panggilan, tersimpan, dipakai; dua `dayFor` bersamaan memicu **satu** permintaan; `UnknownRegion` → `unknownRegion` (wilayah tersimpan tidak dihapus diam-diam; pengguna diminta memilih ulang) dan tidak diulang sampai wilayah diganti; `NoDataForMonth` → di-cache `none`, tidak dipanggil lagi dalam 24 jam, dicoba lagi sesudahnya; `Network` → `calc` berlabel perkiraan bila ada koordinat, jika tidak `needsInternet`; dicoba lagi pada `syncIfNeeded` berikutnya; bulan berikutnya diambil saat `syncIfNeeded` bila belum ada (termasuk batas Des → Jan) dan tidak diambil dua kali; pada 2026-11-15 16:30 UTC `todayIn(wib)` = `2026-11-15` (23:30), `todayIn(wita)` = `2026-11-16` (00:30), `todayIn(wit)` = `2026-11-16` (01:30); `instantOf('2026-11-01','04:09',wib)` = 2026-10-31 21:09 UTC dan hasil yang sesuai untuk wita (20:09 UTC) dan wit (19:09 UTC).
 - [ ] **Step 2–4: Run fail, implement, run pass.**
 - [ ] **Step 5: Commit** `feat: add prayer repository with cache and fallback flow`.
 
-### Task 5: Perhitungan offline dan GPS
-
-*(menunggu persetujuan D3: `adhan`, `geolocator`)*
+### Task 5: Perhitungan offline (aktif bila koordinat ada)
 
 **Files:**
-- Create: `lib/app/data/sources/prayer_calculator.dart` (`AdhanPrayerCalculator`), `lib/app/services/location_service.dart`
-- Modify: `pubspec.yaml`, `android/app/src/main/AndroidManifest.xml` (izin lokasi kasar, commit platform terpisah)
+- Create: `lib/app/data/sources/prayer_calculator.dart` (`AdhanPrayerCalculator`)
+- Modify: `pubspec.yaml` (`adhan`)
 - Test: `test/app/data/prayer_calculator_test.dart`
 
 **Interfaces:**
-- Produces: `abstract interface class PrayerCalculator { PrayerDay calculate({required String date, required double lat, required double lng, required PrayerZone zone, Map<PrayerName, int> adjustMinutes}); }`; `abstract interface class LocationService { Future<LocationResult> current(); }` dengan `LocationResult` sealed: `Granted(lat, lng)`, `Denied`, `Unavailable`.
+- Produces: `abstract interface class PrayerCalculator { PrayerDay calculate({required String date, required double lat, required double lng, required PrayerZone zone, Map<PrayerName, int> adjustMinutes}); }`. Tidak ada `LocationService` dan tidak ada izin lokasi (D3).
 
-- [ ] **Step 1: Write the failing tests**: untuk tanggal-tanggal di fixture Jakarta (-6.2088, 106.8456) dan Bontang (0.1333, 117.5), subuh, terbit, dzuhur, ashar, maghrib, isya dalam ±2 menit dari fixture API; imsak = subuh −10; `dhuha == null`; penyesuaian +2 menit menggeser tepat 2 menit; hasil `source == calc`; izin ditolak → `Denied` dan `PrayerRepository` mengembalikan `needsInternet` tanpa error.
+- [ ] **Step 1: Write the failing tests**: untuk tanggal-tanggal di fixture Jakarta (-6.2088, 106.8456) dan Bontang (0.1333, 117.5), subuh, terbit, dzuhur, ashar, maghrib, isya dalam ±2 menit dari fixture API; imsak = subuh −10; `dhuha == null`; penyesuaian +2 menit menggeser tepat 2 menit; hasil `source == calc`; dengan `RegionCoordinates` kosong `PrayerRepository` tetap `needsInternet` (Task 4) dan dengan koordinat tiruan memakai kalkulator ini.
 - [ ] **Step 2–4: Run fail, implement, run pass.** Bila selisih > 2 menit pada salah satu waktu, berhenti dan laporkan angkanya (Q5) sebelum mengubah parameter.
 - [ ] **Step 5: Commit** `feat: add offline prayer time calculation`.
 
@@ -152,17 +151,15 @@ D1 dan D3 mengubah sumber data / dependensi dan **perlu persetujuan pemilik sebe
 
 ### Task 7: Notifikasi dan izin
 
-*(menunggu persetujuan D3: `flutter_local_notifications`, `timezone`)*
-
 **Files:**
 - Create: `lib/app/services/prayer_notifier.dart`
 - Modify: `pubspec.yaml`, `android/app/src/main/AndroidManifest.xml` (`POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`, `RECEIVE_BOOT_COMPLETED`, receiver plugin), `android/app/build.gradle.kts` (desugaring), `lib/app/modules/prayer/…` (sakelar dan keterangan izin), `app_bootstrap.dart`
 - Test: `test/app/services/prayer_notifier_test.dart` (plugin dibungkus antarmuka `NotificationScheduler`, tiruan di tes)
 
 **Interfaces:**
-- Produces: `abstract interface class NotificationScheduler { Future<void> cancelPrayer(); Future<void> schedule(int id, DateTime utcInstant, String title, String body, {required bool exact}); Future<PermissionState> notificationPermission(); Future<PermissionState> exactAlarmPermission(); }`; `class PrayerNotifier { Future<void> reschedule(); }` memakai `PrayerClock.instantOf` + `tz.UTC`.
+- Produces: `abstract interface class NotificationScheduler { Future<void> cancelPrayer(); Future<void> schedule(int id, DateTime utcInstant, String title, String body, {required bool exact}); Future<PermissionState> notificationPermission(); Future<PermissionState> exactAlarmPermission(); }`; `class PrayerNotifier { Future<void> reschedule(); }` memakai `PrayerClock.instantOf` + `tz.UTC`; konstanta `kMaxScheduleDays = 30`.
 
-- [ ] **Step 1: Write the failing tests**: `reschedule` dua kali menghasilkan himpunan jadwal yang sama (tanpa duplikat, id deterministik dari tanggal+waktu); hanya waktu yang sakelarnya hidup dan belum lewat, maksimum 7 hari dan tidak melewati data cache; instan benar untuk wilayah WIT saat zona perangkat WIB; izin notifikasi ditolak → tidak menjadwalkan dan keterangan tampil; izin alarm tepat ditolak → `exact:false` dan keterangan; wilayah berganti atau sakelar berubah → batal lalu jadwal ulang; `unknownRegion` → semua jadwal dibatalkan.
+- [ ] **Step 1: Write the failing tests**: `reschedule` dua kali menghasilkan himpunan jadwal yang sama (tanpa duplikat, id deterministik dari tanggal+waktu); hanya waktu yang sakelarnya hidup dan belum lewat; jendela = sampai akhir data tersimpan dan **maksimal 30 hari** dari hari ini (data 61 hari → jadwal berhenti di hari ke-30; data 10 hari → berhenti di hari ke-10); pada hari terakhir data tersimpan ada **satu** notifikasi "Buka Nura untuk memperbarui jadwal sholat." pukul 08:00 waktu wilayah, tidak ada bila hari itu di luar jendela 30 hari atau semua pengingat sholat mati, dan tidak duplikat setelah `reschedule` kedua; instan benar untuk wilayah WIT saat zona perangkat WIB; izin notifikasi ditolak → tidak menjadwalkan dan keterangan tampil; izin alarm tepat ditolak → `exact:false` dan keterangan; wilayah berganti atau sakelar berubah → batal lalu jadwal ulang; `unknownRegion` → semua jadwal dibatalkan dan layar meminta memilih ulang wilayah.
 - [ ] **Step 2–4: Run fail, implement, run pass.**
 - [ ] **Step 5: Commit** terpisah: `feat: schedule prayer notifications` dan `build: add notification permissions and boot receiver`.
 
@@ -171,7 +168,7 @@ D1 dan D3 mengubah sumber data / dependensi dan **perlu persetujuan pemilik sebe
 **Files:** `docs/STATUS.md`, `docs/PRD.md` (bila perlu), `docs/specs/2026-11-09-nura-v1-design.md` (7.x sesuai hasil)
 
 - [ ] **Step 1:** Jalankan `flutter analyze` dan `flutter test` (`content.db` tidak berubah di fase ini).
-- [ ] **Step 2:** Perbarui STATUS: fase, keputusan D1–D10, daftar uji perangkat pemilik (pilih wilayah, jadwal tampil offline setelah mode pesawat, "perkiraan" tanpa cache, wilayah WIT dengan perangkat WIB, notifikasi berbunyi tepat waktu, izin alarm ditolak, restart perangkat, aplikasi tidak dibuka 7 hari), risiko tersisa, dan Q3/Q4/Q5.
+- [ ] **Step 2:** Perbarui STATUS: fase, keputusan D1–D10, daftar uji perangkat pemilik (pilih wilayah, jadwal tampil offline setelah mode pesawat, "perkiraan" tanpa cache, wilayah WIT dengan perangkat WIB, notifikasi berbunyi tepat waktu, izin alarm ditolak, restart perangkat, aplikasi tidak dibuka sampai data habis: notifikasi "Buka Nura untuk memperbarui jadwal sholat." muncul di hari terakhir), risiko tersisa, dan Q3/Q4/Q5.
 - [ ] **Step 3: Commit** `docs: update status after phase 5`.
 
 ## Spec coverage
@@ -180,8 +177,8 @@ D1 dan D3 mengubah sumber data / dependensi dan **perlu persetujuan pemilik sebe
 |---|---|
 | 7.1 API sebulan sekali, `adhan` Subuh 20°/Isya 18°/Asar Syafi'i | 3, 4, 5 |
 | 7.2 alur cache → API → hitung, sinkron < 7 hari | 4 |
-| 7.3 provinsi + kab/kota, zona waktu wilayah, GPS/Q4 | 1, 4, 5 |
-| 7.4 notifikasi 7 hari, penjadwalan ulang, izin 12+/13+, boot | 7 |
+| 7.3 provinsi + kab/kota, zona waktu wilayah, koordinat/Q4 | 1, 4, 5 |
+| 7.4 notifikasi sampai akhir data (maks 30 hari), penjadwalan ulang, izin 12+/13+, boot | 7 |
 | 4 skema `user.db` (diubah D6) | 2 |
 | 9 tabel error (API gagal → cadangan, izin ditolak) | 4, 5, 6, 7 |
 | 10 tes jadwal (±2 menit Bontang/Jakarta, klien tiruan) | 3, 4, 5 |
