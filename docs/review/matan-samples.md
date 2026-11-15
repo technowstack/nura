@@ -1,5 +1,7 @@
 # Sampel matan hadis harian
 
+> Catatan: sampel ini dibuat dengan aturan sebelum pengetatan tanda kutip (sampel pertama). Sampel baru ada di `matan-samples-2.md`.
+
 50 sampel acak (seed 20261115) dari daftar `default` (Bukhari dan Muslim, 1271 hadis), dihasilkan oleh `tool/sample_daily_hadith.dart`. Periksa apakah matan Arab dan terjemahan sejajar dan utuh.
 
 ## 1. HR. Shahih Bukhari No. 346
