@@ -385,7 +385,7 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 ### 7.1 Sumber
 
 - **API** (diputuskan 2026-11-15: equran.id v2, `https://equran.id/api/v2/shalat`, dokumentasi `https://equran.id/apidev/shalat`; syarat layanan belum dibaca, wajib dibaca sebelum rilis): ambil sekali per bulan per wilayah (bulan berjalan, bulan berikutnya bila perlu) lalu simpan ke `prayer_day` dengan `source = 'api'`. Rate limit tidak didokumentasikan: batasi permintaan, jangan polling.
-- **Perhitungan offline** (`adhan`): Subuh 20°, Isya 18°, Asar mazhab Syafi'i, plus penyesuaian dari setting. Simpan dengan `source = 'calc'`.
+- **Perhitungan offline** (`adhan`): Subuh 20°, Isya 18°, Asar mazhab Syafi'i. Ihtiyat bawaan (keputusan 2026-11-15, Q5): +3 menit untuk subuh, dzuhur, ashar, maghrib, isya dan -3 menit untuk terbit, diukur terhadap API pada November 2026 untuk Jakarta dan Bontang (selisih akhir maksimal 1 menit). Penyesuaian dari setting (`prayer_adjust_*`) ditambahkan di atasnya. Imsak = subuh (setelah ihtiyat) - 10 menit. Dhuha tidak dihitung (aturan belum ditetapkan). Kalkulator hanya aktif bila koordinat wilayah ada. Simpan dengan `source = 'calc'`.
 
 ### 7.2 Alur
 
@@ -493,7 +493,7 @@ Fase 2 dan seterusnya membutuhkan Fase 1. Fase 5 membutuhkan snapshot `meta/pray
 | Q2 | Nama aplikasi Nura (Play Store, DJKI) | Fase 8 |
 | Q3 | Penyedia API audio dan jadwal, beserta syarat penggunaannya. Jadwal: diputuskan equran.id v2 (2026-11-15), syarat layanan belum dibaca (wajib sebelum rilis). Audio belum diputuskan | Fase 7, rilis |
 | Q4 | Sumber `surah_info.json`, `juz.json`, dan koordinat per kab/kota (pengganti `cities.json`; hanya untuk cadangan offline) | Fase 1 (revelation), 2 (juz), 5 |
-| Q5 | Nilai ihtiyat dan parameter perhitungan offline | Fase 5 |
+| Q5 | Nilai ihtiyat dan parameter perhitungan offline. Diputuskan 2026-11-15: +3 menit prayer, -3 menit terbit | Fase 5 |
 | Q6 | Ketentuan tashih LPMQ dan lisensi font Arab (LPMQ Isep Misbah; cadangan KFGQPC Uthmanic Script Hafs) | Rilis |
 | Q7 | Lisensi teks terjemahan hadis | Rilis |
 | Q8 | Verifikasi data ke sumber asli | Sebelum rilis |
