@@ -187,6 +187,53 @@ void main() {
     });
   });
 
+  group('daily_ayah', () {
+    late Directory src;
+    late File db;
+
+    setUp(() {
+      src = makeSource(
+        tempDir,
+        'ayah-src',
+        files: {
+          'meta/daily_ayah.json': '[{"surah":1,"ayah":2},{"surah":1,"ayah":3}]',
+        },
+      );
+      db = File('${tempDir.path}/ayah.db');
+      buildContentDb(sourceRoot: src, output: db);
+    });
+
+    VerificationReport verifyAyah(String sql) {
+      final copy = db.copySync('${tempDir.path}/ayah-tampered.db');
+      final d = sqlite3.open(copy.path)..execute(sql);
+      d.dispose();
+      return verifyContentDb(sourceRoot: src, database: copy);
+    }
+
+    test('a populated daily_ayah verifies ok', () {
+      expect(verifyContentDb(sourceRoot: src, database: db).errors, isEmpty);
+    });
+
+    test('a missing ayah, a seq gap and a duplicate are errors', () {
+      expect(
+        verifyAyah(
+          'UPDATE daily_ayah SET ayah_id = 999999 WHERE seq = 0',
+        ).errors,
+        anyElement(contains('missing')),
+      );
+      expect(
+        verifyAyah('UPDATE daily_ayah SET seq = 5 WHERE seq = 1').errors,
+        anyElement(contains('not dense')),
+      );
+      expect(
+        verifyAyah(
+          'UPDATE daily_ayah SET ayah_id = (SELECT ayah_id FROM daily_ayah WHERE seq = 0) WHERE seq = 1',
+        ).errors,
+        anyElement(contains('twice')),
+      );
+    });
+  });
+
   group('daily_hadith', () {
     late Directory src;
     late File db;

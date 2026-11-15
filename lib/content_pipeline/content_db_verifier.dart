@@ -20,6 +20,25 @@ export 'verification_report.dart';
 int _count(Database db, String sql, [List<Object?> params = const []]) =>
     db.select(sql, params).single.values.first as int;
 
+/// Checks `daily_ayah`: every ayah_id exists, `seq` is dense from 0 and no
+/// ayah appears twice.
+void _verifyDailyAyah(Database db, List<String> errors) {
+  var want = 0;
+  final seen = <int>{};
+  final rows = db.select(
+    'SELECT d.seq, d.ayah_id, a.id AS found FROM daily_ayah d '
+    'LEFT JOIN ayah a ON a.id = d.ayah_id ORDER BY d.seq',
+  );
+  for (final r in rows) {
+    final seq = r['seq'] as int;
+    final id = r['ayah_id'] as int;
+    if (r['found'] == null) errors.add('daily_ayah#$seq: ayah_id $id missing');
+    if (seq != want) errors.add('daily_ayah seq not dense: $seq != $want');
+    want = seq + 1;
+    if (!seen.add(id)) errors.add('daily_ayah#$seq: ayah_id $id appears twice');
+  }
+}
+
 /// Checks `daily_hadith` (spec 3.3): list membership, no excluded or
 /// truncated hadith, dense `seq`, offsets inside the text, and slices equal
 /// to the matan the rule yields when re-run on the original columns.
@@ -314,6 +333,8 @@ VerificationReport verifyContentDb({
       );
     }
 
+
+    _verifyDailyAyah(db, errors);
     _verifyDailyHadith(db, sourceRoot, errors);
 
     // 6. meta.source_checksums.
