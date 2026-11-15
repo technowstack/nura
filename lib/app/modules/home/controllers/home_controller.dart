@@ -72,10 +72,13 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     unawaited(_reschedule(() => _notifier?.reschedule()));
   }
 
-  Future<void> setNotify(bool on) => _reschedule(() async {
-    final ok = await _notifier?.setEnabled(on) ?? true;
-    if (!ok) notifyDenied.value = true;
-  });
+  Future<void> setNotify(bool on) async {
+    var refused = false;
+    await _reschedule(() async {
+      refused = !(await _notifier?.setEnabled(on) ?? true);
+    });
+    if (refused) notifyDenied.value = true;
+  }
 
   /// [hhmm] is a valid 24h `HH:mm`.
   Future<void> setNotifyTime(String hhmm) =>
@@ -83,7 +86,6 @@ class HomeController extends GetxController with WidgetsBindingObserver {
 
   /// Failures never reach the UI; the switch state is re-read on every path.
   Future<void> _reschedule(Future<void>? Function() action) async {
-    notifyDenied.value = false;
     try {
       await action();
       notifyFailed.value = false;
@@ -95,6 +97,14 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     }
     notifyOn.value = _settings.notifyEnabled;
     notifyTime.value = _settings.notifyTime;
+    // The note mirrors the real permission, so other changes keep it.
+    try {
+      notifyDenied.value =
+          _settings.notifyEnabled &&
+          (await _notifier?.permissionDenied() ?? false);
+    } on Object catch (e) {
+      debugPrint('HomeController: permission check failed: $e');
+    }
   }
 
   void refreshForToday() {

@@ -218,11 +218,53 @@ void main() {
     expect(t.pending.length, 6);
   });
 
+  test(
+    'toggle on (pending permission) then off ends OFF, nothing scheduled',
+    () async {
+      store.notifyEnabled = false;
+      final g = _GatedPermission()..notif = PermissionState.denied;
+      final n = DailyNotifier(
+        scheduler: g,
+        repository: repo,
+        store: store,
+        now: () => now,
+      );
+      final on = n.setEnabled(true);
+      final off = n.setEnabled(false);
+      await Future<void>.delayed(Duration.zero);
+      g.gate.complete(PermissionState.granted);
+      await Future.wait([on, off]);
+      expect(store.notifyEnabled, isFalse);
+      expect(g.pending, isEmpty);
+    },
+  );
+
+  test('a time that normalizes into the next day keeps ids distinct', () async {
+    final n = DailyNotifier(
+      scheduler: sch,
+      repository: repo,
+      store: store,
+      now: () => now,
+      localAt: (y, m, d, h, mi) => DateTime(y, m, d + 1, 0, 30),
+    );
+    await n.reschedule();
+    expect(sch.pending.length, 7);
+    expect(sch.pending.keys.toSet().length, 7);
+    expect(sch.pending.containsKey(dailyNotificationId(at(15))), isTrue);
+  });
+
   test('inexact when exact alarms are denied', () async {
     sch.exactState = PermissionState.denied;
     await make().reschedule();
     expect(sch.pending.values.every((s) => !s.exact), isTrue);
   });
+}
+
+class _GatedPermission extends RecordingScheduler {
+  final gate = Completer<PermissionState>();
+
+  @override
+  Future<PermissionState> requestNotificationPermission() => gate.future;
 }
 
 class _NullAyah extends FakeDailyContentRepository {

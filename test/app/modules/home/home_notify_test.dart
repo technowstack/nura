@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
+import 'package:nura/app/data/models/daily_content.dart';
 import 'package:nura/app/data/repositories/daily_content_repository.dart';
 import 'package:nura/app/data/repositories/daily_settings_store.dart';
 import 'package:nura/app/modules/home/controllers/home_controller.dart';
@@ -148,5 +149,39 @@ void main() {
     });
     await tester.pump();
     expect(tester.takeException(), isNull);
+  });
+
+  tw('hadith source change keeps a visible denied note', (tester) async {
+    sch.notif = PermissionState.denied;
+    sch.notifAfterRequest = PermissionState.denied;
+    store.notifyEnabled = true;
+    final c = await pump(tester);
+    await tester.runAsync(() => c.setNotifyTime('06:30'));
+    await tester.pump();
+    expect(find.text(_denied), findsOneWidget);
+    c.setHadithSource(HadithSource.allBooks);
+    await settle(tester);
+    expect(find.text(_denied), findsOneWidget);
+  });
+
+  tw('time picker: cancel keeps time, OK stores zero-padded HH:mm', (
+    tester,
+  ) async {
+    store
+      ..notifyEnabled = true
+      ..notifyTime = '07:05';
+    await pump(tester);
+    await tester.tap(find.text('Jam notifikasi'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(store.notifyTime, '07:05');
+    expect(sch.log, isNot(contains('cancelDaily')));
+    await tester.tap(find.text('Jam notifikasi'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK'));
+    await settle(tester);
+    expect(store.notifyTime, '07:05');
+    expect(sch.log, contains('cancelDaily'));
   });
 }

@@ -46,7 +46,10 @@ class DailyNotifier {
     required DailyContentRepository repository,
     required DailySettingsStore store,
     DateTime Function()? now,
-  }) : _scheduler = scheduler,
+    @visibleForTesting
+    DateTime Function(int y, int m, int d, int h, int min)? localAt,
+  }) : _localAt = localAt ?? DateTime.new,
+       _scheduler = scheduler,
        _repo = repository,
        _store = store,
        _now = now ?? DateTime.now;
@@ -55,6 +58,7 @@ class DailyNotifier {
   final DailyContentRepository _repo;
   final DailySettingsStore _store;
   final DateTime Function() _now;
+  final DateTime Function(int y, int m, int d, int h, int min) _localAt;
 
   Future<void> _tail = Future<void>.value();
 
@@ -64,29 +68,36 @@ class DailyNotifier {
       await _scheduler.notificationPermission() == PermissionState.denied;
 
   /// Returns false (switch stays off) when the permission was refused.
-  Future<bool> setEnabled(bool on) async {
+  /// Queued behind earlier actions so the last user intent wins.
+  Future<bool> setEnabled(bool on) => _enqueue(() async {
     if (on && await permissionDenied()) {
       final r = await _scheduler.requestNotificationPermission();
       if (r == PermissionState.denied) return false;
     }
     _store.setNotifyEnabled(on);
-    await reschedule();
+    await _run();
     return true;
-  }
+  });
 
   /// [hhmm] must be a valid `HH:mm` (the store throws otherwise).
-  Future<void> setTime(String hhmm) {
+  Future<void> setTime(String hhmm) => _enqueue(() {
     _store.setNotifyTime(hhmm);
-    return reschedule();
-  }
+    return _run();
+  });
 
   /// Cancels every daily notification, then schedules the window again.
-  /// Calls are serialized so overlapping triggers cannot interleave.
-  Future<void> reschedule() {
-    final run = _tail.then((_) => _run());
-    _tail = run.catchError((Object e) {
-      debugPrint('DailyNotifier: reschedule failed: $e');
-    });
+  Future<void> reschedule() => _enqueue(_run);
+
+  /// Every action runs on one chain so overlapping triggers cannot interleave
+  /// and a throw does not poison later actions.
+  Future<T> _enqueue<T>(Future<T> Function() action) {
+    final run = _tail.then((_) => action());
+    _tail = run.then<void>(
+      (_) {},
+      onError: (Object e) {
+        debugPrint('DailyNotifier: action failed: $e');
+      },
+    );
     return run;
   }
 
@@ -114,17 +125,19 @@ class DailyNotifier {
     final parts = _store.notifyTime.split(':').map(int.parse).toList();
     final now = _now();
     for (var i = 0; i < kDailyScheduleDays; i++) {
-      final at = DateTime(now.year, now.month, now.day + i, parts[0], parts[1]);
+      // Id and content follow the loop date, never the normalized instant.
+      final day = DateTime(now.year, now.month, now.day + i);
+      final at = _localAt(day.year, day.month, day.day, parts[0], parts[1]);
       if (!at.toUtc().isAfter(now.toUtc())) continue;
       _attempted++;
       try {
-        final c = _contentFor(at);
+        final c = _contentFor(day);
         if (c == null) {
           _attempted--;
           continue;
         }
         await _scheduler.schedule(
-          dailyNotificationId(at),
+          dailyNotificationId(day),
           at.toUtc(),
           c.kind == DailyKind.ayah ? 'Ayat hari ini' : 'Hadis hari ini',
           '${c.translation}\n${c.reference}',
