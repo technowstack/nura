@@ -22,14 +22,18 @@ class ShellView extends StatelessWidget {
       HadithBooksBinding().dependencies();
     },
     builder: (c) => Scaffold(
-      body: IndexedStack(
-        index: c.index,
-        children: [
-          HomeView(dataVersion: dataVersion),
-          const QuranListView(),
-          const HadithBooksView(),
-          const ComingSoonTab(),
-        ],
+      // Tabs have no AppBar, so keep their top row out of the status bar.
+      body: SafeArea(
+        bottom: false,
+        child: IndexedStack(
+          index: c.index,
+          children: [
+            HomeView(dataVersion: dataVersion),
+            const QuranListView(),
+            const HadithBooksView(),
+            const ComingSoonTab(),
+          ],
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: c.index,
