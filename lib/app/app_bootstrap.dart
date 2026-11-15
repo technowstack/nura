@@ -21,6 +21,7 @@ import 'data/repositories/sqlite_user_repository.dart';
 import 'data/repositories/user_repository.dart';
 import 'data/sources/content_database.dart';
 import 'data/sources/content_db_installer.dart';
+import 'data/sources/prayer_adjustments.dart';
 import 'data/sources/prayer_api_client.dart';
 import 'data/sources/prayer_calculator.dart';
 import 'data/sources/prayer_regions_source.dart';
@@ -92,10 +93,15 @@ Future<BootstrapResult> bootstrap({
     Get.put<PrayerRepository>(
       DefaultPrayerRepository(
         store: store,
-        api: PrayerApiClient(defaultPrayerHttp),
+        api: PrayerApiClient(
+          defaultPrayerHttp,
+          nowMs: () => clock.nowUtc().millisecondsSinceEpoch,
+        ),
         online: online,
         clock: clock,
-        calculator: const AdhanPrayerCalculator(),
+        calculator: AdhanPrayerCalculator(
+          adjustMinutes: prayerAdjustmentsFrom(user),
+        ),
         coordinates: const NoRegionCoordinates(),
       ),
       permanent: true,
