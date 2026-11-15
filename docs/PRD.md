@@ -61,7 +61,8 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 - Jadwal diambil dari API per bulan (bulan berjalan dan berikutnya) lalu disimpan di perangkat, sehingga bisa dibuka offline setelah sinkron.
 - Izin sinkron jadwal **terpisah** dari sakelar audio dan ditanyakan saat onboarding.
 - Jika belum ada jadwal tersimpan dan perangkat offline, jadwal dihitung offline dari koordinat (paket `adhan`, parameter Kemenag) dan diberi label **"perkiraan"**.
-- Notifikasi pengingat per waktu sholat, bisa diatur masing-masing.
+- Notifikasi pengingat per waktu sholat, bisa diatur masing-masing. Dijadwalkan dalam zona waktu wilayah terpilih (WIB/WITA/WIT), bukan zona waktu perangkat.
+- Keputusan (belum dikerjakan, Fase 5): sumber jadwal = API equran.id v2. Lokasi dipilih sebagai provinsi + kabupaten/kota (nama persis seperti di API), bukan koordinat. Jadwal diambil sekali per bulan per wilayah lalu disimpan.
 - Penanda waktu sholat berikutnya dan hitung mundur.
 
 ### 5.5 1 Hari 1 Ayat dan 1 Hari 1 Hadis
@@ -161,7 +162,7 @@ Pakai `sqlite3` dan `sqlite3_flutter_libs` (bukan `sqflite`). Library SQLite dib
 | Teks Arab, terjemahan, dan tafsir Al-Qur'an | Kementerian Agama RI | Perlu cek ketentuan tashih LPMQ untuk mushaf digital |
 | Hadis 9 kitab | github.com/gadingnst/hadith-api (MIT), data asal tafsirq.com | Lisensi MIT mencakup repo. Status lisensi teks terjemahan dari sumber asal perlu dikonfirmasi |
 | Audio murottal | API pihak ketiga (belum dipilih) | Perlu cek syarat penggunaan |
-| Jadwal sholat (API) | API pihak ketiga (kandidat myquran.com, data Kemenag; belum dipilih) | Perlu cek syarat penggunaan |
+| Jadwal sholat (API) | equran.id v2 (`https://equran.id/api/v2/shalat`, dokumentasi `https://equran.id/apidev/shalat`); diputuskan | Syarat layanan belum dibaca: wajib dibaca sebelum rilis |
 | Info surah, juz, kota | Belum dipilih | Perlu sumber dengan lisensi jelas |
 | Daftar kurasi ayat harian | Disusun pemilik proyek | Menunggu daftar (Q9) |
 | Font Arab LPMQ Isep Misbah (cadangan KFGQPC Uthmanic Script Hafs) | LPMQ Kemenag (lajnah.kemenag.go.id/unduhan) | Lisensi kedua font wajib dicek sebelum rilis (Q6). Catat tanggal unduh di catatan rilis |
@@ -188,7 +189,7 @@ Tanggal target belum ditetapkan.
 
 1. ~~**Application ID Android.**~~ Diputuskan: `com.technowstack.nura` (lihat bagian 4).
 2. **Nama aplikasi.** Nura masih perlu dicek di Play Store dan DJKI.
-3. **Penyedia API audio dan jadwal sholat.** Kandidat audio: equran.id. Kandidat jadwal: myquran.com. Perlu cek syarat penggunaan keduanya.
+3. **Penyedia API audio dan jadwal sholat.** Jadwal sholat: diputuskan equran.id v2 (syarat layanan belum dibaca; wajib sebelum rilis). Audio: kandidat equran.id, belum diputuskan.
 4. **Sumber data meta** (info surah, juz, kota) dan transliterasi.
 5. **Parameter perhitungan offline** (cadangan jadwal sholat, termasuk ihtiyat). Perlu diverifikasi dengan jadwal Kemenag.
 6. **Ketentuan tashih LPMQ** untuk Al-Qur'an digital, dan **lisensi font Arab**: LPMQ Isep Misbah (cadangan KFGQPC Uthmanic Script Hafs). Lisensi kedua font wajib dicek sebelum rilis. LPMQ diambil dari sumber resmi (lajnah.kemenag.go.id/unduhan) dan tanggal unduh dicatat di catatan rilis.

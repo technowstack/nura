@@ -233,6 +233,7 @@ CREATE TABLE prayer_location (
   lat       REAL NOT NULL,
   lng       REAL NOT NULL,
   city_key  TEXT NOT NULL          -- kunci kota di cities.json (kota terdekat jika GPS)
+  -- RENCANA Fase 5 (keputusan 2026-11-15): diganti migrasi baru ke model provinsi + kabupaten/kota (nama persis dari API equran.id, bukan kode) plus zona waktu wilayah; lat/lng tidak lagi wajib. Lihat 7.3
 );
 
 CREATE TABLE prayer_day (
@@ -376,7 +377,7 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 
 ### 7.1 Sumber
 
-- **API** (kandidat myquran.com, memakai data Kemenag, menunggu Q3): ambil satu bulan berjalan dan bulan berikutnya per kota. Simpan ke `prayer_day` dengan `source = 'api'`.
+- **API** (diputuskan 2026-11-15: equran.id v2, `https://equran.id/api/v2/shalat`, dokumentasi `https://equran.id/apidev/shalat`; syarat layanan belum dibaca, wajib dibaca sebelum rilis): ambil sekali per bulan per wilayah (bulan berjalan, bulan berikutnya bila perlu) lalu simpan ke `prayer_day` dengan `source = 'api'`. Rate limit tidak didokumentasikan: batasi permintaan, jangan polling.
 - **Perhitungan offline** (`adhan`): Subuh 20°, Isya 18°, Asar mazhab Syafi'i, plus penyesuaian dari setting. Simpan dengan `source = 'calc'`.
 
 ### 7.2 Alur
@@ -389,7 +390,10 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 
 ### 7.3 Lokasi
 
+- Model lokasi (keputusan 2026-11-15): provinsi + kabupaten/kota dengan nama persis dari API, bukan koordinat. Skema `prayer_location` disesuaikan lewat migrasi `user.db` baru saat Fase 5. Dokumentasi API menyebut 34 provinsi, Indonesia kini 38: cek saat Fase 5.
+- Notifikasi dijadwalkan dalam zona waktu wilayah (WIB/WITA/WIT), bukan zona perangkat.
 - Pilihan kota: daftar dari `meta/cities.json`, dengan pencarian nama.
+- GPS ke wilayah terdekat dan cadangan offline butuh koordinat per kab/kota (Q4). Bila belum ada: cadangan memakai GPS perangkat jika diizinkan; tanpa keduanya tampilkan "butuh internet untuk jadwal pertama".
 - GPS: ambil posisi sekali, lalu cari kota terdekat di `cities.json` (jarak haversine). Kota itu dipakai untuk API, sedangkan koordinat GPS dipakai untuk perhitungan offline.
 
 ### 7.4 Notifikasi
@@ -479,7 +483,7 @@ Fase 2 dan seterusnya membutuhkan Fase 1. Fase 5 membutuhkan `cities.json`. Fase
 | ID | Pertanyaan | Memengaruhi |
 |---|---|---|
 | Q2 | Nama aplikasi Nura (Play Store, DJKI) | Fase 8 |
-| Q3 | Penyedia API audio dan jadwal, beserta syarat penggunaannya | Fase 5, 7 |
+| Q3 | Penyedia API audio dan jadwal, beserta syarat penggunaannya. Jadwal: diputuskan equran.id v2 (2026-11-15), syarat layanan belum dibaca (wajib sebelum rilis). Audio belum diputuskan | Fase 7, rilis |
 | Q4 | Sumber `surah_info.json`, `juz.json`, dan `cities.json` | Fase 1 (revelation), 2 (juz), 5 |
 | Q5 | Nilai ihtiyat dan parameter perhitungan offline | Fase 5 |
 | Q6 | Ketentuan tashih LPMQ dan lisensi font Arab (LPMQ Isep Misbah; cadangan KFGQPC Uthmanic Script Hafs) | Rilis |

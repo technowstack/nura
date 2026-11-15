@@ -93,6 +93,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | 2026-11-13 | Font Plus Jakarta Sans dibundel (OFL). Zip font tidak di-commit (`assets/fonts/*.zip` di-`.gitignore`). LPMQ tetap belum didaftarkan sampai Q6 selesai |
 | 2026-11-13 | Fase 2 lulus uji perangkat (pemilik proyek, perangkat fisik) dan di-merge `--no-ff` ke `main`. Di-push ke `origin/main` pada 2026-11-15 setelah pemilik proyek memastikan repo privat |
 | 2026-11-15 | Remote `origin` diganti ke `git@github.com:technowstack/nura.git` (GitHub mengabarkan repo dipindah dari `alquran`) |
+| 2026-11-15 | Keputusan untuk Fase 5 (belum dikerjakan): API jadwal sholat = equran.id v2 (`https://equran.id/api/v2/shalat`, dokumentasi `https://equran.id/apidev/shalat`). Lokasi = provinsi + kabupaten/kota (nama persis dari API, bukan kode, bukan koordinat); skema `user.db` disesuaikan lewat migrasi baru di Fase 5. GPS ke wilayah terdekat dan cadangan offline butuh koordinat per kab/kota (Q4); bila belum ada, cadangan memakai GPS perangkat jika diizinkan, tanpa keduanya tampil "butuh internet untuk jadwal pertama". Notifikasi dijadwalkan dalam zona waktu wilayah (WIB/WITA/WIT), bukan zona perangkat. Dokumentasi menyebut 34 provinsi, Indonesia kini 38: cek saat Fase 5. Ambil sekali per bulan per wilayah dan simpan; rate limit tidak didokumentasikan |
 | 2026-11-15 | Fase 3 lulus uji perangkat (pemilik proyek) dan di-merge `--no-ff` ke `main`; belum di-push |
 | 2026-11-15 | Fase 3 (Hadis): Task 6–9 jalan dengan UI sementara memakai komponen yang ada. View tipis, logika di controller dan repository, agar desain putaran 2 hanya mengganti tampilan. Semua asumsi di plan disetujui (last read hadis tidak ada, pratinjau tiga baris, navigasi menurut urutan baris, tab Bookmark gabungan, bookmark dan salin tanpa bagikan/audio) |
 | 2026-11-15 | Fase 3: query hadis berjalan di isolate pekerja (`IsolateHadithRepository`, dimulai di bootstrap) agar teks sampai 25 KB tidak memblokir UI. Flag terpotong dihitung dari byte UTF-8 (>= 16.374). Muslim 4974 punya kedua flag (Arab dan terjemahan) bernilai true |
@@ -103,7 +104,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | ID | Pertanyaan | Blokir |
 |---|---|---|
 | Q2 | Nama aplikasi Nura: cek Play Store dan DJKI | Rilis |
-| Q3 | Penyedia API audio dan jadwal sholat, beserta syarat penggunaannya | Fitur online, jadwal sholat |
+| Q3 | Penyedia API audio dan jadwal sholat, beserta syarat penggunaannya. Jadwal: diputuskan equran.id v2 (2026-11-15). Syarat layanan belum dibaca: wajib dibaca sebelum rilis. Audio: belum diputuskan | Fitur online (audio), rilis |
 | Q4 | Sumber data meta: info surah, juz, kota | Quran (juz), jadwal sholat |
 | Q5 | Parameter perhitungan offline (ihtiyat, dll.) untuk cadangan jadwal sholat | Jadwal sholat |
 | Q6 | Ketentuan tashih LPMQ untuk Al-Qur'an digital, dan lisensi font Arab (LPMQ Isep Misbah; cadangan KFGQPC Uthmanic Script Hafs). LPMQ diambil dari sumber resmi (lajnah.kemenag.go.id/unduhan), catat tanggal unduh di catatan rilis | Rilis |
