@@ -22,6 +22,8 @@ const _timeFields = [
   'isya',
 ];
 
+final _unknownProvince = RegExp(r'^Provinsi ".*" tidak ditemukan');
+
 const _maxBodyBytes = 1 << 20;
 
 /// Default transport: one POST with a JSON body. [timeout] bounds connect,
@@ -96,7 +98,9 @@ class PrayerApiClient {
     }
     if (res.status == 404) {
       final msg = json is Map ? '${json['message']}' : '';
-      if (msg.contains('tidak ditemukan di provinsi')) {
+      // Unknown kabkota, or an unknown province (renamed or split).
+      if (msg.contains('tidak ditemukan di provinsi') ||
+          _unknownProvince.hasMatch(msg)) {
         throw const UnknownRegion();
       }
       if (msg.contains('Jadwal shalat untuk')) throw const NoDataForMonth();

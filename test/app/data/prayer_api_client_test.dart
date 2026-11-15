@@ -152,6 +152,25 @@ void main() {
     );
   });
 
+  test('404 unknown province is UnknownRegion', () async {
+    final f = _ok(
+      '{"code":404,"message":"Provinsi \\"Papua Selatan\\" tidak ditemukan","data":null}',
+      404,
+    );
+    await expectLater(
+      _client(f).fetchMonth(_jakarta, 2026, 11),
+      throwsA(isA<UnknownRegion>()),
+    );
+  });
+
+  test('404 unrelated message stays BadResponse', () async {
+    final f = _ok('{"message":"Halaman tidak ditemukan"}', 404);
+    await expectLater(
+      _client(f).fetchMonth(_jakarta, 2026, 11),
+      throwsA(isA<BadResponse>()),
+    );
+  });
+
   test('404 month without data', () async {
     final f = _ok(
       '{"code":404,"message":"Jadwal shalat untuk \\"Kota Jakarta\\", \\"DKI Jakarta\\" bulan November 2035 tidak ditemukan","data":null}',
