@@ -98,7 +98,7 @@ void main() {
     expect(days.every((d) => d.fetchedAt == 42), isTrue);
     final req = f.calls.single;
     expect(req.url.toString(), 'https://equran.id/api/v2/shalat');
-    expect(jsonDecode(req.jsonBody!), {
+    expect(jsonDecode(req.jsonBody ?? ''), {
       'provinsi': 'DKI Jakarta',
       'kabkota': 'Kota Jakarta',
       'bulan': 11,
@@ -136,7 +136,7 @@ void main() {
     );
     final f = _ok(_body(provinsi: 'D.I. Yogyakarta', kabkota: 'Kab. Sleman'));
     await _client(f).fetchMonth(r, 2026, 11);
-    final body = jsonDecode(f.calls.single.jsonBody!) as Map;
+    final body = jsonDecode(f.calls.single.jsonBody ?? '') as Map;
     expect(body['provinsi'], 'D.I. Yogyakarta');
     expect(body['kabkota'], 'Kab. Sleman');
   });
@@ -163,17 +163,23 @@ void main() {
     );
   });
 
-  test('other 404 and odd statuses are BadResponse, 5xx is Network', () async {
+  test('other 404 and odd statuses are BadResponse', () async {
     for (final s in [404, 400, 302]) {
       await expectLater(
         _client(_ok('{"message":"?"}', s)).fetchMonth(_jakarta, 2026, 11),
         throwsA(isA<BadResponse>()),
       );
     }
+  });
+
+  test('5xx is Network', () async {
     await expectLater(
       _client(_ok('oops', 503)).fetchMonth(_jakarta, 2026, 11),
       throwsA(isA<Network>()),
     );
+  });
+
+  test('unparseable JSON on 200 is BadResponse', () async {
     await _expectBad('not json');
   });
 
@@ -200,6 +206,12 @@ void main() {
     await _expectBad(_body(year: 2025));
     await _expectBad(_body(provinsi: 'Bali'));
     await _expectBad(_body(kabkota: 'Kota Bekasi'));
+  });
+
+  test('non-numeric bulan/tahun echo is BadResponse', () async {
+    await _expectBad(_body(mutate: (d, _) => d['bulan'] = '11'));
+    await _expectBad(_body(mutate: (d, _) => d['tahun'] = 'abcd'));
+    await _expectBad(_body(mutate: (d, _) => d['bulan'] = null));
   });
 
   test('200 with data null is BadResponse', () async {
@@ -259,9 +271,19 @@ void main() {
     expect(ok.first.subuh, '00:00');
   });
 
-  test('SocketException and timeout map to Network', () async {
+  test('FormatException from transport is BadResponse', () async {
+    await expectLater(
+      _client(
+        _Fake(() => throw const FormatException('bad utf8')),
+      ).fetchMonth(_jakarta, 2026, 11),
+      throwsA(isA<BadResponse>()),
+    );
+  });
+
+  test('IOException family and timeout map to Network', () async {
     for (final e in <Object>[
       const SocketException('down'),
+      const HandshakeException('tls'),
       TimeoutException('slow'),
     ]) {
       await expectLater(

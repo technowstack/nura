@@ -22,19 +22,31 @@ const _timeFields = [
   'isya',
 ];
 
-/// Default transport: one POST with a JSON body, 15 s timeout.
+const _maxBodyBytes = 1 << 20;
+
+/// Default transport: one POST with a JSON body. [timeout] bounds connect,
+/// response headers and the body read each; the body is capped at 1 MB.
+/// Throws [TimeoutException], [IOException] or [FormatException] (invalid
+/// UTF-8 or oversize body); [PrayerApiClient] maps them.
 Future<({int status, String body})> defaultPrayerHttp(
   Uri url, {
   String? jsonBody,
+  Duration timeout = const Duration(seconds: 15),
 }) async {
-  final client = HttpClient()..connectionTimeout = const Duration(seconds: 15);
+  final client = HttpClient()..connectionTimeout = timeout;
   try {
     final req = await client.postUrl(url);
     req.headers.contentType = ContentType.json;
     if (jsonBody != null) req.write(jsonBody);
-    final res = await req.close();
-    final body = await res.transform(utf8.decoder).join();
-    return (status: res.statusCode, body: body);
+    final res = await req.close().timeout(timeout);
+    final bytes = <int>[];
+    await for (final chunk in res.timeout(timeout)) {
+      bytes.addAll(chunk);
+      if (bytes.length > _maxBodyBytes) {
+        throw const FormatException('response body too large');
+      }
+    }
+    return (status: res.statusCode, body: utf8.decode(bytes));
   } finally {
     client.close(force: true);
   }
@@ -68,12 +80,12 @@ class PrayerApiClient {
           'tahun': year,
         }),
       ).timeout(const Duration(seconds: 15));
-    } on SocketException {
+    } on IOException {
       throw const Network();
     } on TimeoutException {
       throw const Network();
-    } on HttpException {
-      throw const Network();
+    } on FormatException {
+      throw const BadResponse('undecodable body');
     }
     if (res.status >= 500) throw const Network();
     final Object? json;
