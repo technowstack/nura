@@ -16,7 +16,7 @@ class DailyWidgetSupportTest {
         kind: DailyKind,
         date: LocalDate = today,
         dark: Boolean = false,
-        heightDp: Int = 152,
+        heightDp: Int = 110,
     ) = DailyWidgetSupport.select(store.keys, store::get, date, kind, dark, heightDp) { it in existing }
 
     @Test
@@ -25,7 +25,7 @@ class DailyWidgetSupportTest {
             "daily_hadith_2026-11-15_light_4x2" to entry("/data/w/h.png", "nura://hadith/bukhari/1"),
         )
         assertEquals(
-            DailyWidgetState.Show("/data/w/h.png", "nura://hadith/bukhari/1"),
+            DailyWidgetState.Show("/data/w/h.png", "nura://hadith/bukhari/1", null),
             select(store, DailyKind.HADITH),
         )
     }
@@ -50,12 +50,15 @@ class DailyWidgetSupportTest {
         )
         fun path(dark: Boolean, h: Int) =
             (select(store, DailyKind.AYAH, dark = dark, heightDp = h) as DailyWidgetState.Show).imagePath
-        assertEquals("/l2.png", path(false, 152))
-        assertEquals("/l3.png", path(false, 240))
-        assertEquals("/d2.png", path(true, 152))
-        assertEquals("/d3.png", path(true, 240))
-        assertEquals("/l3.png", path(false, 200))
-        assertEquals("/l2.png", path(false, 199))
+        assertEquals("/l2.png", path(false, 110))
+        assertEquals("/l3.png", path(false, 180))
+        assertEquals("/d2.png", path(true, 110))
+        assertEquals("/d3.png", path(true, 180))
+        assertEquals("/l2.png", path(false, 110))
+        assertEquals("/l3.png", path(false, 180))
+        assertEquals("/l2.png", path(false, 149))
+        assertEquals("/l3.png", path(false, 150))
+        assertEquals("/l3.png", path(false, 151))
         assertEquals("/l2.png", path(false, 0))
     }
 
@@ -83,7 +86,6 @@ class DailyWidgetSupportTest {
             """{"link":"nura://hadith/bukhari/1"}""",
             """{"image":"/missing.png","link":"nura://hadith/bukhari/1"}""",
             """{"image":"/ok.png","link":"https://evil.example"}""",
-            """{"image":"/ok.png"}""",
             "",
         ).forEach { raw ->
             assertEquals(raw, DailyWidgetState.Stale, select(mapOf(key to raw), DailyKind.HADITH))
@@ -98,7 +100,7 @@ class DailyWidgetSupportTest {
                 """{ "link" : "nura:\/\/hadith\/abu-daud\/2" , "image" : "\/w\/a\"b.png" }""",
         )
         assertEquals(
-            DailyWidgetState.Show("/w/a\"b.png", "nura://hadith/abu-daud/2"),
+            DailyWidgetState.Show("/w/a\"b.png", "nura://hadith/abu-daud/2", null),
             select(store, DailyKind.HADITH),
         )
     }
@@ -117,5 +119,36 @@ class DailyWidgetSupportTest {
             "/new.png",
             (select(store, DailyKind.HADITH, LocalDate.of(2027, 1, 1)) as DailyWidgetState.Show).imagePath,
         )
+    }
+
+    @Test
+    fun emptyOrMissingLinkShowsImageWithoutLink() {
+        existing += "/ok.png"
+        val key = "daily_hadith_2026-11-15_light_4x2"
+        listOf("""{"image":"/ok.png","link":""}""", """{"image":"/ok.png"}""").forEach { raw ->
+            assertEquals(raw, DailyWidgetState.Show("/ok.png", null, null), select(mapOf(key to raw), DailyKind.HADITH))
+        }
+    }
+
+    @Test
+    fun readsOptionalDescription() {
+        existing += "/ok.png"
+        val key = "daily_hadith_2026-11-15_light_4x2"
+        fun desc(raw: String) = (select(mapOf(key to raw), DailyKind.HADITH) as DailyWidgetState.Show).description
+        assertEquals("HR. Bukhari No. 1", desc("""{"image":"/ok.png","link":"nura://hadith/bukhari/1","description":"HR. Bukhari No. 1"}"""))
+        assertEquals(null, desc("""{"image":"/ok.png","link":"nura://hadith/bukhari/1"}"""))
+        assertEquals(null, desc("""{"image":"/ok.png","link":"nura://hadith/bukhari/1","description":""}"""))
+    }
+
+    @Test
+    fun bitmapPlanFitsWithinHalfTheBudget() {
+        val budget = 1000L
+        assertEquals(BitmapPlan.BOTH, DailyWidgetSupport.bitmapPlan(200, 300, night = false, budget = budget))
+        assertEquals(BitmapPlan.BOTH, DailyWidgetSupport.bitmapPlan(250, 250, night = true, budget = budget))
+        assertEquals(BitmapPlan.CURRENT_ONLY, DailyWidgetSupport.bitmapPlan(250, 251, night = false, budget = budget))
+        assertEquals(BitmapPlan.CURRENT_ONLY, DailyWidgetSupport.bitmapPlan(500, 900, night = false, budget = budget))
+        assertEquals(BitmapPlan.CURRENT_ONLY, DailyWidgetSupport.bitmapPlan(900, 500, night = true, budget = budget))
+        assertEquals(BitmapPlan.NONE, DailyWidgetSupport.bitmapPlan(501, 100, night = false, budget = budget))
+        assertEquals(BitmapPlan.NONE, DailyWidgetSupport.bitmapPlan(900, 900, night = true, budget = budget))
     }
 }
