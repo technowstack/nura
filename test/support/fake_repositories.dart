@@ -215,6 +215,10 @@ class FakeHadithRepository implements HadithRepository {
   List<Hadith> hadith;
   Object? failure;
 
+  /// Number of listPage calls, and 1-based call indexes that should throw.
+  int listPageCalls = 0;
+  Set<int> failPageCalls = {};
+
   void _check() {
     final f = failure;
     if (f != null) throw f;
@@ -232,6 +236,10 @@ class FakeHadithRepository implements HadithRepository {
     int afterNumber = 0,
     int limit = 30,
   }) async {
+    listPageCalls++;
+    if (failPageCalls.contains(listPageCalls)) {
+      throw const ContentUnavailable('page');
+    }
     _check();
     if (limit <= 0) throw ArgumentError.value(limit, 'limit');
     final rest = (summaries[slug] ?? const <HadithSummary>[])
