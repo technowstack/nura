@@ -217,6 +217,9 @@ class FakeHadithRepository implements HadithRepository {
   List<Hadith> hadith;
   Object? failure;
 
+  /// When set, only neighbor throws it.
+  Object? neighborFailure;
+
   /// Number of listPage calls, and 1-based call indexes that should throw.
   int listPageCalls = 0;
   Set<int> failPageCalls = {};
@@ -266,9 +269,14 @@ class FakeHadithRepository implements HadithRepository {
     return page;
   }
 
+  /// Per-number gates: getHadith for that number waits (slow request).
+  final Map<int, Completer<void>> hadithGates = {};
+
   @override
   Future<Hadith> getHadith(HadithRef ref) async {
     _check();
+    final gate = hadithGates[ref.number];
+    if (gate != null) await gate.future;
     return hadith.firstWhere(
       (h) => h.ref == ref,
       orElse: () =>
@@ -279,9 +287,17 @@ class FakeHadithRepository implements HadithRepository {
   @override
   Future<HadithRef?> neighbor(HadithRef ref, {required bool next}) async {
     _check();
+    final nf = neighborFailure;
+    if (nf != null) throw nf;
+    // Keyset semantics over the sorted numbers (gaps allowed); falls back to
+    // [hadith] when no summaries were configured for the book.
+    final listed = summaries[ref.slug];
     final nums =
-        (summaries[ref.slug] ?? const <HadithSummary>[])
-            .map((h) => h.ref.number)
+        (listed != null
+                ? listed.map((h) => h.ref.number)
+                : hadith
+                      .where((h) => h.ref.slug == ref.slug)
+                      .map((h) => h.ref.number))
             .toList()
           ..sort();
     if (!nums.contains(ref.number)) {
