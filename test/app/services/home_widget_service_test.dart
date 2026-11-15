@@ -72,6 +72,51 @@ void main() {
     expect(files().length, 56);
   });
 
+  test('entry carries a TalkBack description', () async {
+    await service.refresh();
+    final a =
+        jsonDecode(storage.data['daily_ayah_2026-11-15_light_4x2']!)
+            as Map<String, dynamic>;
+    expect(
+      a['description'],
+      'Ayat hari ini. QS. Asy-Syarh: 15. Ayat hari 15',
+    );
+    final h =
+        jsonDecode(storage.data['daily_hadith_2026-11-15_light_4x2']!)
+            as Map<String, dynamic>;
+    expect(
+      (h['description'] as String).startsWith(
+        'Hadis hari ini. HR. Shahih Bukhari No. 15. Hadis hari 15',
+      ),
+      isTrue,
+    );
+  });
+
+  test('description truncates long translations and survives JSON', () async {
+    final tricky = 'Dia berkata "ya"\nlalu ${'a' * 200}';
+    final long = HomeWidgetService(
+      repository: _TextRepo(tricky),
+      settings: settings,
+      storage: storage,
+      directory: dir,
+      render: (c, {required dp, required pixelRatio, required brightness}) async =>
+          Uint8List(1),
+      now: () => clock,
+      pixelRatio: () => 1,
+    );
+    await long.refresh();
+    final e =
+        jsonDecode(storage.data['daily_ayah_2026-11-15_dark_4x3']!)
+            as Map<String, dynamic>;
+    final d = e['description'] as String;
+    const prefix = 'Ayat hari ini. QS. Asy-Syarh: 15. ';
+    expect(d.startsWith(prefix), isTrue);
+    final body = d.substring(prefix.length);
+    expect(body.runes.length, 160);
+    expect(body.endsWith('\u2026'), isTrue);
+    expect(body.startsWith('Dia berkata "ya"\nlalu'), isTrue);
+  });
+
   test('window crosses month and year boundary', () async {
     clock = DateTime(2026, 12, 29, 23, 59);
     await service.refresh();
@@ -283,5 +328,24 @@ class _ThrowingAyahRepo extends FakeDailyContentRepository {
   DailyContent? ayahFor(DateTime localDate) {
     if (localDate == badDate) throw StateError('lookup');
     return super.ayahFor(localDate);
+  }
+}
+
+class _TextRepo extends FakeDailyContentRepository {
+  _TextRepo(this.text);
+
+  final String text;
+
+  @override
+  DailyContent? ayahFor(DateTime localDate) {
+    final base = fakeAyah(localDate.day);
+    return DailyContent(
+      kind: base.kind,
+      arab: base.arab,
+      translation: text,
+      reference: base.reference,
+      deepLink: base.deepLink,
+      ayahRef: base.ayahRef,
+    );
   }
 }

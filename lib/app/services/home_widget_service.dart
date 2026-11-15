@@ -179,13 +179,30 @@ class HomeWidgetService {
       );
       await tmp.writeAsBytes(bytes, flush: true);
       await tmp.rename(path);
-      await _storage.save(key, jsonEncode({'image': path, 'link': c.deepLink}));
+      await _storage.save(
+        key,
+        jsonEncode({
+          'image': path,
+          'link': c.deepLink,
+          'description': _description(c),
+        }),
+      );
       return true;
     } catch (e) {
       debugPrint('widget entry $key failed: $e');
       if (tmp.existsSync()) await _guard(tmp.delete);
       return false;
     }
+  }
+
+  /// TalkBack text: label, reference and the translation cut to 160 chars.
+  static String _description(DailyContent c) {
+    final label = c.kind == DailyKind.ayah ? 'Ayat hari ini' : 'Hadis hari ini';
+    final runes = c.translation.runes;
+    final text = runes.length <= 160
+        ? c.translation
+        : '${String.fromCharCodes(runes.take(159))}\u2026';
+    return '$label. ${c.reference}. $text';
   }
 
   Future<Set<String>> _readIndex() async {

@@ -135,7 +135,7 @@ D1, D2, dan D3 **diputuskan pemilik (2026-11-15)** dengan tambahan yang tercatat
 
 Ditulis `HomeWidgetService` (lihat doc comment di `lib/app/services/home_widget_service.dart`), dibaca provider Android (Task 5):
 
-- Kunci home_widget `daily_<kind>_<yyyy-MM-dd>_<light|dark>_<4x2|4x3>` (`kind` = `ayah` | `hadith`; tanggal = tanggal lokal) berisi string JSON `{"image": "<path absolut png>", "link": "nura://..."}`.
+- Kunci home_widget `daily_<kind>_<yyyy-MM-dd>_<light|dark>_<4x2|4x3>` (`kind` = `ayah` | `hadith`; tanggal = tanggal lokal) berisi string JSON `{"image": "<path absolut png>", "link": "nura://...", "description": "<teks TalkBack>"}`. `description` opsional (keputusan pengendali 12): `<Ayat hari ini|Hadis hari ini>. <rujukan>. <terjemahan, maks. 160 karakter dengan elipsis>`.
 - PNG ada di direktori support aplikasi, subfolder `widget/`, bernama kunci + `.png` (ditulis ke berkas sementara lalu di-rename). Ukuran: 4x2 = 320x152 dp, 4x3 = 320x240 dp, dikali pixel ratio perangkat.
 - `daily_widget_updated` = stempel waktu ISO-8601 refresh terakhir yang seluruh entrinya berhasil. `daily_widget_index` = daftar kunci (khusus pembersihan; abaikan di native).
 - Jenis ayat tidak ditulis sama sekali bila repository tidak punya ayat; entri hari ini yang hilang ditangani native (fallback).
