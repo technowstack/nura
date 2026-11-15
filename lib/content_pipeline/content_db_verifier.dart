@@ -333,7 +333,6 @@ VerificationReport verifyContentDb({
       );
     }
 
-
     _verifyDailyAyah(db, errors);
     _verifyDailyHadith(db, sourceRoot, errors);
 

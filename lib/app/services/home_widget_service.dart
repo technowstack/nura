@@ -165,7 +165,7 @@ class HomeWidgetService {
     }
     // Providers only redraw on their own schedule unless told to.
     if (present.isNotEmpty) await _guard(_storage.notifyWidgets);
-    
+
     return !failed;
   }
 
