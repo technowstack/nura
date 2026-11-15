@@ -29,4 +29,9 @@ void main() {
     expect(await OnlineService(db, probe: () async => false).canReach(), false);
     expect(await OnlineService(db, probe: () async => true).canReach(), true);
   });
+
+  test('canReach is false when the probe throws', () async {
+    final s = OnlineService(db, probe: () async => throw StateError('x'));
+    expect(await s.canReach(), isFalse);
+  });
 }

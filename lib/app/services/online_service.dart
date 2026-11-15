@@ -20,5 +20,11 @@ class OnlineService {
   bool get prayerSyncEnabled =>
       _db.getSetting(SettingKeys.prayerSyncEnabled) == 'true';
 
-  Future<bool> canReach() => _probe();
+  Future<bool> canReach() async {
+    try {
+      return await _probe();
+    } catch (_) {
+      return false;
+    }
+  }
 }

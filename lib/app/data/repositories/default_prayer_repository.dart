@@ -72,6 +72,12 @@ class DefaultPrayerRepository implements PrayerRepository {
     final m = int.parse(date.substring(5, 7));
     if (_noneFresh(r, y, m)) return const DayResult(DayOutcome.noData);
     if (_online.prayerSyncEnabled && await _online.canReach()) {
+      // Another call may have filled the cache while we awaited the probe.
+      final again = _store.getDay(date, r);
+      if (again != null && again.source == PrayerSource.api) {
+        return DayResult(DayOutcome.api, again);
+      }
+      if (_noneFresh(r, y, m)) return const DayResult(DayOutcome.noData);
       final err = await _fetch(r, y, m);
       if (err is UnknownRegion) {
         return const DayResult(DayOutcome.unknownRegion);
@@ -123,7 +129,8 @@ class DefaultPrayerRepository implements PrayerRepository {
     for (final (yy, mm) in [(y, m), next]) {
       if (_store.getMonth(r, yy, mm)?.status == MonthStatus.ok) continue;
       if (_noneFresh(r, yy, mm)) continue;
-      if (await _fetch(r, yy, mm) != null) return;
+      final err = await _fetch(r, yy, mm);
+      if (err != null && err is! NoDataForMonth) return;
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -194,5 +195,55 @@ void main() {
     reachable = false;
     await repo().syncIfNeeded();
     expect(api.calls, isEmpty);
+  });
+
+  test('reselecting the same region clears the unknown mark', () async {
+    api.handler = (r, y, m) async => throw const UnknownRegion();
+    final r = repo();
+    await r.dayFor('2026-11-15');
+    r.selectRegion(jkt);
+    await r.dayFor('2026-11-15');
+    expect(api.calls, hasLength(2));
+  });
+
+  test('syncIfNeeded continues to next month after NoDataForMonth', () async {
+    api.handler = (r, y, m) async =>
+        m == 11 ? throw const NoDataForMonth() : monthDays(y, m);
+    await repo().syncIfNeeded();
+    expect(api.calls, ['2026-11', '2026-12']);
+  });
+
+  test('syncIfNeeded stops after a network failure', () async {
+    api.handler = (r, y, m) async => throw const Network();
+    await repo().syncIfNeeded();
+    expect(api.calls, ['2026-11']);
+  });
+
+  test('re-checks the cache after the reachability probe', () async {
+    final probes = <Completer<bool>>[];
+    final r = DefaultPrayerRepository(
+      store: store,
+      api: api,
+      online: OnlineService(
+        db,
+        probe: () {
+          final c = Completer<bool>();
+          probes.add(c);
+          return c.future;
+        },
+      ),
+      clock: clock,
+      calculator: FakeCalculator(),
+      coordinates: const NoRegionCoordinates(),
+    )..selectRegion(jkt);
+    db.setSetting(SettingKeys.prayerSyncEnabled, 'true');
+    final a = r.dayFor('2026-11-15');
+    final b = r.dayFor('2026-11-16');
+    await Future<void>.delayed(Duration.zero);
+    probes[0].complete(true);
+    expect((await a).outcome, DayOutcome.api);
+    probes[1].complete(true);
+    expect((await b).outcome, DayOutcome.api);
+    expect(api.calls, hasLength(1));
   });
 }
