@@ -9,7 +9,9 @@ import 'package:nura/app/core/widgets/empty_state.dart';
 import 'package:nura/app/core/widgets/error_state.dart';
 import 'package:nura/app/data/models/hadith.dart';
 import 'package:nura/app/data/repositories/hadith_repository.dart';
+import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
+import 'package:nura/app/modules/bookmarks/controllers/bookmarks_controller.dart';
 import 'package:nura/app/modules/hadith_detail/hadith_detail_args.dart';
 import 'package:nura/app/modules/hadith_list/bindings/hadith_list_binding.dart';
 import 'package:nura/app/modules/hadith_list/controllers/hadith_list_controller.dart';
@@ -20,6 +22,16 @@ import 'package:nura/app/routes/app_routes.dart';
 import '../../../support/fake_repositories.dart';
 
 const _slug = 'bukhari';
+
+class _CountingBookmarks extends BookmarksController {
+  int loads = 0;
+
+  @override
+  void load() {
+    loads++;
+    super.load();
+  }
+}
 
 List<HadithSummary> _rows(int n, {String Function(int)? preview}) => [
   for (var i = 1; i <= n; i++)
@@ -265,6 +277,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel(RegExp('Ditandai')), findsNWidgets(2));
     sem.dispose();
+  });
+
+  testWidgets('returning from detail reloads the bookmark tab', (tester) async {
+    Get.put<QuranRepository>(FakeQuranRepository());
+    final bookmarks = _CountingBookmarks();
+    Get.put<BookmarksController>(bookmarks);
+    await pump(tester);
+    final before = bookmarks.loads;
+    await tester.tap(find.text('No. 1'));
+    await tester.pumpAndSettle();
+    user.toggleHadithBookmark(const HadithRef(_slug, 3));
+    Get.back();
+    await tester.pumpAndSettle();
+    expect(bookmarks.loads, before + 1);
   });
 
   testWidgets('user repository failure does not break the list', (

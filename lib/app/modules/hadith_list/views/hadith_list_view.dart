@@ -6,6 +6,7 @@ import '../../../core/ui_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../routes/app_routes.dart';
+import '../../bookmarks/controllers/bookmarks_controller.dart';
 import '../../hadith_detail/hadith_detail_args.dart';
 import '../controllers/hadith_list_controller.dart';
 import '../widgets/hadith_list_tile.dart';
@@ -19,6 +20,9 @@ class HadithListView extends GetView<HadithListController> {
       arguments: HadithDetailArgs(item.ref.slug, item.ref.number),
     );
     controller.refreshMarkers();
+    if (Get.isRegistered<BookmarksController>()) {
+      Get.find<BookmarksController>().load();
+    }
   }
 
   @override
