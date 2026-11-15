@@ -48,6 +48,7 @@ Harness setup(
   required DateTime now,
   Map<String, DayResult> days = const {},
   ShellController? shell,
+  void Function()? beforeController,
 }) {
   Get.reset();
   final tmp = Directory.systemTemp.createTempSync('nura_prayer_');
@@ -69,6 +70,7 @@ Harness setup(
     }),
   );
   if (shell != null) Get.put<ShellController>(shell);
+  beforeController?.call();
   Get.put<PrayerController>(PrayerController());
   return Harness(repo, clock, db);
 }

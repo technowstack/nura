@@ -59,18 +59,11 @@ class PrayerView extends GetView<PrayerController> {
         if (day != null) ...[
           _card(s),
           for (final row in _rows(s, day))
-            PrayerTimeRow(
-              label: row.$1,
-              time: row.$2,
-              highlighted: row.$3,
-            ),
+            PrayerTimeRow(label: row.$1, time: row.$2, highlighted: row.$3),
         ] else ...[
           Padding(
             padding: const EdgeInsets.all(NuraSpace.s16),
-            child: Text(
-              _message(s.outcome),
-              style: Get.textTheme.titleMedium,
-            ),
+            child: Text(_message(s.outcome), style: Get.textTheme.titleMedium),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: NuraSpace.s16),
@@ -94,9 +87,36 @@ class PrayerView extends GetView<PrayerController> {
           trailing: const Icon(Icons.chevron_right),
           onTap: _pick,
         ),
+        const Divider(),
+        ..._reminders(),
       ],
     );
   }
+
+  List<Widget> _reminders() => [
+    for (final p in PrayerName.values)
+      Obx(
+        () => SwitchListTile(
+          value: controller.notifyOn[p] ?? false,
+          onChanged: (v) => controller.setNotify(p, v),
+          title: Text('Pengingat ${prayerNameLabel(p)}'),
+        ),
+      ),
+    Obx(() {
+      final note = controller.notifyDenied.value
+          ? 'Izin notifikasi ditolak, jadi pengingat tidak dikirim. '
+                'Aktifkan izin notifikasi Nura di pengaturan sistem.'
+          : controller.exactDenied.value
+          ? 'Pengingat bisa terlambat beberapa menit karena izin alarm '
+                'tepat belum diberikan.'
+          : null;
+      if (note == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.all(NuraSpace.s16),
+        child: Text(note, style: Get.textTheme.bodyMedium),
+      );
+    }),
+  ];
 
   Widget _card(PrayerScreen s) {
     final next = s.next;

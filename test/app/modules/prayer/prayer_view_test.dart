@@ -152,7 +152,7 @@ void main() {
     tester,
   ) async {
     final h = await pumpView(tester, days: {'2026-11-15': api('2026-11-15')});
-    final tile = find.byType(SwitchListTile);
+    final tile = find.widgetWithText(SwitchListTile, 'Sinkron jadwal online');
     expect(tester.getSize(tile).height, greaterThanOrEqualTo(48));
     await tester.ensureVisible(tile);
     await tester.pump();

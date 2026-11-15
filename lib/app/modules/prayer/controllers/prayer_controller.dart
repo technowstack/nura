@@ -10,6 +10,7 @@ import '../../../data/models/prayer_region.dart';
 import '../../../data/models/prayer_regions.dart';
 import '../../../data/repositories/prayer_repository.dart';
 import '../../../services/online_service.dart';
+import '../../../services/prayer_notifier.dart';
 import '../../shell/controllers/shell_controller.dart';
 
 /// Everything the Sholat tab shows, already resolved for display.
@@ -59,6 +60,21 @@ class PrayerController extends GetxController with WidgetsBindingObserver {
   final PrayerRegions regions = Get.find();
   final ShellController? _shell;
 
+  /// Null in contexts that do not wire notifications (some tests).
+  final PrayerNotifier? _notifier = Get.isRegistered<PrayerNotifier>()
+      ? Get.find<PrayerNotifier>()
+      : null;
+
+  /// Which reminder switches are on.
+  final notifyOn = <PrayerName, bool>{}.obs;
+
+  /// The notification permission is denied (a turn-on was refused or the
+  /// permission was revoked while reminders are on).
+  final notifyDenied = false.obs;
+
+  /// Exact alarms are denied while reminders are on.
+  final exactDenied = false.obs;
+
   final screen = Rx<UiState<PrayerScreen>>(const UiLoading());
 
   /// `HH:MM:SS` until the next prayer; empty when there is none.
@@ -103,6 +119,41 @@ class PrayerController extends GetxController with WidgetsBindingObserver {
       debugPrint('PrayerController: sync failed: $e');
     }
     await _load();
+    await _notify();
+  }
+
+  /// Reschedules from the cache, then refreshes the switches and notes.
+  Future<void> _notify() async {
+    final n = _notifier;
+    if (n == null) return;
+    try {
+      await n.reschedule();
+      await _refreshNotify(n);
+    } on Object catch (e) {
+      debugPrint('PrayerController: notifications failed: $e');
+    }
+  }
+
+  Future<void> _refreshNotify(PrayerNotifier n) async {
+    for (final p in PrayerName.values) {
+      notifyOn[p] = n.isEnabled(p);
+    }
+    final st = await n.status();
+    final any = n.anyEnabled;
+    notifyDenied.value = any && st.notificationDenied;
+    exactDenied.value = any && !st.notificationDenied && st.exactDenied;
+  }
+
+  Future<void> setNotify(PrayerName p, bool v) async {
+    final n = _notifier;
+    if (n == null) return;
+    try {
+      final ok = await n.setEnabled(p, v);
+      await _refreshNotify(n);
+      if (!ok) notifyDenied.value = true;
+    } on Object catch (e) {
+      debugPrint('PrayerController: switch failed: $e');
+    }
   }
 
   Future<void> selectRegion(PrayerRegion r) async {

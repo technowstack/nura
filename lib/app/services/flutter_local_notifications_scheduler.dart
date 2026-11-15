@@ -1,0 +1,98 @@
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+
+import 'notification_scheduler.dart';
+import 'prayer_notifier.dart';
+
+class FlutterLocalNotificationsScheduler implements NotificationScheduler {
+  FlutterLocalNotificationsScheduler([FlutterLocalNotificationsPlugin? plugin])
+    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+
+  static const channelId = 'prayer_times';
+  static const channelName = 'Waktu sholat';
+
+  final FlutterLocalNotificationsPlugin _plugin;
+
+  AndroidFlutterLocalNotificationsPlugin? get _android => _plugin
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >();
+
+  static PermissionState _state(bool? v) => switch (v) {
+    true => PermissionState.granted,
+    false => PermissionState.denied,
+    null => PermissionState.notRequired,
+  };
+
+  Future<void>? _init;
+
+  /// Idempotent; every other call awaits it so early calls cannot race it.
+  @override
+  Future<void> init() => _init ??= _plugin.initialize(
+    settings: const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    ),
+  );
+
+  @override
+  Future<void> cancelPrayer() async {
+    await init();
+    for (final p in await _plugin.pendingNotificationRequests()) {
+      if (isPrayerNotificationId(p.id)) await _plugin.cancel(id: p.id);
+    }
+  }
+
+  @override
+  Future<void> schedule(
+    int id,
+    DateTime utcInstant,
+    String title,
+    String body, {
+    required bool exact,
+  }) async {
+    await init();
+    await _plugin.zonedSchedule(
+      id: id,
+      // The UTC location is built into package:timezone; no database needed.
+      scheduledDate: tz.TZDateTime.from(utcInstant, tz.UTC),
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          channelId,
+          channelName,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      ),
+      androidScheduleMode: exact
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle,
+    );
+  }
+
+  @override
+  Future<PermissionState> notificationPermission() async {
+    await init();
+    return _state(await _android?.areNotificationsEnabled());
+  }
+
+  @override
+  Future<PermissionState> requestNotificationPermission() async {
+    await init();
+    return _state(await _android?.requestNotificationsPermission());
+  }
+
+  @override
+  Future<PermissionState> exactAlarmPermission() async {
+    await init();
+    return _state(await _android?.canScheduleExactNotifications());
+  }
+
+  @override
+  Future<PermissionState> requestExactAlarmPermission() async {
+    await init();
+    await _android?.requestExactAlarmsPermission();
+    return exactAlarmPermission();
+  }
+}

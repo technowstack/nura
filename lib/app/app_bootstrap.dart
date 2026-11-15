@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -25,7 +26,10 @@ import 'data/sources/prayer_calculator.dart';
 import 'data/sources/prayer_regions_source.dart';
 import 'data/sources/region_coordinates.dart';
 import 'data/sources/user_database.dart';
+import 'services/flutter_local_notifications_scheduler.dart';
+import 'services/notification_scheduler.dart';
 import 'services/online_service.dart';
+import 'services/prayer_notifier.dart';
 
 sealed class BootstrapResult {
   const BootstrapResult();
@@ -93,6 +97,23 @@ Future<BootstrapResult> bootstrap({
         clock: clock,
         calculator: const AdhanPrayerCalculator(),
         coordinates: const NoRegionCoordinates(),
+      ),
+      permanent: true,
+    );
+    final scheduler = FlutterLocalNotificationsScheduler();
+    // Not awaited and never fatal: reminders are optional.
+    unawaited(
+      scheduler.init().catchError((Object e) {
+        debugPrint('Notification init failed: $e');
+      }),
+    );
+    Get.put<NotificationScheduler>(scheduler, permanent: true);
+    Get.put<PrayerNotifier>(
+      PrayerNotifier(
+        scheduler: scheduler,
+        repository: Get.find<PrayerRepository>(),
+        store: store,
+        clock: clock,
       ),
       permanent: true,
     );
