@@ -138,6 +138,8 @@ void main() {
         row(4, 'a', 'x' * 16373),
         row(5, 'a', tr16382b),
         row(6, 'a', 'x' * 16092),
+        row(7, 'a', '${'x' * 16371}\u201d'),
+        row(8, 'a', '${'x' * 16370}\u201d'),
       ],
     });
     Future<Hadith> g(int n) => repo.getHadith(HadithRef('a', n));
@@ -149,6 +151,8 @@ void main() {
     expect((await g(4)).translationTruncated, isFalse);
     expect((await g(5)).translationTruncated, isTrue);
     expect((await g(6)).translationTruncated, isFalse);
+    expect((await g(7)).translationTruncated, isTrue);
+    expect((await g(8)).translationTruncated, isFalse);
   });
 
   test('missing book or hadith throws ContentUnavailable', () async {
@@ -176,6 +180,13 @@ void main() {
     );
     expect(await repo.neighbor(const HadithRef('a', 3), next: true), isNull);
     expect(await repo.neighbor(const HadithRef('a', 1), next: false), isNull);
+  });
+
+  test('non-positive limit is an ArgumentError', () async {
+    open({'a': seq(5)});
+    for (final l in [0, -1, -2]) {
+      expect(repo.listPage('a', limit: l), throwsA(isA<ArgumentError>()));
+    }
   });
 
   test('closed database throws ContentUnavailable everywhere', () async {

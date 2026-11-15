@@ -13,9 +13,7 @@ ContentDatabase buildHadithDb(
   required Map<String, (String, int)> books,
   required Map<String, List<HadithRow>> rows,
 }) {
-  final file = File(
-    '${dir.path}/hadith-${DateTime.now().microsecondsSinceEpoch}.db',
-  );
+  final file = File('${dir.path}/hadith.db');
   final db = sqlite3.open(file.path);
   for (final ddl in contentSchemaDdl) {
     db.execute(ddl);
