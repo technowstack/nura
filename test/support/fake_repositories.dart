@@ -3,10 +3,12 @@ import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/models/bookmark.dart';
 import 'package:nura/app/data/models/hadith.dart';
+import 'package:nura/app/data/models/hadith_book.dart';
 import 'package:nura/app/data/models/juz.dart';
 import 'package:nura/app/data/models/last_read.dart';
 import 'package:nura/app/data/models/reading_prefs.dart';
 import 'package:nura/app/data/models/surah.dart';
+import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 
@@ -195,5 +197,74 @@ class FakeUserRepository implements UserRepository {
   void setThemeMode(ThemeMode mode) {
     _check();
     themeMode = mode;
+  }
+}
+
+/// Configurable in-memory hadith repository. Set [failure] to make every call
+/// throw. [summaries] hold per-book items ordered by number.
+class FakeHadithRepository implements HadithRepository {
+  FakeHadithRepository({
+    this.books = const [],
+    this.summaries = const {},
+    this.hadith = const [],
+    this.failure,
+  });
+
+  List<HadithBook> books;
+  Map<String, List<HadithSummary>> summaries;
+  List<Hadith> hadith;
+  Object? failure;
+
+  void _check() {
+    final f = failure;
+    if (f != null) throw f;
+  }
+
+  @override
+  Future<List<HadithBook>> listBooks() async {
+    _check();
+    return books;
+  }
+
+  @override
+  Future<HadithPage> listPage(
+    String slug, {
+    int afterNumber = 0,
+    int limit = 30,
+  }) async {
+    _check();
+    if (limit <= 0) throw ArgumentError.value(limit, 'limit');
+    final rest = (summaries[slug] ?? const <HadithSummary>[])
+        .where((h) => h.ref.number > afterNumber)
+        .toList();
+    return HadithPage(
+      items: rest.take(limit).toList(),
+      hasMore: rest.length > limit,
+    );
+  }
+
+  @override
+  Future<Hadith> getHadith(HadithRef ref) async {
+    _check();
+    return hadith.firstWhere(
+      (h) => h.ref == ref,
+      orElse: () =>
+          throw ContentUnavailable('hadith ${ref.slug}:${ref.number}'),
+    );
+  }
+
+  @override
+  Future<HadithRef?> neighbor(HadithRef ref, {required bool next}) async {
+    _check();
+    final nums =
+        (summaries[ref.slug] ?? const <HadithSummary>[])
+            .map((h) => h.ref.number)
+            .toList()
+          ..sort();
+    if (!nums.contains(ref.number)) {
+      throw ContentUnavailable('hadith ${ref.slug}:${ref.number}');
+    }
+    final i = nums.indexOf(ref.number) + (next ? 1 : -1);
+    return i < 0 || i >= nums.length ? null : HadithRef(ref.slug, nums[i]);
   }
 }
