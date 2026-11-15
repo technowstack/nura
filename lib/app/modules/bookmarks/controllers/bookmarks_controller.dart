@@ -97,6 +97,7 @@ class BookmarksController extends GetxController {
     final order = {for (var i = 0; i < result.length; i++) result[i]: i};
     result.sort((a, b) {
       final byTime = b.createdAt.compareTo(a.createdAt);
+      // Every item is a key: order was built from result.
       return byTime != 0 ? byTime : order[a]!.compareTo(order[b]!);
     });
     // Every entry failing points at a broken content.db, not an empty list.
