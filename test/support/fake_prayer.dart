@@ -1,3 +1,4 @@
+import 'package:nura/app/data/repositories/prayer_repository.dart';
 import 'package:nura/app/core/prayer_clock.dart';
 import 'package:nura/app/data/models/prayer_day.dart';
 import 'package:nura/app/data/models/prayer_region.dart';
@@ -61,3 +62,54 @@ class FakeCalculator implements PrayerCalculator {
     fetchedAt: fetchedAt,
   );
 }
+
+/// Fake repository: [days] answers `dayFor` by date; unknown dates are noData.
+class FakePrayerRepository implements PrayerRepository {
+  FakePrayerRepository({
+    this.region,
+    this.syncEnabled = false,
+    Map<String, DayResult>? days,
+  }) : days = days ?? {};
+
+  @override
+  PrayerRegion? region;
+  @override
+  bool syncEnabled;
+  final Map<String, DayResult> days;
+  final calls = <String>[];
+  Object? failWith;
+
+  @override
+  void selectRegion(PrayerRegion r) {
+    calls.add('select:${r.key}');
+    region = r;
+  }
+
+  @override
+  Future<DayResult> dayFor(String date) async {
+    calls.add('day:$date');
+    if (failWith case final e?) throw e;
+    return days[date] ?? const DayResult(DayOutcome.noData);
+  }
+
+  @override
+  Future<void> syncIfNeeded() async => calls.add('sync');
+}
+
+PrayerDay fullDay(
+  String date, {
+  PrayerSource source = PrayerSource.api,
+  String? dhuha = '05:50',
+}) => PrayerDay(
+  date: date,
+  imsak: '04:20',
+  subuh: '04:30',
+  terbit: '05:40',
+  dhuha: dhuha,
+  dzuhur: '11:50',
+  ashar: '15:10',
+  maghrib: '18:00',
+  isya: '19:10',
+  source: source,
+  fetchedAt: 1,
+);

@@ -4,10 +4,11 @@ import 'package:get/get.dart';
 import '../../hadith_books/bindings/hadith_books_binding.dart';
 import '../../hadith_books/views/hadith_books_view.dart';
 import '../../home/home_view.dart';
+import '../../prayer/bindings/prayer_binding.dart';
+import '../../prayer/views/prayer_view.dart';
 import '../../quran_list/bindings/quran_list_binding.dart';
 import '../../quran_list/views/quran_list_view.dart';
 import '../controllers/shell_controller.dart';
-import '../widgets/coming_soon_tab.dart';
 
 class ShellView extends StatelessWidget {
   const ShellView({required this.dataVersion, super.key});
@@ -20,6 +21,7 @@ class ShellView extends StatelessWidget {
     initState: (_) {
       QuranListBinding().dependencies();
       HadithBooksBinding().dependencies();
+      PrayerBinding().dependencies();
     },
     builder: (c) => Scaffold(
       // Tabs have no AppBar, so keep their top row out of the status bar.
@@ -31,7 +33,7 @@ class ShellView extends StatelessWidget {
             HomeView(dataVersion: dataVersion),
             const QuranListView(),
             const HadithBooksView(),
-            const ComingSoonTab(),
+            const PrayerView(),
           ],
         ),
       ),
