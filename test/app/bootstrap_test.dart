@@ -6,11 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/app_bootstrap.dart';
+import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/theme/theme_controller.dart';
 import 'package:nura/app/core/theme/theme_mode_setting.dart';
 import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/isolate_hadith_repository.dart';
+import 'package:nura/app/data/repositories/isolate_search_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
+import 'package:nura/app/data/repositories/search_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/data/sources/content_database.dart';
 import 'package:nura/app/data/sources/content_db_installer.dart';
@@ -52,10 +55,13 @@ void main() {
     addTearDown(s.user.close);
     final hadith = Get.find<HadithRepository>() as IsolateHadithRepository;
     addTearDown(hadith.close);
+    final search = Get.find<SearchRepository>() as IsolateSearchRepository;
+    addTearDown(search.close);
     if (swapHadithForFake) {
-      // The real isolate never replies under fake async, which would keep the
-      // Hadis tab's loading spinner animating forever.
+      // Real isolates never reply under fake async, which would keep loading
+      // spinners animating forever.
       Get.replace<HadithRepository>(FakeHadithRepository());
+      Get.replace<SearchRepository>(FakeSearchRepository());
     }
     if (onboardingDone != null) {
       s.user.setSetting(SettingKeys.onboardingDone, onboardingDone);
@@ -77,25 +83,74 @@ void main() {
     expect(Get.find<QuranRepository>(), isA<QuranRepository>());
     expect(Get.find<UserRepository>(), isA<UserRepository>());
     expect(Get.find<HadithRepository>(), isA<IsolateHadithRepository>());
+    expect(Get.find<SearchRepository>(), isA<IsolateSearchRepository>());
+  });
+
+  test('search worker starts after the hadith worker', () async {
+    final order = <String>[];
+    final r = await bootstrap(
+      installer: installer(),
+      dataDir: tmp,
+      startHadith: (f) async {
+        order.add('hadith');
+        return IsolateHadithRepository.start(f);
+      },
+      startSearch: (f) async {
+        order.add('search');
+        return IsolateSearchRepository.start(f);
+      },
+    );
+    final s = r as BootstrapSuccess;
+    addTearDown(s.content.close);
+    addTearDown(s.user.close);
+    addTearDown(
+      (Get.find<HadithRepository>() as IsolateHadithRepository).close,
+    );
+    addTearDown(
+      (Get.find<SearchRepository>() as IsolateSearchRepository).close,
+    );
+    expect(order, ['hadith', 'search']);
   });
 
   test(
-    'failed bootstrap closes the hadith worker and registers nothing',
+    'failed search start closes the hadith worker and registers nothing',
     () async {
-      Directory('${tmp.path}/user.db').createSync();
-      IsolateHadithRepository? started;
+      IsolateHadithRepository? hadith;
       final r = await bootstrap(
         installer: installer(),
         dataDir: tmp,
         startHadith: (f) async =>
-            started = await IsolateHadithRepository.start(f),
+            hadith = await IsolateHadithRepository.start(f),
+        startSearch: (_) async => throw const ContentUnavailable('boom'),
       );
       expect(r, isA<BootstrapFailure>());
-      expect(started, isNotNull);
-      await started?.exited.timeout(const Duration(seconds: 5));
+      expect(hadith, isNotNull);
+      await hadith?.exited.timeout(const Duration(seconds: 5));
+      expect(Get.isRegistered<ContentDatabase>(), isFalse);
       expect(Get.isRegistered<HadithRepository>(), isFalse);
+      expect(Get.isRegistered<SearchRepository>(), isFalse);
     },
   );
+
+  test('failed bootstrap closes both workers and registers nothing', () async {
+    Directory('${tmp.path}/user.db').createSync();
+    IsolateHadithRepository? started;
+    IsolateSearchRepository? search;
+    final r = await bootstrap(
+      installer: installer(),
+      dataDir: tmp,
+      startHadith: (f) async =>
+          started = await IsolateHadithRepository.start(f),
+      startSearch: (f) async => search = await IsolateSearchRepository.start(f),
+    );
+    expect(r, isA<BootstrapFailure>());
+    expect(started, isNotNull);
+    expect(search, isNotNull);
+    await started?.exited.timeout(const Duration(seconds: 5));
+    await search?.exited.timeout(const Duration(seconds: 5));
+    expect(Get.isRegistered<HadithRepository>(), isFalse);
+    expect(Get.isRegistered<SearchRepository>(), isFalse);
+  });
 
   test('bootstrap returns failure when installer throws', () async {
     final r = await bootstrap(

@@ -8,6 +8,7 @@ import '../../../routes/app_routes.dart';
 import '../../bookmarks/controllers/bookmarks_controller.dart';
 import '../../bookmarks/views/bookmarks_tab.dart';
 import '../../quran_detail/surah_args.dart';
+import '../../search/search_args.dart';
 import '../controllers/quran_list_controller.dart';
 import '../widgets/juz_list_item.dart';
 import '../widgets/surah_list_item.dart';
@@ -22,11 +23,25 @@ class QuranListView extends GetView<QuranListController> {
       length: 3,
       child: Column(
         children: [
-          const TabBar(
-            tabs: [
-              Tab(text: 'Surah'),
-              Tab(text: 'Juz'),
-              Tab(text: 'Bookmark'),
+          Row(
+            children: [
+              const Expanded(
+                child: TabBar(
+                  tabs: [
+                    Tab(text: 'Surah'),
+                    Tab(text: 'Juz'),
+                    Tab(text: 'Bookmark'),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Cari',
+                icon: const Icon(Icons.search),
+                onPressed: () => Get.toNamed(
+                  Routes.search,
+                  arguments: const SearchArgs(SearchScope.quran),
+                ),
+              ),
             ],
           ),
           Expanded(

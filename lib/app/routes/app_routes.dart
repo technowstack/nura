@@ -4,4 +4,5 @@ abstract class Routes {
   static const surah = '/quran/surah';
   static const hadithList = '/hadith/list';
   static const hadithDetail = '/hadith/detail';
+  static const search = '/search';
 }

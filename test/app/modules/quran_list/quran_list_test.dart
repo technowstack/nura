@@ -15,6 +15,7 @@ import 'package:nura/app/modules/quran_detail/surah_args.dart';
 import 'package:nura/app/modules/quran_list/bindings/quran_list_binding.dart';
 import 'package:nura/app/modules/quran_list/controllers/quran_list_controller.dart';
 import 'package:nura/app/modules/quran_list/views/quran_list_view.dart';
+import 'package:nura/app/modules/search/search_args.dart';
 import 'package:nura/app/routes/app_routes.dart';
 
 import '../../../support/fake_repositories.dart';
@@ -67,6 +68,13 @@ void main() {
             page: () {
               routeArgs = Get.arguments;
               return const Scaffold(body: Text('stub surah'));
+            },
+          ),
+          GetPage(
+            name: Routes.search,
+            page: () {
+              routeArgs = Get.arguments;
+              return const Scaffold(body: Text('stub search'));
             },
           ),
         ],
@@ -237,5 +245,14 @@ void main() {
     Get.back<void>();
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('search icon opens search with quran scope', (tester) async {
+    await pump(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Cari'));
+    await tester.pumpAndSettle();
+    expect(find.text('stub search'), findsOneWidget);
+    expect((routeArgs as SearchArgs).scope, SearchScope.quran);
   });
 }

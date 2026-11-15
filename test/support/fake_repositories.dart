@@ -4,14 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/models/bookmark.dart';
+import 'package:nura/app/core/search_query.dart';
 import 'package:nura/app/data/models/hadith.dart';
 import 'package:nura/app/data/models/hadith_book.dart';
 import 'package:nura/app/data/models/juz.dart';
 import 'package:nura/app/data/models/last_read.dart';
 import 'package:nura/app/data/models/reading_prefs.dart';
+import 'package:nura/app/data/models/search_hit.dart';
 import 'package:nura/app/data/models/surah.dart';
 import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
+import 'package:nura/app/data/repositories/search_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 
 /// Configurable in-memory repository. Set [failure] to make every call throw.
@@ -310,4 +313,72 @@ class FakeHadithRepository implements HadithRepository {
     final i = nums.indexOf(ref.number) + (next ? 1 : -1);
     return i < 0 || i >= nums.length ? null : HadithRef(ref.slug, nums[i]);
   }
+}
+
+/// One recorded [FakeSearchRepository] call.
+typedef SearchCall = ({
+  bool hadith,
+  ParsedQuery query,
+  String? bookSlug,
+  int afterRowId,
+  int limit,
+});
+
+/// Configurable search repository: returns [ayahPage] / [hadithPage] for
+/// every call. Set [failure] to make every call throw, or [gate] to make the
+/// next call wait for it (slow request).
+class FakeSearchRepository implements SearchRepository {
+  FakeSearchRepository({
+    this.ayahPage = SearchPage.empty,
+    this.hadithPage = SearchPage.empty,
+    this.failure,
+  });
+
+  SearchPage ayahPage;
+  SearchPage hadithPage;
+  Object? failure;
+  Completer<void>? gate;
+
+  /// Every call, in order.
+  final List<SearchCall> calls = [];
+
+  Future<SearchPage> _answer(SearchCall call, SearchPage page) async {
+    calls.add(call);
+    final g = gate;
+    if (g != null) {
+      gate = null; // only the first call after setting is slow
+      await g.future;
+    }
+    final f = failure;
+    if (f != null) throw f;
+    if (call.limit < 1) throw ArgumentError.value(call.limit, 'limit');
+    return page;
+  }
+
+  @override
+  Future<SearchPage> searchAyah(
+    ParsedQuery q, {
+    int afterRowId = 0,
+    int limit = 30,
+  }) => _answer((
+    hadith: false,
+    query: q,
+    bookSlug: null,
+    afterRowId: afterRowId,
+    limit: limit,
+  ), ayahPage);
+
+  @override
+  Future<SearchPage> searchHadith(
+    ParsedQuery q, {
+    String? bookSlug,
+    int afterRowId = 0,
+    int limit = 30,
+  }) => _answer((
+    hadith: true,
+    query: q,
+    bookSlug: bookSlug,
+    afterRowId: afterRowId,
+    limit: limit,
+  ), hadithPage);
 }
