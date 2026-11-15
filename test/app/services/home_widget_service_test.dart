@@ -16,6 +16,7 @@ void main() {
   late FakeWidgetStorage storage;
   late DateTime clock;
   late Set<String> failRenderFor;
+  var renderTag = 'v1';
   late HomeWidgetService service;
 
   setUp(() {
@@ -30,15 +31,18 @@ void main() {
       settings: settings,
       storage: storage,
       directory: dir,
-      render:
-          (c, {required dp, required pixelRatio, required brightness}) async {
-            if (failRenderFor.contains(c.translation)) {
-              throw StateError('render');
-            }
-            return Uint8List.fromList(utf8.encode('${c.translation}|$dp'));
-          },
+      render: (c, {required dp, required pixelRatio, required brightness}) async {
+        if (failRenderFor.contains(c.translation)) {
+          throw StateError('render');
+        }
+        return Uint8List.fromList(
+          utf8.encode(
+            '${c.translation}|${brightness.name}|${dp.width}x${dp.height}|$pixelRatio|$renderTag',
+          ),
+        );
+      },
       now: () => clock,
-      pixelRatio: () => 2,
+      pixelRatio: () => 2.5,
     );
   });
 
@@ -109,14 +113,133 @@ void main() {
     expect(files().where((f) => f.endsWith('.tmp')), isEmpty);
   });
 
-  test('throwing storage does not escape', () async {
+  test('throwing storage does not escape and keeps old value', () async {
+    await service.refresh();
+    const k = 'daily_ayah_2026-11-16_light_4x2';
+    final old = storage.data[k];
+    expect(old, isNotNull);
     storage.failAll = true;
     await service.refresh();
+    expect(storage.data[k], old);
     storage.failAll = false;
-    storage.failingKeys.add('daily_ayah_2026-11-16_light_4x2');
+    storage.failingKeys.add(k);
+    settings.hadithSource = HadithSource.allBooks;
     await service.refresh();
-    expect(storage.data['daily_ayah_2026-11-17_light_4x2'], isNotNull);
-    expect(storage.data['daily_ayah_2026-11-16_light_4x2'], isNull);
+    expect(storage.data[k], old);
+    expect(
+      File(
+        '${dir.path}/daily_hadith_2026-11-17_light_4x2.png',
+      ).readAsStringSync(),
+      contains('(all)'),
+    );
+  });
+
+  test('renderer receives brightness, size and ratio per key', () async {
+    await service.refresh();
+    final sizes = {'4x2': '320.0x152.0', '4x3': '320.0x240.0'};
+    for (final key in storage.data.keys.where(
+      (k) => k.startsWith('daily_a') || k.startsWith('daily_h'),
+    )) {
+      final m = jsonDecode(storage.data[key]!) as Map<String, dynamic>;
+      final parts = File(m['image'] as String).readAsStringSync().split('|');
+      final bits = key.split('_');
+      expect(parts[1], bits[3], reason: key);
+      expect(parts[2], sizes[bits[4]], reason: key);
+      expect(parts[3], '2.5', reason: key);
+    }
+  });
+
+  test('lookup failure keeps old entries; others still refresh', () async {
+    await service.refresh();
+    const k = 'daily_ayah_2026-11-15_light_4x2';
+    final old = storage.data[k];
+    final oldPng = File('${dir.path}/$k.png').readAsStringSync();
+    final failing = _ThrowingAyahRepo(DateTime(2026, 11, 15));
+    final svc = HomeWidgetService(
+      repository: failing,
+      settings: settings,
+      storage: storage,
+      directory: dir,
+      render:
+          (c, {required dp, required pixelRatio, required brightness}) async =>
+              Uint8List.fromList(utf8.encode('new')),
+      now: () => clock,
+      pixelRatio: () => 2.5,
+    );
+    await svc.refresh();
+    expect(storage.data[k], old);
+    expect(File('${dir.path}/$k.png').readAsStringSync(), oldPng);
+    expect(storage.data['daily_ayah_2026-11-16_light_4x2'], isNotNull);
+    expect(
+      File(
+        '${dir.path}/daily_ayah_2026-11-16_light_4x2.png',
+      ).readAsStringSync(),
+      'new',
+    );
+    expect(
+      File(
+        '${dir.path}/daily_hadith_2026-11-15_light_4x2.png',
+      ).readAsStringSync(),
+      'new',
+    );
+  });
+
+  test('failed temp write keeps previous png and value, no tmp file', () async {
+    await service.refresh();
+    const k = 'daily_ayah_2026-11-16_light_4x2';
+    final old = storage.data[k];
+    final png = File('${dir.path}/$k.png');
+    final oldPng = png.readAsStringSync();
+    // A directory in place of the temp file makes the temp write fail.
+    Directory('${dir.path}/$k.png.tmp').createSync();
+    renderTag = 'v2';
+    settings.hadithSource = HadithSource.allBooks;
+    await service.refresh();
+    expect(png.readAsStringSync(), oldPng);
+    expect(storage.data[k], old);
+  });
+
+  test('failed rename keeps value and leaves no tmp file', () async {
+    const k = 'daily_ayah_2026-11-15_light_4x2';
+    // A non-empty directory at the target makes rename fail.
+    Directory('${dir.path}/$k.png').createSync();
+    File('${dir.path}/$k.png/x').writeAsStringSync('x');
+    storage.data[k] = 'old';
+    await service.refresh();
+    expect(storage.data[k], 'old');
+    expect(files().where((f) => f.endsWith('.tmp')), isEmpty);
+    expect(storage.data['daily_ayah_2026-11-16_light_4x2'], isNotNull);
+  });
+
+  test('concurrent refresh calls are serialized', () async {
+    var running = 0;
+    var maxRunning = 0;
+    final svc = HomeWidgetService(
+      repository: repo,
+      settings: settings,
+      storage: storage,
+      directory: dir,
+      render:
+          (c, {required dp, required pixelRatio, required brightness}) async {
+            maxRunning = ++running > maxRunning ? running : maxRunning;
+            await Future<void>.delayed(Duration.zero);
+            running--;
+            return Uint8List.fromList([1]);
+          },
+      now: () => clock,
+      pixelRatio: () => 1,
+    );
+    await Future.wait([svc.refresh(), svc.refresh()]);
+    expect(maxRunning, 1);
+    expect(files().length, 56);
+  });
+
+  test('orphan keys are swept even when the index is lost', () async {
+    await service.refresh();
+    storage.data.remove('daily_widget_index');
+    clock = DateTime(2026, 11, 16, 9);
+    await service.refresh();
+    expect(storage.data.keys.where((k) => k.contains('2026-11-15')), isEmpty);
   });
 
   test('refresh twice keeps the same files', () async {
@@ -149,4 +272,16 @@ void main() {
       contains('(all)'),
     );
   });
+}
+
+class _ThrowingAyahRepo extends FakeDailyContentRepository {
+  _ThrowingAyahRepo(this.badDate);
+
+  final DateTime badDate;
+
+  @override
+  DailyContent? ayahFor(DateTime localDate) {
+    if (localDate == badDate) throw StateError('lookup');
+    return super.ayahFor(localDate);
+  }
 }

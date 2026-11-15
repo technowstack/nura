@@ -70,14 +70,26 @@ class HomeWidgetService {
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
+  Future<void> _inFlight = Future<void>.value();
+
   /// Never throws; failures are logged and the remaining entries continue.
-  Future<void> refresh() async {
-    try {
-      await _refresh();
-    } catch (e) {
-      debugPrint('HomeWidgetService.refresh failed: $e');
-    }
+  /// Runs are serialized so two runs never share the same temp file.
+  Future<void> refresh() {
+    final run = _inFlight.then((_) async {
+      try {
+        await _refresh();
+      } catch (e) {
+        debugPrint('HomeWidgetService.refresh failed: $e');
+      }
+    });
+    _inFlight = run;
+    return run;
   }
+
+  static Iterable<String> _keys(String kind, String date) => [
+    for (final b in Brightness.values)
+      for (final t in _sizes.keys) 'daily_${kind}_${date}_${b.name}_$t',
+  ];
 
   Future<void> _refresh() async {
     final n = _now();
@@ -103,6 +115,8 @@ class HomeWidgetService {
           }
         } catch (e) {
           debugPrint('daily content $kind $d failed: $e');
+          // A failed lookup keeps the old entries (not "no content").
+          wanted.addAll(_keys(kind.name, d));
           failed = true;
           continue;
         }
@@ -126,9 +140,16 @@ class HomeWidgetService {
       await _guard(() => _storage.save(key, null));
     }
     for (final f in _dir.listSync()) {
-      final name = f.uri.pathSegments.last;
-      if (f is File &&
-          !wanted.contains(name.replaceAll(RegExp(r'\.png$'), ''))) {
+      if (f is! File) continue;
+      final key = f.uri.pathSegments.last.replaceAll(
+        RegExp(r'\.png(\.tmp)?$'),
+        '',
+      );
+      if (!wanted.contains(key)) {
+        // Directory sweep also covers keys lost with a failed index save.
+        if (key.startsWith('daily_')) {
+          await _guard(() => _storage.save(key, null));
+        }
         await _guard(f.delete);
       }
     }
@@ -147,6 +168,8 @@ class HomeWidgetService {
     double ratio,
     Brightness brightness,
   ) async {
+    final path = '${_dir.path}/$key.png';
+    final tmp = File('$path.tmp');
     try {
       final bytes = await _render(
         c,
@@ -154,14 +177,13 @@ class HomeWidgetService {
         pixelRatio: ratio,
         brightness: brightness,
       );
-      final path = '${_dir.path}/$key.png';
-      final tmp = File('$path.tmp');
       await tmp.writeAsBytes(bytes, flush: true);
       await tmp.rename(path);
       await _storage.save(key, jsonEncode({'image': path, 'link': c.deepLink}));
       return true;
     } catch (e) {
       debugPrint('widget entry $key failed: $e');
+      if (tmp.existsSync()) await _guard(tmp.delete);
       return false;
     }
   }

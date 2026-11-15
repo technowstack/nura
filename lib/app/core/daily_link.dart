@@ -17,27 +17,33 @@ class HadithLink extends DailyLink {
   final int number;
 }
 
-int? _positive(String s) {
+/// Digits only, value >= 1.
+int? _naturalNumber(String s) {
   if (!RegExp(r'^\d+$').hasMatch(s)) return null;
-  return int.tryParse(s);
+  final n = int.tryParse(s);
+  return n == null || n < 1 ? null : n;
 }
 
 /// Parses `nura://ayah/<surah>/<ayat>` and `nura://hadith/<slug>/<number>`;
 /// returns null for anything else.
 DailyLink? parseDailyLink(String uri) {
   final u = Uri.tryParse(uri);
-  if (u == null || u.scheme != 'nura' || u.pathSegments.length != 2) {
+  if (u == null ||
+      u.scheme != 'nura' ||
+      u.hasQuery ||
+      u.hasFragment ||
+      u.pathSegments.length != 2) {
     return null;
   }
   final a = u.pathSegments[0];
   final b = u.pathSegments[1];
   switch (u.host) {
     case 'ayah':
-      final surah = _positive(a);
-      final ayah = _positive(b);
+      final surah = _naturalNumber(a);
+      final ayah = _naturalNumber(b);
       return surah == null || ayah == null ? null : AyahLink(surah, ayah);
     case 'hadith':
-      final n = _positive(b);
+      final n = _naturalNumber(b);
       return a.isEmpty || n == null ? null : HadithLink(a, n);
   }
   return null;

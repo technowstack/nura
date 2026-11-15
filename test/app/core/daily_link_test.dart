@@ -30,6 +30,12 @@ void main() {
       'http://ayah/94/6',
       'https://nura/ayah/94/6',
       'ayah/94/6',
+      'nura://ayah/0/6',
+      'nura://ayah/94/0',
+      'nura://hadith/bukhari/0',
+      'nura://ayah/94/6/',
+      'nura://ayah/94/6?x=1',
+      'nura://ayah/94/6#f',
     ]) {
       expect(parseDailyLink(s), isNull, reason: s);
     }
