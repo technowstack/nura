@@ -7,8 +7,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../routes/app_routes.dart';
 import '../../hadith_detail/hadith_detail_args.dart';
 import '../../quran_detail/surah_args.dart';
-import '../controllers/bookmarks_controller.dart';
 import '../controllers/bookmark_item.dart';
+import '../controllers/bookmarks_controller.dart';
 import '../widgets/bookmark_tile.dart';
 
 class BookmarksTab extends GetView<BookmarksController> {

@@ -74,6 +74,7 @@ class BookmarksController extends GetxController {
       }
     }
     for (final b in hadith) {
+      if (_stale(gen)) return;
       try {
         final h = await _hadith.getHadith(b.ref);
         if (_stale(gen)) return;
@@ -92,8 +93,12 @@ class BookmarksController extends GetxController {
       }
     }
     if (_stale(gen)) return;
-    // Stable sort: newest first; ties keep ayat before hadith, source order.
-    result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    // List.sort is not stable: tie-break on the source index (ayat first).
+    final order = {for (var i = 0; i < result.length; i++) result[i]: i};
+    result.sort((a, b) {
+      final byTime = b.createdAt.compareTo(a.createdAt);
+      return byTime != 0 ? byTime : order[a]!.compareTo(order[b]!);
+    });
     // Every entry failing points at a broken content.db, not an empty list.
     items.value = ayat.isEmpty && hadith.isEmpty
         ? const UiEmpty()

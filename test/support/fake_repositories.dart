@@ -272,8 +272,12 @@ class FakeHadithRepository implements HadithRepository {
   /// Per-number gates: getHadith for that number waits (slow request).
   final Map<int, Completer<void>> hadithGates = {};
 
+  /// Number of getHadith calls.
+  int getHadithCalls = 0;
+
   @override
   Future<Hadith> getHadith(HadithRef ref) async {
+    getHadithCalls++;
     _check();
     final gate = hadithGates[ref.number];
     if (gate != null) await gate.future;

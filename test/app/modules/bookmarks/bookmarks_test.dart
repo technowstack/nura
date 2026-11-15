@@ -4,18 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
+import 'package:nura/app/core/ui_state.dart';
 import 'package:nura/app/core/widgets/empty_state.dart';
 import 'package:nura/app/core/widgets/error_state.dart';
 import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/models/bookmark.dart';
 import 'package:nura/app/data/models/hadith.dart';
-import 'package:nura/app/data/repositories/hadith_repository.dart';
-import 'package:nura/app/modules/hadith_detail/hadith_detail_args.dart';
 import 'package:nura/app/data/models/surah.dart';
+import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
-import 'package:nura/app/modules/quran_detail/surah_args.dart';
+import 'package:nura/app/modules/bookmarks/controllers/bookmark_item.dart';
 import 'package:nura/app/modules/bookmarks/controllers/bookmarks_controller.dart';
+import 'package:nura/app/modules/hadith_detail/hadith_detail_args.dart';
+import 'package:nura/app/modules/quran_detail/surah_args.dart';
 import 'package:nura/app/modules/quran_list/bindings/quran_list_binding.dart';
 import 'package:nura/app/modules/quran_list/views/quran_list_view.dart';
 import 'package:nura/app/routes/app_routes.dart';
@@ -79,8 +81,12 @@ void main() {
   });
   tearDown(Get.reset);
 
-  Future<void> pump(WidgetTester tester, {double scale = 1}) async {
-    tester.view.physicalSize = const Size(360, 640);
+  Future<void> pump(
+    WidgetTester tester, {
+    double scale = 1,
+    double height = 640,
+  }) async {
+    tester.view.physicalSize = Size(360, height);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -351,6 +357,9 @@ void main() {
     await pump(tester, scale: 1.3);
     expect(tester.takeException(), isNull);
     expect(find.text('HR. Shahih Bukhari No. 34'), findsOneWidget);
+    final w = tester.widget<Text>(find.text(big));
+    expect(w.maxLines, 2);
+    expect(w.overflow, TextOverflow.ellipsis);
   });
 
   testWidgets('Latin 130% with three ayah and three hadith', (tester) async {
@@ -372,9 +381,45 @@ void main() {
     user.hadithBookmarks.addAll([
       for (final n in [34, 35, 36]) _hb(n, at(n)),
     ]);
-    await pump(tester, scale: 1.3);
+    await pump(tester, scale: 1.3, height: 2400);
     expect(tester.takeException(), isNull);
-    expect(find.textContaining('· ayat'), findsAtLeastNWidgets(1));
-    expect(find.textContaining('HR. '), findsAtLeastNWidgets(1));
+    expect(find.textContaining('· ayat'), findsNWidgets(3));
+    expect(find.textContaining('HR. '), findsNWidgets(3));
+  });
+
+  testWidgets('equal timestamps keep ayah-then-hadith source order (80)', (
+    tester,
+  ) async {
+    quran.ayahs = [for (var n = 1; n <= 40; n++) _a(1, n)];
+    hadith.hadith = [for (var n = 1; n <= 40; n++) _h(n)];
+    user.bookmarks.addAll([for (var n = 1; n <= 40; n++) ab(1, n, at(1))]);
+    user.hadithBookmarks.addAll([for (var n = 1; n <= 40; n++) _hb(n, at(1))]);
+    await pump(tester);
+    final state = Get.find<BookmarksController>().items.value;
+    final list = (state as UiData<List<BookmarkItem>>).value;
+    expect(list, hasLength(80));
+    expect(list.map((e) => e.title).toList(), [
+      for (var n = 1; n <= 40; n++) 'Latin1 · ayat $n',
+      for (var n = 1; n <= 40; n++) 'HR. Shahih Bukhari No. $n',
+    ]);
+  });
+
+  testWidgets('superseded read stops calling getHadith', (tester) async {
+    await pump(tester);
+    user.hadithBookmarks.addAll([
+      for (var n = 100; n < 120; n++) _hb(n, at(n)),
+    ]);
+    final gate = Completer<void>();
+    hadith.hadithGates[100] = gate;
+    final c = Get.find<BookmarksController>()..load();
+    await tester.pump();
+    await tester.pump();
+    user.hadithBookmarks.clear();
+    c.load();
+    await tester.pumpAndSettle();
+    final before = hadith.getHadithCalls;
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(hadith.getHadithCalls, before);
   });
 }
