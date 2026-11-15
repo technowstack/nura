@@ -64,6 +64,16 @@ Future<(RecordingScheduler, MemoryPrayerStore)> pump(
 
 Finder sw(String label) => find.widgetWithText(SwitchListTile, label);
 
+/// Scrolls down until [f] is built (a lazy list does not build items far
+/// outside the viewport, so scrollUntilVisible cannot find them).
+Future<void> revealBelow(WidgetTester tester, Finder f) async {
+  for (var i = 0; i < 20 && f.evaluate().isEmpty; i++) {
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
+    await tester.pump();
+  }
+  await tester.ensureVisible(f);
+}
+
 Future<void> reveal(WidgetTester tester, Finder f) async {
   await tester.scrollUntilVisible(
     f,
@@ -71,6 +81,7 @@ Future<void> reveal(WidgetTester tester, Finder f) async {
     scrollable: find.byType(Scrollable).first,
   );
   await tester.ensureVisible(f);
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -155,7 +166,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     const note = 'Pengingat gagal dijadwalkan. Coba buka ulang Nura.';
-    await reveal(tester, find.text(note));
+    await revealBelow(tester, find.text(note));
     expect(find.text(note), findsOneWidget);
     expect(tester.takeException(), isNull);
     sched.failAll = false;
@@ -175,6 +186,10 @@ void main() {
     final isya = sw('Pengingat Isya');
     await reveal(tester, isya);
     expect(tester.widget<SwitchListTile>(isya).value, isTrue);
+    await revealBelow(
+      tester,
+      find.text('Pengingat gagal dijadwalkan. Coba buka ulang Nura.'),
+    );
     expect(
       find.text('Pengingat gagal dijadwalkan. Coba buka ulang Nura.'),
       findsOneWidget,

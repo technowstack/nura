@@ -98,6 +98,10 @@ void main() {
     );
     expect(find.text('Butuh internet untuk jadwal pertama'), findsNothing);
     expect(find.text('Unduh jadwal sholat'), findsOneWidget);
+    expect(
+      find.text('Jadwal diunduh per bulan dan tersimpan di perangkat.'),
+      findsOneWidget,
+    );
     expect(find.byType(NextPrayerCard), findsNothing);
   });
 
