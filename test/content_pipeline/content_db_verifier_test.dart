@@ -1,12 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nura/content_pipeline/content_db_builder.dart';
 import 'package:nura/content_pipeline/content_db_verifier.dart';
+import 'package:nura/content_pipeline/content_schema.dart';
+import 'package:nura/content_pipeline/matan_extractor.dart';
 import 'package:nura/content_pipeline/text_normalizer.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../support/fixtures.dart';
+import '../support/source_tree.dart';
 
 void main() {
   late Directory tempDir;
@@ -180,6 +184,190 @@ void main() {
         versionFile: v,
       );
       expect(missing.errors.join(), contains('content.version'));
+    });
+  });
+
+  group('daily_hadith', () {
+    late Directory src;
+    late File db;
+
+    Map<String, String?> files({Map<String, String?> extra = const {}}) => {
+      'hadith/bukhari.json': hadithJson([
+        goodHadith(1),
+        narrativeHadith(2),
+        goodHadith(3),
+      ]),
+      'hadith/muslim.json': hadithJson([goodHadith(1)]),
+      ...extra,
+    };
+
+    setUp(() {
+      src = makeSource(tempDir, 'daily-src', files: files());
+      db = File('${tempDir.path}/daily.db');
+      buildContentDb(sourceRoot: src, output: db);
+    });
+
+    VerificationReport verifyDaily(String sql, {Directory? source}) {
+      final copy = db.copySync('${tempDir.path}/daily-tampered.db');
+      final d = sqlite3.open(copy.path)..execute(sql);
+      d.dispose();
+      return verifyContentDb(sourceRoot: source ?? src, database: copy);
+    }
+
+    test('an honest build verifies ok', () {
+      final r = verifyContentDb(sourceRoot: src, database: db);
+      expect(r.errors, isEmpty);
+    });
+
+    test('offset outside the text or start >= end is an error', () {
+      var r = verifyDaily(
+        'UPDATE daily_hadith SET arab_end = 100000 WHERE list = \'all\' AND seq = 0',
+      );
+      expect(r.errors.join('\n'), contains('offsets outside'));
+      r = verifyDaily(
+        'UPDATE daily_hadith SET tr_start = tr_end WHERE list = \'all\' AND seq = 0',
+      );
+      expect(r.errors.join('\n'), contains('offsets outside'));
+      r = verifyDaily(
+        'UPDATE daily_hadith SET arab_start = -1 WHERE list = \'all\' AND seq = 0',
+      );
+      expect(r.errors.join('\n'), contains('offsets outside'));
+    });
+
+    test('seq with a gap is an error', () {
+      final r = verifyDaily(
+        "UPDATE daily_hadith SET seq = 9 WHERE list = 'default' AND seq = 0",
+      );
+      expect(r.errors.join('\n'), contains('seq not dense'));
+    });
+
+    test('a slice differing from the re-run rule is an error', () {
+      final r = verifyDaily(
+        'UPDATE daily_hadith SET arab_start = arab_start + 1 WHERE list = \'all\' AND seq = 0',
+      );
+      expect(r.errors.join('\n'), contains('slices differ from extractMatan'));
+    });
+
+    test('a hadith that does not qualify is an error', () {
+      final d = sqlite3.open(db.path, mode: OpenMode.readOnly);
+      final id = d
+          .select(
+            "SELECT id FROM hadith WHERE book_slug='bukhari' AND number=2",
+          )
+          .single['id'];
+      d.dispose();
+      final r = verifyDaily(
+        'INSERT INTO daily_hadith VALUES (\'all\', 9999, $id, 0, 12, 0, 12)'
+        '; UPDATE daily_hadith SET seq = seq',
+      );
+      expect(r.errors.join('\n'), contains('bukhari:2'));
+    });
+
+    test('an excluded hadith in a list is an error', () {
+      final excluded = makeSource(
+        tempDir,
+        'excl',
+        files: files(
+          extra: {
+            'meta/daily_hadith_exclude.json': '[{"book":"bukhari","number":1}]',
+          },
+        ),
+      );
+      final r = verifyContentDb(sourceRoot: excluded, database: db);
+      expect(r.errors.join('\n'), contains('excluded hadith bukhari:1'));
+    });
+
+    test('a truncated hadith in a list is an error', () {
+      final cut = (
+        number: 50,
+        arab: arabWithMatan(
+          'مَنْ يَقُمْ لَيْلَةَ الْقَدْرِ إِيمَانًا',
+          sanad: 'ب ' * 8200,
+        ),
+        id: translationWithMatan(
+          'Barangsiapa menegakkan malam qadar dengan iman',
+        ),
+      );
+      expect(
+        utf8.encode(cut.arab).length,
+        greaterThanOrEqualTo(kSourceTruncationBytes),
+      );
+      final withCut = makeSource(
+        tempDir,
+        'cut',
+        files: files(
+          extra: {
+            'hadith/bukhari.json': hadithJson([goodHadith(1), cut]),
+          },
+        ),
+      );
+      final out = File('${tempDir.path}/cut.db');
+      buildContentDb(sourceRoot: withCut, output: out);
+      final m = extractMatan(cut.arab, cut.id);
+      expect(m, isNotNull);
+      final d = sqlite3.open(out.path);
+      final id = d.select("SELECT id FROM hadith WHERE number=50").single['id'];
+      final n = d
+          .select("SELECT COUNT(*) c FROM daily_hadith WHERE list='default'")
+          .single['c'];
+      d.execute(
+        "INSERT INTO daily_hadith VALUES ('default', $n, $id, ${m!.arabStart}, ${m.arabEnd}, ${m.trStart}, ${m.trEnd})",
+      );
+      d.dispose();
+      final r = verifyContentDb(sourceRoot: withCut, database: out);
+      expect(r.errors.join('\n'), contains('truncated hadith bukhari:50'));
+    });
+
+    test('a default list holding another book is an error', () {
+      final d = sqlite3.open(db.path, mode: OpenMode.readOnly);
+      final id = d
+          .select("SELECT id FROM hadith WHERE book_slug='malik' AND number=4")
+          .single['id'];
+      final m = extractMatan(
+        d.select('SELECT arab FROM hadith WHERE id = ?', [id]).single['arab']
+            as String,
+        d.select('SELECT translation_id FROM hadith WHERE id = ?', [
+              id,
+            ]).single['translation_id']
+            as String,
+      );
+      d.dispose();
+      final r = verifyDaily(
+        "INSERT INTO daily_hadith VALUES ('default', 99, $id, ${m!.arabStart}, ${m.arabEnd}, ${m.trStart}, ${m.trEnd})",
+      );
+      expect(r.errors.join('\n'), contains('default list'));
+    });
+
+    test('offsets stay correct with non-BMP and combining characters', () {
+      final emoji = (
+        number: 60,
+        arab:
+            'x\u{1F600} ${arabWithMatan('مَنْ يَقُمْ لَيْلَةَ الْقَدْرِ إِيمَانًا')}',
+        id: 'Dari [A] \u{1F600} shallallahu \'alaihi wasallam bersabda: "Barangsiapa e\u0301 menegakkan malam \u{1F600} qadar"',
+      );
+      final s = makeSource(
+        tempDir,
+        'emoji',
+        files: files(
+          extra: {
+            'hadith/bukhari.json': hadithJson([goodHadith(1), emoji]),
+          },
+        ),
+      );
+      final out = File('${tempDir.path}/emoji.db');
+      buildContentDb(sourceRoot: s, output: out);
+      expect(verifyContentDb(sourceRoot: s, database: out).errors, isEmpty);
+      final d = sqlite3.open(out.path, mode: OpenMode.readOnly);
+      final r = d
+          .select(
+            'SELECT d.*, h.translation_id t FROM daily_hadith d JOIN hadith h ON h.id = d.hadith_id WHERE h.number = 60 AND d.list = \'default\'',
+          )
+          .single;
+      d.dispose();
+      expect(
+        (r['t'] as String).substring(r['tr_start'] as int, r['tr_end'] as int),
+        'Barangsiapa e\u0301 menegakkan malam \u{1F600} qadar',
+      );
     });
   });
 }
