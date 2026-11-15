@@ -9,12 +9,12 @@ class SqlitePrayerStore implements PrayerStore {
 
   final UserDatabase _db;
 
-  static const _notifyKeys = {
-    PrayerName.subuh: SettingKeys.notifyFajr,
-    PrayerName.dzuhur: SettingKeys.notifyDhuhr,
-    PrayerName.ashar: SettingKeys.notifyAsr,
-    PrayerName.maghrib: SettingKeys.notifyMaghrib,
-    PrayerName.isya: SettingKeys.notifyIsha,
+  static String _notifyKey(PrayerName p) => switch (p) {
+    PrayerName.subuh => SettingKeys.notifyFajr,
+    PrayerName.dzuhur => SettingKeys.notifyDhuhr,
+    PrayerName.ashar => SettingKeys.notifyAsr,
+    PrayerName.maghrib => SettingKeys.notifyMaghrib,
+    PrayerName.isya => SettingKeys.notifyIsha,
   };
 
   @override
@@ -88,8 +88,11 @@ class SqlitePrayerStore implements PrayerStore {
 
   @override
   void saveMonth(PrayerRegion r, int year, int month, List<PrayerDay> days) {
+    if (days.isEmpty) {
+      throw ArgumentError.value(days, 'days', 'use markMonthNone for empty');
+    }
     final raw = _db.raw;
-    final fetchedAt = days.isEmpty ? 0 : days.first.fetchedAt;
+    final fetchedAt = days.first.fetchedAt;
     raw.execute('BEGIN');
     try {
       for (final d in days) {
@@ -146,12 +149,9 @@ class SqlitePrayerStore implements PrayerStore {
           as int;
 
   @override
-  bool notifyEnabled(PrayerName p) =>
-      _db.getSetting(_notifyKeys[p] ?? '') == 'true';
+  bool notifyEnabled(PrayerName p) => _db.getSetting(_notifyKey(p)) == 'true';
 
   @override
-  void setNotifyEnabled(PrayerName p, bool v) {
-    final key = _notifyKeys[p];
-    if (key != null) _db.setSetting(key, v.toString());
-  }
+  void setNotifyEnabled(PrayerName p, bool v) =>
+      _db.setSetting(_notifyKey(p), v.toString());
 }

@@ -8,8 +8,11 @@ abstract interface class PrayerStore {
   void setLocation(PrayerRegion r, {required String source});
   PrayerDay? getDay(String date, PrayerRegion r);
 
-  /// Replaces every day of [year]-[month] (including `calc` days) and marks
-  /// the month `ok`.
+  /// Upserts the dates present in [days] (replacing any `calc` day on those
+  /// dates; other dates are untouched) and marks the month `ok`, atomically.
+  /// The month `fetched_at` is taken from the first day, so the caller must
+  /// stamp every day of one fetch with the same time. Throws [ArgumentError]
+  /// on an empty list; use [markMonthNone] instead.
   void saveMonth(PrayerRegion r, int year, int month, List<PrayerDay> days);
   void markMonthNone(PrayerRegion r, int year, int month, int nowMs);
   MonthRecord? getMonth(PrayerRegion r, int year, int month);

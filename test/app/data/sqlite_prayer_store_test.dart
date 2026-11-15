@@ -78,11 +78,63 @@ void main() {
     expect(m?.fetchedAt, 777);
   });
 
-  test('one region does not read another region data', () {
-    store.saveMonth(jkt, 2026, 11, [day(1)]);
-    expect(store.getDay('2026-11-01', bdg), isNull);
-    expect(store.getMonth(bdg, 2026, 11), isNull);
-    expect(store.apiDaysFrom('2026-11-01', bdg), 0);
+  const bogor = PrayerRegion(
+    provinsi: 'Jawa Barat',
+    kabkota: 'Kab. Bogor',
+    zone: PrayerZone.wib,
+  );
+  const bdgSameName = PrayerRegion(
+    provinsi: 'Jawa Tengah',
+    kabkota: 'Kota Bandung',
+    zone: PrayerZone.wib,
+  );
+
+  test('regions sharing province or kabkota stay isolated', () {
+    store.saveMonth(bdg, 2026, 11, [day(1)]);
+    for (final other in [jkt, bogor, bdgSameName]) {
+      expect(store.getDay('2026-11-01', other), isNull);
+      expect(store.getMonth(other, 2026, 11), isNull);
+      expect(store.apiDaysFrom('2026-11-01', other), 0);
+    }
+    store.saveMonth(bogor, 2026, 11, [day(1), day(2)]);
+    store.markMonthNone(bdgSameName, 2026, 11, 5);
+    expect(store.apiDaysFrom('2026-11-01', bdg), 1);
+    expect(store.apiDaysFrom('2026-11-01', bogor), 2);
+    expect(store.getMonth(bdg, 2026, 11)?.status, MonthStatus.ok);
+    expect(store.getMonth(bogor, 2026, 11)?.status, MonthStatus.ok);
+    expect(store.getMonth(bdgSameName, 2026, 11)?.status, MonthStatus.none);
+  });
+
+  test('saveMonth with empty list throws and writes nothing', () {
+    expect(() => store.saveMonth(jkt, 2026, 11, []), throwsArgumentError);
+    expect(store.getMonth(jkt, 2026, 11), isNull);
+  });
+
+  test('apiDaysFrom excludes calc days and honors the lower bound', () {
+    store.saveMonth(jkt, 2026, 11, [day(5), day(15), day(25)]);
+    store.saveCalcDay(jkt, day(20, s: PrayerSource.calc));
+    expect(store.apiDaysFrom('2026-11-01', jkt), 3);
+    expect(store.apiDaysFrom('2026-11-15', jkt), 2);
+    expect(store.apiDaysFrom('2026-11-16', jkt), 1);
+  });
+
+  test('failed saveMonth rolls back days and marker', () {
+    final bad = PrayerDay(
+      date: '2026-11-02',
+      subuh: '04:30',
+      source: PrayerSource.api,
+      fetchedAt: 100,
+    );
+    db.raw.execute(
+      'CREATE TRIGGER boom BEFORE INSERT ON prayer_day '
+      "WHEN NEW.date = '2026-11-02' BEGIN SELECT RAISE(ABORT, 'x'); END",
+    );
+    expect(
+      () => store.saveMonth(jkt, 2026, 11, [day(1), bad]),
+      throwsA(anything),
+    );
+    expect(store.getDay('2026-11-01', jkt), isNull);
+    expect(store.getMonth(jkt, 2026, 11), isNull);
   });
 
   test('notifyEnabled defaults false and round trips', () {
