@@ -31,11 +31,12 @@ void main() {
     buildContentDb(sourceRoot: src, output: db);
   });
 
-  Future<String> run(String name) async {
+  Future<String> run(String name, {String? seed}) async {
     final out = '${tmp.path}/$name.md';
     final r = await Process.run('dart', [
       'run',
       'tool/sample_daily_hadith.dart',
+      if (seed != null) ...['--seed', seed],
       '--db',
       db.path,
       '--out',
@@ -55,4 +56,23 @@ void main() {
     expect(a, contains('HR. ${hadithBookNames['muslim']} No. '));
     expect(a, isNot(contains(hadithBookNames['abu-daud']!)));
   });
+
+  test(
+    '--seed picks another deterministic set, still from default only',
+    () async {
+      final a = await run('a');
+      final s2 = await run('s2', seed: '20261116');
+      expect(await run('s2b', seed: '20261116'), s2);
+      expect(s2, isNot(a));
+      expect(s2, contains('seed 20261116'));
+      expect(a, contains('seed 20261115'));
+      expect(
+        RegExp(r'^## \d+\. ', multiLine: true).allMatches(s2),
+        hasLength(50),
+      );
+      expect(s2, isNot(contains(hadithBookNames['abu-daud']!)));
+      // The header states the rule.
+      expect(s2, contains('tanda kutip'));
+    },
+  );
 }

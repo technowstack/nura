@@ -6,7 +6,7 @@ import 'package:sqlite3/sqlite3.dart';
 
 const int _sampleCount = 50;
 // Distinct from dailySeed so the review sample is not the first days' picks.
-const int _sampleSeed = 20261115;
+const int _defaultSeed = 20261115;
 
 String? _opt(List<String> args, String name) {
   final i = args.indexOf(name);
@@ -18,6 +18,12 @@ String? _opt(List<String> args, String name) {
 void main(List<String> args) {
   final dbPath = _opt(args, '--db') ?? 'assets/db/content.db';
   final outPath = _opt(args, '--out') ?? 'docs/review/matan-samples.md';
+  final seedArg = _opt(args, '--seed');
+  final seed = seedArg == null ? _defaultSeed : int.tryParse(seedArg);
+  if (seed == null) {
+    stderr.writeln('error: --seed needs an integer, got "$seedArg"');
+    exit(1);
+  }
   final db = sqlite3.open(dbPath, mode: OpenMode.readOnly);
   try {
     final rows = db
@@ -28,15 +34,25 @@ void main(List<String> args) {
           "WHERE d.list = 'default' ORDER BY d.seq",
         )
         .toList();
-    final picked = seededShuffle(rows, _sampleSeed).take(_sampleCount);
+    final picked = seededShuffle(rows, seed).take(_sampleCount);
     final out = StringBuffer()
       ..writeln('# Sampel matan hadis harian')
       ..writeln()
       ..writeln(
-        '$_sampleCount sampel acak (seed $_sampleSeed) dari daftar `default` '
+        '$_sampleCount sampel acak (seed $seed) dari daftar `default` '
         '(Bukhari dan Muslim, ${rows.length} hadis), dihasilkan oleh '
-        '`tool/sample_daily_hadith.dart`. Periksa apakah matan Arab dan '
-        'terjemahan sejajar dan utuh.',
+        '`dart run tool/sample_daily_hadith.dart --seed $seed`. Periksa '
+        'apakah matan Arab dan terjemahan sejajar dan utuh.',
+      )
+      ..writeln()
+      ..writeln(
+        'Aturan matan (spec 8.1): terjemahan = isi kutipan setelah '
+        '`bersabda:`, tanpa tanda kutip lain di dalamnya (satu kutipan utuh, '
+        'bukan dialog atau komentar), tanpa `[` `]`, tanpa "bersabda:" kedua, '
+        'paling banyak 300 karakter; Arab = teks sesudah `صلى الله عليه وسلم` '
+        '(dan kata kerja ucap) sampai akhir, paling banyak 300 karakter; '
+        'rasio panjang terjemahan/Arab 0,8 sampai 3,0; 19 hadis terpotong dan '
+        'daftar pengecualian manual dilewati.',
       );
     var n = 0;
     for (final r in picked) {
