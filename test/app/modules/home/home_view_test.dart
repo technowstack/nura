@@ -8,7 +8,6 @@ import 'package:nura/app/data/models/daily_content.dart';
 import 'package:nura/app/data/repositories/daily_content_repository.dart';
 import 'package:nura/app/data/repositories/daily_settings_store.dart';
 import 'package:nura/app/modules/hadith_detail/hadith_detail_args.dart';
-import 'package:nura/app/modules/home/bindings/home_binding.dart';
 import 'package:nura/app/modules/home/controllers/home_controller.dart';
 import 'package:nura/app/modules/home/home_view.dart';
 import 'package:nura/app/modules/quran_detail/surah_args.dart';
@@ -53,7 +52,8 @@ void main() {
     tester.view.physicalSize = const Size(360, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    HomeBinding().dependencies();
+    // A fixed clock: the fakes derive their text from the day of the month.
+    Get.put(HomeController(now: () => DateTime(2026, 11, 15, 12)));
     await tester.pumpWidget(
       GetMaterialApp(
         theme: theme ?? AppTheme.light,
