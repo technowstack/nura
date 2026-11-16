@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="daily_ayah_widget_label">Ayat hari ini</string>
+    <string name="daily_hadith_widget_label">Hadis hari ini</string>
+    <string name="daily_widget_stale">Buka Nura untuk memperbarui</string>
+    <string name="daily_widget_no_ayah">Ayat harian belum tersedia. Buka Nura.</string>
+</resources>

@@ -1,15 +1,18 @@
 import 'package:nura/app/data/models/prayer_day.dart';
 import 'package:nura/app/data/models/prayer_region.dart';
 import 'package:nura/app/data/repositories/prayer_store.dart';
+import 'package:nura/app/services/daily_notifier.dart';
 import 'package:nura/app/services/notification_scheduler.dart';
+import 'package:nura/app/services/prayer_notifier.dart';
 
 class Scheduled {
-  Scheduled(this.id, this.at, this.title, this.body, this.exact);
+  Scheduled(this.id, this.at, this.title, this.body, this.exact, this.payload);
 
   final int id;
   final DateTime at;
   final String title, body;
   final bool exact;
+  final String? payload;
 }
 
 class RecordingScheduler implements NotificationScheduler {
@@ -25,7 +28,13 @@ class RecordingScheduler implements NotificationScheduler {
   @override
   Future<void> cancelPrayer() async {
     log.add('cancel');
-    pending.clear();
+    pending.removeWhere((id, _) => isPrayerNotificationId(id));
+  }
+
+  @override
+  Future<void> cancelDaily() async {
+    log.add('cancelDaily');
+    pending.removeWhere((id, _) => isDailyNotificationId(id));
   }
 
   @override
@@ -35,9 +44,10 @@ class RecordingScheduler implements NotificationScheduler {
     String title,
     String body, {
     required bool exact,
+    String? payload,
   }) async {
     log.add('schedule:$id');
-    pending[id] = Scheduled(id, utcInstant, title, body, exact);
+    pending[id] = Scheduled(id, utcInstant, title, body, exact, payload);
   }
 
   @override
@@ -77,9 +87,17 @@ class ThrowingScheduler extends RecordingScheduler {
     String title,
     String body, {
     required bool exact,
+    String? payload,
   }) async {
     if (failAll || id == failId) throw StateError('boom');
-    await super.schedule(id, utcInstant, title, body, exact: exact);
+    await super.schedule(
+      id,
+      utcInstant,
+      title,
+      body,
+      exact: exact,
+      payload: payload,
+    );
   }
 }
 

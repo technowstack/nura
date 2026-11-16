@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/daily_widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- The PNG already carries its own rounded card; values-night picks the variant. -->
+    <FrameLayout
+        android:id="@+id/daily_widget_images"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/daily_widget_image_light"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            android:visibility="@integer/daily_widget_light_visibility" />
+
+        <ImageView
+            android:id="@+id/daily_widget_image_dark"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            android:visibility="@integer/daily_widget_dark_visibility" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/daily_widget_fallback"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/daily_widget_background"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="@string/daily_widget_stale"
+        android:textColor="@color/daily_widget_text"
+        android:textSize="16sp" />
+</FrameLayout>

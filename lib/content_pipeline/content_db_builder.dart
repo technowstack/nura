@@ -8,6 +8,8 @@ import 'checksum_manifest.dart';
 import 'content_schema.dart';
 import 'content_version.dart';
 import 'hadith_source_parser.dart';
+import 'matan_extractor.dart';
+import 'meta_lists.dart';
 import 'quran_source_parser.dart';
 import 'seeded_shuffle.dart';
 import 'source_models.dart';
@@ -24,6 +26,41 @@ List<Map<String, dynamic>>? _optionalList(Directory root, String name) {
   } on Object catch (e) {
     throw SourceFormatException('meta/$name', 'invalid json: $e');
   }
+}
+
+const _ayahFile = 'meta/daily_ayah.json';
+
+/// Ids of the daily ayah list, in file order. Rejects malformed entries,
+/// pairs that do not exist and duplicates.
+List<int> _dailyAyahIds(Directory root, Map<String, int> ayahIds) {
+  final seen = <String>{};
+  final ids = <int>[];
+  for (final e in readMetaObjects(root, _ayahFile)) {
+    if (e['surah'] is! int || e['ayah'] is! int) {
+      throw SourceFormatException(
+        _ayahFile,
+        'entry needs integer "surah" and "ayah": $e',
+      );
+    }
+    final key = '${e['surah']}:${e['ayah']}';
+    final id = ayahIds[key];
+    if (id == null) throw SourceFormatException(_ayahFile, 'no such ayah $key');
+    if (!seen.add(key)) {
+      throw SourceFormatException(_ayahFile, 'duplicate ayah $key');
+    }
+    ids.add(id);
+  }
+  return ids;
+}
+
+class _DailyCandidate {
+  _DailyCandidate(this.id, this.slug, this.sortOrder, this.number, this.matan);
+
+  final int id;
+  final String slug;
+  final int sortOrder;
+  final int number;
+  final Matan matan;
 }
 
 BuildResult buildContentDb({
@@ -129,7 +166,9 @@ BuildResult buildContentDb({
     final insHadithFts = db.prepare(
       'INSERT INTO hadith_fts(rowid, arab, translation) VALUES (?, ?, ?)',
     );
-    final dailyCandidates = <int>[];
+    final excluded = readExcludedHadith(sourceRoot);
+    final unmatchedExcluded = {...excluded};
+    final dailyCandidates = <_DailyCandidate>[];
     for (final b in books) {
       insBook.execute([
         b.slug,
@@ -140,7 +179,25 @@ BuildResult buildContentDb({
       for (final h in b.hadiths) {
         hadithCount++;
         final len = h.translation.length;
-        if (len <= dailyHadithMaxLength) dailyCandidates.add(hadithCount);
+        final key = '${b.slug}:${h.number}';
+        unmatchedExcluded.remove(key);
+        final isExcluded = excluded.contains(key);
+        if (!isExcluded &&
+            utf8.encode(h.arab).length < kSourceTruncationBytes &&
+            utf8.encode(h.translation).length < kSourceTruncationBytes) {
+          final matan = extractMatan(h.arab, h.translation);
+          if (matan != null) {
+            dailyCandidates.add(
+              _DailyCandidate(
+                hadithCount,
+                b.slug,
+                order.indexOf(b.slug),
+                h.number,
+                matan,
+              ),
+            );
+          }
+        }
         insHadith.execute([
           hadithCount,
           b.slug,
@@ -172,26 +229,48 @@ BuildResult buildContentDb({
     }
     insJuz.dispose();
 
-    final dailyAyah = _optionalList(sourceRoot, 'daily_ayah.json') ?? const [];
-    final ids = [
-      for (final e in dailyAyah)
-        ayahIds['${e['surah']}:${e['ayah']}'] ??
-            (throw SourceFormatException(
-              'meta/daily_ayah.json',
-              'no such ayah ${e['surah']}:${e['ayah']}',
-            )),
-    ];
     final insDa = db.prepare('INSERT INTO daily_ayah VALUES (?, ?)');
-    final shuffledAyah = seededShuffle(ids, dailySeed);
+    final shuffledAyah = seededShuffle(
+      _dailyAyahIds(sourceRoot, ayahIds),
+      dailySeed,
+    );
     for (var i = 0; i < shuffledAyah.length; i++) {
       insDa.execute([i, shuffledAyah[i]]);
     }
     insDa.dispose();
 
-    final insDh = db.prepare('INSERT INTO daily_hadith VALUES (?, ?)');
-    final shuffledHadith = seededShuffle(dailyCandidates, dailySeed);
-    for (var i = 0; i < shuffledHadith.length; i++) {
-      insDh.execute([i, shuffledHadith[i]]);
+    if (unmatchedExcluded.isNotEmpty) {
+      throw SourceFormatException(
+        excludedHadithFile,
+        'not found in the source: ${(unmatchedExcluded.toList()..sort()).map((k) => k.replaceFirst(':', ' ')).join(', ')}',
+      );
+    }
+    dailyCandidates.sort(
+      (a, b) => a.sortOrder != b.sortOrder
+          ? a.sortOrder.compareTo(b.sortOrder)
+          : a.number.compareTo(b.number),
+    );
+    final insDh = db.prepare(
+      'INSERT INTO daily_hadith VALUES (?, ?, ?, ?, ?, ?, ?)',
+    );
+    final defaultBooks = {'bukhari', 'muslim'};
+    for (final list in ['default', 'all']) {
+      final shuffled = seededShuffle([
+        for (final c in dailyCandidates)
+          if (list == 'all' || defaultBooks.contains(c.slug)) c,
+      ], dailySeed);
+      for (var i = 0; i < shuffled.length; i++) {
+        final m = shuffled[i].matan;
+        insDh.execute([
+          list,
+          i,
+          shuffled[i].id,
+          m.arabStart,
+          m.arabEnd,
+          m.trStart,
+          m.trEnd,
+        ]);
+      }
     }
     insDh.dispose();
 

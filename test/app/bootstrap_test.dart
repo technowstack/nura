@@ -12,6 +12,8 @@ import 'package:nura/app/core/theme/theme_mode_setting.dart';
 import 'package:nura/app/core/prayer_clock.dart';
 import 'package:nura/app/data/models/prayer_regions.dart';
 import 'package:nura/app/data/repositories/default_prayer_repository.dart';
+import 'package:nura/app/data/repositories/daily_content_repository.dart';
+import 'package:nura/app/data/repositories/daily_settings_store.dart';
 import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/prayer_repository.dart';
 import 'package:nura/app/services/online_service.dart';
@@ -25,6 +27,9 @@ import 'package:nura/app/data/sources/content_db_installer.dart';
 import 'package:nura/app/data/sources/setting_keys.dart';
 import 'package:nura/app/data/sources/user_database.dart';
 import 'package:nura/app/nura_app.dart';
+import 'package:nura/app/services/daily_link_router.dart';
+import 'package:nura/app/services/daily_refresher.dart';
+import 'package:nura/app/services/home_widget_service.dart';
 
 import '../support/fixture_db.dart';
 import '../support/fake_repositories.dart';
@@ -99,6 +104,15 @@ void main() {
     expect(Get.isRegistered<PrayerClock>(), isTrue);
   });
 
+  test('bootstrap registers the daily content services', () async {
+    await ready();
+    expect(Get.find<DailyContentRepository>(), isA<DailyContentRepository>());
+    expect(Get.find<DailySettingsStore>(), isA<DailySettingsStore>());
+    expect(Get.find<HomeWidgetService>(), isA<HomeWidgetService>());
+    expect(Get.find<DailyRefresher>(), isA<DailyRefresher>());
+    expect(Get.find<DailyLinkRouter>(), isA<DailyLinkRouter>());
+  });
+
   test('failed region load registers nothing', () async {
     final r = await bootstrap(
       installer: installer(),
@@ -108,6 +122,11 @@ void main() {
     expect(r, isA<BootstrapFailure>());
     expect(Get.isRegistered<PrayerRepository>(), isFalse);
     expect(Get.isRegistered<UserDatabase>(), isFalse);
+    expect(Get.isRegistered<DailyContentRepository>(), isFalse);
+    expect(Get.isRegistered<DailySettingsStore>(), isFalse);
+    expect(Get.isRegistered<HomeWidgetService>(), isFalse);
+    expect(Get.isRegistered<DailyRefresher>(), isFalse);
+    expect(Get.isRegistered<DailyLinkRouter>(), isFalse);
   });
 
   test('search worker starts after the hadith worker', () async {

@@ -1,5 +1,6 @@
 import 'package:sqlite3/sqlite3.dart';
 
+import '../../../content_pipeline/content_schema.dart';
 import '../../core/errors.dart';
 import '../models/hadith.dart';
 import '../models/hadith_book.dart';
@@ -9,7 +10,7 @@ import 'hadith_repository.dart';
 /// Empirical threshold from measuring the source JSON: 19 of 38,102 hadith are
 /// cut at 16,384 UTF-8 bytes; the next-lower Arabic is 14,833 bytes and the
 /// next-lower translation 16,092 bytes.
-const int sourceTruncationBytes = 16374;
+const int sourceTruncationBytes = kSourceTruncationBytes;
 
 class SqliteHadithRepository implements HadithRepository {
   SqliteHadithRepository(this._db);

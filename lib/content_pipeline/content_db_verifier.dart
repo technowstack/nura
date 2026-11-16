@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:sqlite3/sqlite3.dart';
@@ -7,6 +8,8 @@ import 'content_schema.dart';
 import 'content_version.dart';
 import 'expected_totals.dart';
 import 'hadith_source_parser.dart';
+import 'matan_extractor.dart';
+import 'meta_lists.dart';
 import 'quran_source_parser.dart';
 import 'text_normalizer.dart';
 import 'verification_report.dart';
@@ -16,6 +19,121 @@ export 'verification_report.dart';
 
 int _count(Database db, String sql, [List<Object?> params = const []]) =>
     db.select(sql, params).single.values.first as int;
+
+/// Checks `daily_ayah`: every ayah_id exists, `seq` is dense from 0 and no
+/// ayah appears twice.
+void _verifyDailyAyah(Database db, List<String> errors) {
+  var want = 0;
+  final seen = <int>{};
+  final rows = db.select(
+    'SELECT d.seq, d.ayah_id, a.id AS found FROM daily_ayah d '
+    'LEFT JOIN ayah a ON a.id = d.ayah_id ORDER BY d.seq',
+  );
+  for (final r in rows) {
+    final seq = r['seq'] as int;
+    final id = r['ayah_id'] as int;
+    if (r['found'] == null) errors.add('daily_ayah#$seq: ayah_id $id missing');
+    if (seq != want) errors.add('daily_ayah seq not dense: $seq != $want');
+    want = seq + 1;
+    if (!seen.add(id)) errors.add('daily_ayah#$seq: ayah_id $id appears twice');
+  }
+}
+
+/// Checks `daily_hadith` (spec 3.3): list membership, no excluded or
+/// truncated hadith, dense `seq`, offsets inside the text, and slices equal
+/// to the matan the rule yields when re-run on the original columns.
+void _verifyDailyHadith(
+  Database db,
+  Directory sourceRoot,
+  List<String> errors,
+) {
+  final excluded = readExcludedHadith(sourceRoot);
+  final next = <String, int>{};
+  final seenIds = <String>{};
+  final rowCounts = <String, int>{};
+  final rows = db.select(
+    'SELECT d.list, d.seq, d.hadith_id, d.arab_start, d.arab_end, d.tr_start, d.tr_end, '
+    'h.book_slug, h.number, h.arab, h.translation_id '
+    'FROM daily_hadith d JOIN hadith h ON h.id = d.hadith_id '
+    'ORDER BY d.list, d.seq',
+  );
+  if (rows.length != _count(db, 'SELECT COUNT(*) FROM daily_hadith')) {
+    errors.add('daily_hadith has rows pointing to missing hadith');
+  }
+  for (final r in rows) {
+    final list = r['list'] as String;
+    final seq = r['seq'] as int;
+    final key = '${r['book_slug']}:${r['number']}';
+    final at = 'daily_hadith $list#$seq ($key)';
+    final want = next[list] ?? 0;
+    if (seq != want) {
+      errors.add("daily_hadith $list seq not dense: $seq != $want");
+    }
+    next[list] = seq + 1;
+    rowCounts[list] = (rowCounts[list] ?? 0) + 1;
+    if (!seenIds.add('$list:${r['hadith_id']}')) {
+      errors.add('$at appears twice in the $list list');
+    }
+    if (list == 'default' &&
+        r['book_slug'] != 'bukhari' &&
+        r['book_slug'] != 'muslim') {
+      errors.add('$at is not Bukhari or Muslim but is in the default list');
+    }
+    if (excluded.contains(key)) errors.add('$at is an excluded hadith $key');
+    final arab = r['arab'] as String;
+    final tr = r['translation_id'] as String;
+    if (utf8.encode(arab).length >= kSourceTruncationBytes ||
+        utf8.encode(tr).length >= kSourceTruncationBytes) {
+      errors.add('$at is a truncated hadith $key');
+    }
+    final as = r['arab_start'] as int, ae = r['arab_end'] as int;
+    final ts = r['tr_start'] as int, te = r['tr_end'] as int;
+    if (as < 0 ||
+        as >= ae ||
+        ae > arab.length ||
+        ts < 0 ||
+        ts >= te ||
+        te > tr.length) {
+      errors.add('$at offsets outside the text or empty');
+      continue;
+    }
+    final m = extractMatan(arab, tr);
+    if (m == null) {
+      errors.add('$at does not pass the matan rule');
+    } else if (arab.substring(as, ae) !=
+            arab.substring(m.arabStart, m.arabEnd) ||
+        tr.substring(ts, te) != tr.substring(m.trStart, m.trEnd)) {
+      errors.add('$at slices differ from extractMatan');
+    }
+  }
+
+  // Completeness: each list holds every qualifying hadith, no fewer.
+  final qualifying = {'default': 0, 'all': 0};
+  for (final r in db.select(
+    'SELECT book_slug, number, arab, translation_id FROM hadith',
+  )) {
+    final arab = r['arab'] as String;
+    final tr = r['translation_id'] as String;
+    if (excluded.contains('${r['book_slug']}:${r['number']}') ||
+        utf8.encode(arab).length >= kSourceTruncationBytes ||
+        utf8.encode(tr).length >= kSourceTruncationBytes ||
+        extractMatan(arab, tr) == null) {
+      continue;
+    }
+    qualifying['all'] = (qualifying['all'] ?? 0) + 1;
+    if (r['book_slug'] == 'bukhari' || r['book_slug'] == 'muslim') {
+      qualifying['default'] = (qualifying['default'] ?? 0) + 1;
+    }
+  }
+  for (final e in qualifying.entries) {
+    final have = rowCounts[e.key] ?? 0;
+    if (have != e.value) {
+      errors.add(
+        'daily_hadith ${e.key} list has $have rows, ${e.value} qualify',
+      );
+    }
+  }
+}
 
 /// Checks [database] against the source JSON under [sourceRoot] (spec 3.4).
 VerificationReport verifyContentDb({
@@ -214,6 +332,9 @@ VerificationReport verifyContentDb({
         h.translation,
       );
     }
+
+    _verifyDailyAyah(db, errors);
+    _verifyDailyHadith(db, sourceRoot, errors);
 
     // 6. meta.source_checksums.
     final meta = db.select(

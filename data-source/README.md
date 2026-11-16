@@ -9,6 +9,8 @@ Folder ini **read-only** dan menjadi **sumber kebenaran** data konten Nura. Jang
 | Al-Qur'an (teks Arab, terjemahan Indonesia, tafsir) | `quran/` | Kementerian Agama RI (tafsir: "Aplikasi Quran Kementrian Agama Republik Indonesia") |
 | Hadis 9 kitab (teks Arab, terjemahan Indonesia) | `hadith/` | https://github.com/gadingnst/hadith-api (lisensi MIT), data asal tafsirq.com |
 | Wilayah jadwal sholat (34 provinsi, 517 kab/kota, nama persis dari API) | `meta/prayer_regions.json` | https://equran.id/api/v2/shalat (snapshot `fetched_at` 2026-11-15, dihasilkan `tool/fetch_prayer_regions.dart`) |
+| Pengecualian manual hadis harian (`[{"book": "bukhari", "number": 34}]`, awalnya `[]`) | `meta/daily_hadith_exclude.json` | Keputusan pemilik proyek (2026-11-15), dibaca `tool/build_content_db.dart` |
+| Daftar ayat harian SEMENTARA untuk uji widget (94:6, 2:286, 13:28; bukan kurasi final, Q9 masih terbuka) | `meta/daily_ayah.json` | Keputusan pemilik proyek (2026-11-15), dibaca `tool/build_content_db.dart` |
 
 ## Isi
 
@@ -35,7 +37,7 @@ Dari dalam folder `data-source/`:
 sha256sum -c CHECKSUMS.sha256
 ```
 
-Semua baris harus berstatus `OK` (124 file). Path di `CHECKSUMS.sha256` relatif terhadap folder ini.
+Semua baris harus berstatus `OK` (126 file). Path di `CHECKSUMS.sha256` relatif terhadap folder ini.
 
 ## Catatan keterbatasan
 

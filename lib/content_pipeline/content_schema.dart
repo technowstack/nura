@@ -1,6 +1,9 @@
-const int contentSchemaVersion = 1;
+const int contentSchemaVersion = 2;
 
-const int dailyHadithMaxLength = 400;
+/// Source texts at or above this many UTF-8 bytes were cut off at 16,384
+/// bytes in the source data (19 of 38,102 hadith); they never become daily
+/// content.
+const int kSourceTruncationBytes = 16374;
 
 /// Slug to display name, in `sort_order`.
 const Map<String, String> hadithBookNames = {
@@ -82,7 +85,13 @@ CREATE TABLE daily_ayah (
 )''',
   '''
 CREATE TABLE daily_hadith (
-  seq        INTEGER PRIMARY KEY,
-  hadith_id  INTEGER NOT NULL REFERENCES hadith(id)
+  list        TEXT    NOT NULL CHECK (list IN ('default','all')),
+  seq         INTEGER NOT NULL,
+  hadith_id   INTEGER NOT NULL REFERENCES hadith(id),
+  arab_start  INTEGER NOT NULL,
+  arab_end    INTEGER NOT NULL,
+  tr_start    INTEGER NOT NULL,
+  tr_end      INTEGER NOT NULL,
+  PRIMARY KEY (list, seq)
 )''',
 ];

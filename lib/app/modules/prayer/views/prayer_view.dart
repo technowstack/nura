@@ -76,7 +76,7 @@ class PrayerView extends GetView<PrayerController> {
           onChanged: controller.setSyncEnabled,
           title: const Text('Unduh jadwal sholat'),
           subtitle: const Text(
-            'Unduh jadwal sholat dari internet. Jadwal tersimpan di perangkat.',
+            'Jadwal diunduh per bulan dan tersimpan di perangkat.',
           ),
         ),
         ListTile(

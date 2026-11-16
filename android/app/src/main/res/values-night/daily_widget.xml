@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="daily_widget_light_visibility">2</integer>
+    <integer name="daily_widget_dark_visibility">0</integer>
+    <color name="daily_widget_surface">#FF161D1B</color>
+    <color name="daily_widget_text">#FFE2E4E1</color>
+</resources>

@@ -143,9 +143,17 @@ CREATE TABLE daily_ayah (
   ayah_id  INTEGER NOT NULL REFERENCES ayah(id)
 );
 
+-- Keputusan 2026-11-15 (Fase 6): dua daftar deterministik, offset matan dalam UTF-16 code unit
+-- (indeks String Dart) pada kolom asli hadith.arab dan hadith.translation_id; teks tidak disalin.
 CREATE TABLE daily_hadith (
-  seq        INTEGER PRIMARY KEY,
-  hadith_id  INTEGER NOT NULL REFERENCES hadith(id)
+  list        TEXT    NOT NULL CHECK (list IN ('default','all')),  -- default = Bukhari + Muslim, all = 9 kitab
+  seq         INTEGER NOT NULL,        -- 0..n-1 per daftar, urutan sudah diacak saat build
+  hadith_id   INTEGER NOT NULL REFERENCES hadith(id),
+  arab_start  INTEGER NOT NULL,
+  arab_end    INTEGER NOT NULL,
+  tr_start    INTEGER NOT NULL,
+  tr_end      INTEGER NOT NULL,
+  PRIMARY KEY (list, seq)
 );
 ```
 
@@ -157,8 +165,8 @@ Nama tampilan kitab hadis ditulis di skrip build sebagai konstanta, karena tidak
 - Field angka bertipe string di JSON Quran (`number`, `number_of_ayah`, kunci ayat) diubah ke `INTEGER`. Verifikasi membandingkan `toString()` hasilnya dengan string asli.
 - Teks Arab untuk indeks `*_fts`: hapus harakat (U+064B–U+065F, U+0670), tanda waqaf dan tanda Al-Qur'an (U+06D6–U+06ED), dan tatweel (U+0640). Normalisasi alif (أ إ آ ٱ → ا), ى → ي, ة → ه.
 - Teks terjemahan untuk indeks `*_fts`: huruf kecil, tanda baca diganti spasi, spasi beruntun dipadatkan.
-- `daily_ayah`: dibaca dari `meta/daily_ayah.json` (daftar pasangan surah dan ayat), diacak dengan seed tetap `20261109`. Jika file belum ada, tabel kosong dan fitur disembunyikan di aplikasi.
-- `daily_hadith`: semua hadis dengan `translation_length` ≤ 400 UTF-16 code unit (`String.length` Dart), diurutkan berdasarkan `(sort_order kitab, number)`, lalu diacak dengan seed tetap yang sama. Batas 400 adalah konstanta di skrip dan bisa diubah. Aturan ini sementara: Fase 6 menggantinya dengan seleksi berbasis matan (bagian 8.1), yang mengubah isi `daily_hadith` dan mungkin skemanya. Perubahan itu butuh persetujuan pemilik proyek saat itu (AGENTS.md).
+- `daily_ayah`: dibaca dari `meta/daily_ayah.json` (daftar pasangan surah dan ayat), diacak dengan seed tetap `20261109`. Jika file belum ada, tabel kosong dan fitur disembunyikan di aplikasi. Langkah pemilik: (1) simpan file di `data-source/meta/daily_ayah.json`; (2) dari folder `data-source/` jalankan `sha256sum meta/daily_ayah.json >> CHECKSUMS.sha256` (manifes dipelihara manual dengan `sha256sum`, lihat `data-source/README.md`; tanpa barisnya builder gagal dengan 'unlisted file'); (3) jalankan `tool/prepare_content.sh`.
+- `daily_hadith` (diputuskan 2026-11-15, menggantikan filter sementara 400 code unit): hanya hadis yang lolos aturan matan bagian 8.1 (termasuk syarat (e): tanpa tanda kutip di dalam isi matan), dalam dua daftar, `default` (Bukhari dan Muslim) dan `all` (9 kitab); tiap daftar diurutkan berdasarkan `(sort_order kitab, number)` lalu diacak dengan seed tetap `20261109`. Offset disimpan dalam UTF-16 code unit; pemotongan teks dilakukan di Dart, bukan `substr` SQLite. `data-source/meta/daily_hadith_exclude.json` (format `[{"book": "bukhari", "number": 34}]`, boleh kosong atau tidak ada) mengecualikan hadis secara manual; builder gagal bila entrinya tidak ada di sumber, dan `verify --full` memastikan tidak ada hadis yang dikecualikan atau terpotong (19 hadis, Q12) di `daily_hadith`, setiap offset berada di dalam teks, `seq` rapat dari 0, dan potongan dari kolom asli sama persis dengan matan hasil aturan yang dijalankan ulang oleh verifier. Format `daily_ayah.json`: `[{"surah": 94, "ayah": 6}]`; builder menolak pasangan yang tidak ada, duplikat, atau berformat salah.
 - Builder mengisi `ayah_fts` dan `hadith_fts` baris demi baris dengan `rowid` = `id` tabel utama, dan memasang `PRAGMA page_size = 16384` sebelum membuat tabel (file terkecil dari 4096/8192/16384).
 - `content.db` dihasilkan lokal oleh `tool/prepare_content.sh` dan tidak di-commit.
 - `meta.data_version` diturunkan dari `data-source/CHECKSUMS.sha256` (16 hex pertama sha256 byte manifest). Builder gagal jika manifest tidak ada. Tidak ada flag `--data-version`.
@@ -420,11 +428,10 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 - Ayat hari ini: `daily_ayah` dengan `seq = dayIndex mod count`. Jika tabel kosong, kartu dan widget ayat disembunyikan atau menampilkan keterangan.
 - Hadis hari ini: `daily_hadith` dengan `seq = dayIndex mod count`.
 - Yang ditampilkan adalah **matan** hasil ekstraksi, bukan hadis lengkap. Data tidak punya field matan terpisah, jadi: matan Arab adalah substring persis dari teks Arab (contoh Shahih Bukhari No. 34: dari "مَنْ يَقُمْ" sampai akhir), dan matan terjemahan adalah substring persis dari terjemahan (teks di dalam tanda kutip setelah "bersabda:", tanpa sanad). Keduanya harus bisa diekstrak bersih agar hadis lolos seleksi, dan ekstraksinya wajib diuji terhadap teks sumber.
-- Aturan seleksi lengkap ditetapkan di Fase 6: matan Arab dan terjemahan bisa diekstrak bersih, dan batas panjang matan (N).
-- Sumber hadis harian: secara default hanya Shahih Bukhari dan Shahih Muslim; pengguna bisa memperluasnya ke 9 kitab di Pengaturan. Cara memodelkannya (mis. filter per kitab saat membaca `daily_hadith`, atau urutan terpisah per setelan) ditetapkan di Fase 6 bersama perubahan skema yang butuh persetujuan pemilik proyek.
-- Sampai Fase 6, `daily_hadith` memakai filter sementara di bagian 3.3. Perubahan isi atau skema `daily_hadith` butuh persetujuan pemilik proyek.
+- Aturan seleksi (diputuskan 2026-11-15; N = 300): hadis bukan salah satu dari 19 yang terpotong, tidak ada di `daily_hadith_exclude.json`, dan lolos semuanya: (a) terjemahan: `shallallahu 'alaihi wasallam` pertama diikuti dalam ≤ 14 karakter oleh `bersabda: "` (atau tanda kutip lengkung), matan = isi antara tanda kutip pembuka itu dan tanda kutip terakhir, sesudah tanda kutip penutup hanya boleh spasi dan tanda baca penutup, tanpa `[` `]`, tanpa tanda kutip di dalamnya dan tanpa "bersabda:" kedua di dalamnya, minimal 10 karakter; (b) Arab: pada bentuk ternormalisasi matan dimulai tepat setelah `صلى الله عليه وسلم` pertama (melewati satu kata kerja ucap opsional) sampai akhir teks, minimal 10 karakter, offset dipetakan ke teks asli bervokal; (c) terjemahan matan ≤ 300 UTF-16 code unit dan Arab ≤ 300 karakter; (d) rasio panjang terjemahan/Arab antara 0,8 dan 3,0; (e) tidak ada tanda kutip (`"`, `“`, `”`) di dalam isi matan terjemahan, karena matan adalah satu kutipan utuh dan tanda kutip di dalamnya berarti dialog atau komentar (tanda kutip tunggal `'` tidak dihitung). Pada data: 1.141 hadis untuk `default` dan 4.544 untuk 9 kitab. Skrip `tool/` menghasilkan 50 sampel acak deterministik dari daftar `default` ke berkas markdown untuk diperiksa pemilik; pemeriksaan itu adalah syarat rilis.
+- Sumber hadis harian: secara default hanya Shahih Bukhari dan Shahih Muslim (daftar `default`); pengguna bisa memperluasnya ke 9 kitab (daftar `all`) di pengaturan harian, dengan keterangan "Kitab selain Bukhari dan Muslim memuat hadis dengan derajat yang beragam." saat memilih 9 kitab.
 - Rujukan: ayat `QS. <Nama Latin>: <ayat>` (mis. "QS. Asy-Syarh: 6") dan hadis `HR. <Kitab> No. <nomor>` (mis. "HR. Shahih Bukhari No. 34"). Nama kitab dari `hadithBookNames` di `lib/content_pipeline/content_schema.dart`.
-- Kartu Hadis di Beranda lebih sederhana daripada kartu Ayat. "Baca selengkapnya" menuju hadis lengkap dengan sanad (layar detail masuk putaran desain 2).
+- Kartu Hadis di Beranda lebih sederhana daripada kartu Ayat. Kartu dan widget selalu menampilkan rujukan (`HR. <Kitab> No. <nomor>` atau `QS. <Nama Latin>: <ayat>`); mengetuk rujukan atau "Baca selengkapnya" membuka hadis lengkap dengan sanad (layar detail masuk putaran desain 2), dan pada widget seluruh gambar adalah satu area ketuk menuju detail yang sama.
 - Hasilnya sama untuk semua pengguna di tanggal yang sama, selama isi `content.db` dan setelan sumber hadis sama (`content.version` sama). Pengguna yang memperluas sumber ke 9 kitab bisa melihat hadis yang berbeda dari setelan default.
 
 ### 8.2 Widget Android
@@ -432,8 +439,8 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 - Dua widget, "Ayat hari ini" dan "Hadis hari ini", lewat `DailyAyahWidgetProvider` dan `DailyHadithWidgetProvider`. Ukuran 4×2 dan 4×3 cell, dengan varian terang dan gelap. Provider native hanya menampilkan gambar.
 - Gambar dirender oleh Flutter karena font Arab LPMQ tidak bisa dipakai di RemoteViews. Flutter merender sesuai ukuran widget yang diminta Android (ukuran sebenarnya bergantung launcher).
 - Karena berupa gambar, widget statis: tanpa tombol di dalamnya, dan seluruh widget adalah satu area ketuk. Isinya label, matan Arab, terjemahan, dan rujukan. Teks yang melebihi ruang dipotong dengan elipsis (Arab 1 baris di 4×2 dan 2 baris di 4×3, terjemahan 1 dan 3 baris). Radius ±24 (widget Android 12+).
-- Strategi awal: saat aplikasi dibuka, `HomeWidgetService` merender dan menulis gambar untuk 7 tanggal ke depan ke penyimpanan `home_widget`. Setiap entri berisi tanggal, gambar, dan deep link. Detail (jumlah hari, ukuran gambar) ditetapkan di Fase 6.
-- Provider native memilih entri sesuai tanggal hari ini setiap kali di-update (`updatePeriodMillis` sekitar 3 jam, dan saat tanggal berganti lewat `ACTION_DATE_CHANGED`).
+- Strategi awal: saat aplikasi dibuka, `HomeWidgetService` merender dan menulis gambar untuk 7 tanggal ke depan ke penyimpanan `home_widget`. Setiap entri berisi tanggal, gambar, deep link, dan teks TalkBack (`description`, opsional). Penyegaran (`DailyRefresher`) berjalan setelah frame pertama, saat aplikasi dilanjutkan, saat tanggal lokal berganti (timer tengah malam Beranda), dan saat sumber hadis berubah (dipaksa). Perubahan setelan notifikasi menjadwalkan ulang notifikasi langsung; dilewati bila tanggal sama dengan penyegaran sukses terakhir. Detail kontrak penyimpanan ada di plan Fase 6.
+- Provider native memilih entri sesuai tanggal hari ini setiap kali di-update: `updatePeriodMillis` sekitar 3 jam, alarm tengah malam dari `home_widget` (`HomeWidgetScheduler`), serta siaran ubah ukuran, waktu, dan zona waktu. Setelah menulis gambar baru, aplikasi meminta provider menggambar ulang lewat `HomeWidget.updateWidget`.
 - Jika entri untuk hari ini tidak ada (aplikasi tidak dibuka lebih dari 7 hari), widget menampilkan "Buka Nura untuk memperbarui".
 - Ketuk widget membuka aplikasi di Detail Surah atau Detail Hadis lewat deep link `nura://ayah/<surah>/<ayat>` atau `nura://hadith/<slug>/<nomor>`.
 

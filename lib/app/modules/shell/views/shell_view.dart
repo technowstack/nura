@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../hadith_books/bindings/hadith_books_binding.dart';
 import '../../hadith_books/views/hadith_books_view.dart';
+import '../../home/bindings/home_binding.dart';
 import '../../home/home_view.dart';
 import '../../prayer/bindings/prayer_binding.dart';
 import '../../prayer/views/prayer_view.dart';
@@ -22,6 +23,7 @@ class ShellView extends StatelessWidget {
       QuranListBinding().dependencies();
       HadithBooksBinding().dependencies();
       PrayerBinding().dependencies();
+      HomeBinding().dependencies();
     },
     builder: (c) => Scaffold(
       // Tabs have no AppBar, so keep their top row out of the status bar.

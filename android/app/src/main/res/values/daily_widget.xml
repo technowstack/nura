@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- android:visibility enum index: 0 = visible, 2 = gone (not the View.GONE value). -->
+    <integer name="daily_widget_light_visibility">0</integer>
+    <integer name="daily_widget_dark_visibility">2</integer>
+    <!-- surfaceContainerLow and onSurface of the app theme. -->
+    <color name="daily_widget_surface">#FFF1F0EB</color>
+    <color name="daily_widget_text">#FF1A1C1B</color>
+</resources>

@@ -60,6 +60,13 @@ void main() {
     expect(plugin.cancelled, [202611150, 202611159]);
   });
 
+  test('cancelDaily cancels only daily ids', () async {
+    final plugin = FakePlugin()
+      ..pendingIds = [1, 202611150, 202611157, 999999999];
+    await FlutterLocalNotificationsScheduler(plugin).cancelDaily();
+    expect(plugin.cancelled, [202611157]);
+  });
+
   test('a failed init is not cached; the next call retries', () async {
     final plugin = FakePlugin()..failFirstInit = true;
     final s = FlutterLocalNotificationsScheduler(plugin);
