@@ -16,7 +16,7 @@ Keputusan yang sudah disepakati dan menjadi dasar spec ini:
 | D1 | Konten Al-Qur'an dan hadis dibundel sebagai SQLite read-only (`content.db`), dibuat saat build dari JSON di `data-source/`. |
 | D2 | Teks asli disalin byte demi byte. Normalisasi hanya di kolom pencarian terpisah. Verifikasi baris demi baris wajib lulus. |
 | D3 | Data pengguna di `user.db` yang terpisah. |
-| D4 | Fitur online (audio) opsional, mati secara default, lewat satu `OnlineService`. Audio yang sudah diunduh tetap bisa diputar saat sakelar mati. |
+| D4 | Fitur online (audio) opsional, mati secara default, lewat satu `OnlineService`. Audio hanya streaming (tanpa unduhan, keputusan 2026-11-16); sakelar mati menyembunyikan semua kontrol audio. |
 | D5 | Audio diambil per ayat dari satu penyedia API. |
 | D6 | Jadwal sholat diambil dari API per bulan dan disimpan. Izin unduh jadwal terpisah dari sakelar audio dan ditanyakan saat onboarding. |
 | D7 | Jika belum ada jadwal tersimpan dan offline, jadwal dihitung offline (paket `adhan`, parameter Kemenag) dan diberi label "perkiraan". |
@@ -262,6 +262,7 @@ CREATE TABLE prayer_month (
   PRIMARY KEY (provinsi, kabkota, year, month)
 );
 
+-- TIDAK DIPAKAI (keputusan 2026-11-16: audio hanya streaming). Tabel dibiarkan dari v1, tanpa migrasi.
 CREATE TABLE audio_download (
   qari_id      TEXT NOT NULL,
   surah_number INTEGER NOT NULL,
@@ -317,7 +318,7 @@ lib/
         user_repository.dart          setting, bookmark, last read
         prayer_repository.dart        API + cache + fallback perhitungan
         daily_content_repository.dart
-        audio_repository.dart         URL, unduhan, status
+        audio_repository.dart         URL audio per surah (cache sesi), tanpa unduhan
     services/
       online_service.dart        sakelar dan cek koneksi; gerbang semua request
       audio_player_service.dart  just_audio, antrian per ayat
@@ -341,7 +342,7 @@ android/app/src/main/kotlin/com/technowstack/nura/
 - **Al-Qur'an**: tab Surah, Juz, dan Bookmark beserta kolom cari, lalu Detail Surah. Tafsir dan pengaturan tampilan baca berupa bottom sheet.
 - **Hadis**: daftar kitab, lalu daftar hadis (paging 30 per halaman), lalu Detail Hadis.
 - **Sholat**: jadwal hari ini, pilihan lokasi, pengaturan notifikasi, label "perkiraan" jika sumbernya `calc`.
-- **Pengaturan**: tema, ukuran font, Fitur Online, qari, kelola unduhan audio, sinkron jadwal, sumber hadis harian (default Bukhari dan Muslim, bisa diperluas ke 9 kitab), Sumber & Atribusi.
+- **Pengaturan**: tema, ukuran font, Fitur Online, qari, sinkron jadwal, sumber hadis harian (default Bukhari dan Muslim, bisa diperluas ke 9 kitab), Sumber & Atribusi.
 - Route awal: Onboarding jika `onboarding_done` belum `true`, selain itu Beranda.
 
 ### 5.4 Inisialisasi aplikasi
@@ -382,11 +383,16 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 
 ### 6.2 Audio
 
-- Penyedia: satu API (kandidat equran.id, menunggu Q3). URL per ayat dibentuk di `audio_api_client.dart`.
-- Putar ayat: kalau file lokal ada, putar file lokal. Kalau tidak ada dan `audioEnabled` serta ada koneksi, streaming. Kalau tidak keduanya, tombol play tidak aktif dengan keterangan "Butuh internet".
-- Putar surah: antrian berurutan dari ayat yang dipilih sampai akhir surah. Ayat yang sedang diputar di-highlight dan daftar menggulir mengikutinya.
-- Unduh surah: unduh semua ayat secara berurutan ke `audio/<qari_id>/<surah>/<ayah>.mp3`, perbarui `audio_download` setelah setiap file, dan bisa dilanjutkan jika terputus. Unduhan hanya berjalan saat aplikasi terbuka (tanpa background download di v1).
-- Hapus unduhan: per surah atau semua, dari Pengaturan.
+Keputusan 2026-11-16: audio **hanya streaming**, tanpa unduhan.
+
+- Penyedia: equran.id v2 (diputuskan 2026-11-16, Q3 audio). URL audio per ayat diambil dari respons `GET https://equran.id/api/v2/surat/{id}` (`data.ayat[].audio`, peta id qari `01`–`06` ke URL), satu permintaan per surah per sesi dan disimpan di memori selama sesi. URL hanya diterima bila `https` dan berhost `cdn.equran.id` (`audio_api_client.dart`). Konfirmasi tertulis ke equran.id dianjurkan sebelum rilis, tidak wajib.
+- Streaming saja: aplikasi tidak menulis berkas audio ke penyimpanan perangkat (cache buffer bawaan pemutar boleh). Tidak ada unduhan, tidak ada layar kelola unduhan. Tabel `audio_download` (bagian 4) tidak dipakai.
+- Sakelar "Fitur Online" mati (default): nol permintaan jaringan audio dan semua kontrol audio tersembunyi. Sakelar nyala tetapi tidak ada koneksi: kontrol audio tampil nonaktif dengan keterangan "Butuh internet".
+- Putar ayat: streaming dari URL ayat qari terpilih (default `05` Misyari Rasyid Al-Afasi, disimpan di `qari_id`).
+- Putar surah: antrian berurutan dari ayat yang dipilih sampai akhir surah. Ayat yang sedang diputar di-highlight dan daftar menggulir mengikutinya. Tidak ada berkas Basmalah terpisah, jadi Basmalah tidak disisipkan.
+- Pemutaran hanya saat aplikasi terlihat dan dijeda saat aplikasi ke latar belakang (v1; tanpa `just_audio_background` dan tanpa izin foreground service).
+- Kegagalan streaming (koneksi putus, URL 404, respons janggal): pemutaran berhenti dengan snackbar, tidak ada layar error.
+- Atribusi di layar Sumber & Atribusi (Fase 8): "Audio: EQuran.id (sumber: Verse By Verse Quran)".
 
 ## 7. Jadwal Sholat
 
@@ -487,7 +493,7 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 | 4. Pencarian | FTS ayat dan hadis, layar pencarian, cuplikan hasil dan sorotan (bagian 5.5) | Pencarian di semua hadis di bawah 1 detik di perangkat uji |
 | 5. Jadwal sholat | Lokasi, API dan cache, fallback, layar Sholat, notifikasi | Jadwal tampil offline dan online, notifikasi berbunyi |
 | 6. Konten harian | Kartu di Beranda, aturan seleksi hadis (matan), widget Android (gambar dari Flutter), notifikasi harian | Widget berganti setiap hari tanpa membuka aplikasi, dan notifikasi harian muncul pada jam yang diatur |
-| 7. Fitur online | Sakelar, audio streaming, unduhan | Audio jalan online dan dari unduhan saat offline |
+| 7. Fitur online | Sakelar, audio streaming per ayat dan per surah | Audio jalan online; offline menampilkan "Butuh internet"; sakelar mati = nol permintaan |
 | 8. Polish | Onboarding, Sumber & Atribusi, ikon, uji perangkat, persiapan Play Store | Siap rilis, terblokir oleh Q6 dan Q7 |
 
 Fase 2 dan seterusnya membutuhkan Fase 1. Fase 5 membutuhkan snapshot `meta/prayer_regions.json` (dibuat `tool/fetch_prayer_regions.dart`). Fase 6 untuk ayat membutuhkan `daily_ayah.json`.
@@ -497,7 +503,7 @@ Fase 2 dan seterusnya membutuhkan Fase 1. Fase 5 membutuhkan snapshot `meta/pray
 | ID | Pertanyaan | Memengaruhi |
 |---|---|---|
 | Q2 | Nama aplikasi Nura (Play Store, DJKI) | Fase 8 |
-| Q3 | Penyedia API audio dan jadwal, beserta syarat penggunaannya. Jadwal: diputuskan equran.id v2 (2026-11-15), syarat layanan belum dibaca (wajib sebelum rilis). Audio belum diputuskan | Fase 7, rilis |
+| Q3 | Penyedia API audio dan jadwal, beserta syarat penggunaannya. Jadwal: diputuskan equran.id v2 (2026-11-15), syarat layanan belum dibaca (wajib sebelum rilis). Audio: diputuskan equran.id v2 (2026-11-16); konfirmasi tertulis ke equran.id dianjurkan sebelum rilis, tidak wajib | Fase 7, rilis |
 | Q4 | Sumber `surah_info.json`, `juz.json`, dan koordinat per kab/kota (pengganti `cities.json`; hanya untuk cadangan offline) | Fase 1 (revelation), 2 (juz), 5 |
 | Q5 | Nilai ihtiyat dan parameter perhitungan offline. Diputuskan 2026-11-15: +3 menit prayer, -3 menit terbit | Fase 5 |
 | Q6 | Ketentuan tashih LPMQ dan lisensi font Arab (LPMQ Isep Misbah; cadangan KFGQPC Uthmanic Script Hafs) | Rilis |
