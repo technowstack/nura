@@ -74,46 +74,71 @@ class DailyWidgetImage extends StatelessWidget {
 
   Widget _content(ThemeData theme, bool compact) {
     final scheme = theme.colorScheme;
+    final arabLines = compact ? 1 : 2;
+    final trLines = compact ? 1 : 3;
     return Builder(
-      builder: (context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            content.kind == DailyKind.ayah ? 'Ayat hari ini' : 'Hadis hari ini',
-            style: theme.textTheme.labelLarge?.copyWith(color: scheme.primary),
-          ),
-          const SizedBox(height: NuraSpace.s4),
-          SizedBox(
-            width: double.infinity,
-            child: Text(
-              content.arab,
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.right,
-              maxLines: compact ? 1 : 2,
-              overflow: TextOverflow.ellipsis,
-              style: context.nuraText.arabicCard.copyWith(
-                color: context.nuraColors.arabicText,
+      builder: (context) {
+        final arab = context.nuraText.arabicCard;
+        final tr = context.nuraText.translation;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              content.kind == DailyKind.ayah
+                  ? 'Ayat hari ini'
+                  : 'Hadis hari ini',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: scheme.primary,
               ),
             ),
-          ),
-          const SizedBox(height: NuraSpace.s4),
-          Text(
-            content.translation,
-            maxLines: compact ? 1 : 3,
-            overflow: TextOverflow.ellipsis,
-            style: context.nuraText.translation.copyWith(
-              color: scheme.onSurface,
+            const SizedBox(height: NuraSpace.s4),
+            // Device fonts (Arabic fallback) can have taller line metrics than
+            // the token line height: the strut pins the line height, and the
+            // flex shares shrink the two texts instead of overflowing.
+            Flexible(
+              flex: 44 * arabLines,
+              child: SizedBox(
+                width: double.infinity,
+                child: Text(
+                  content.arab,
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.right,
+                  maxLines: arabLines,
+                  overflow: TextOverflow.ellipsis,
+                  strutStyle: StrutStyle.fromTextStyle(
+                    arab,
+                    forceStrutHeight: true,
+                  ),
+                  style: arab.copyWith(color: context.nuraColors.arabicText),
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: NuraSpace.s4),
-          Text(
-            content.reference,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelLarge?.copyWith(color: scheme.primary),
-          ),
-        ],
-      ),
+            const SizedBox(height: NuraSpace.s4),
+            Flexible(
+              flex: 24 * trLines,
+              child: Text(
+                content.translation,
+                maxLines: trLines,
+                overflow: TextOverflow.ellipsis,
+                strutStyle: StrutStyle.fromTextStyle(
+                  tr,
+                  forceStrutHeight: true,
+                ),
+                style: tr.copyWith(color: scheme.onSurface),
+              ),
+            ),
+            const SizedBox(height: NuraSpace.s4),
+            Text(
+              content.reference,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: scheme.primary,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

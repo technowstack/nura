@@ -94,4 +94,28 @@ void main() {
     );
     expect(find.text('Hadis hari ini'), findsOneWidget);
   });
+
+  // The device font can have taller line metrics than the test font; the
+  // layout must absorb that instead of overflowing (seen on a device as
+  // "bottom overflowed by 10 pixels" in the hadith widget).
+  testWidgets('layout never overflows when it gets less height', (
+    tester,
+  ) async {
+    for (final size in const [Size(320, 138), Size(320, 200), Size(320, 226)]) {
+      await tester.pumpWidget(
+        _host(
+          DailyWidgetImage(
+            content: fakeHadith(3, HadithSource.defaultBm),
+            size: size,
+            brightness: Brightness.light,
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull, reason: '$size');
+      expect(
+        find.text(fakeHadith(3, HadithSource.defaultBm).reference),
+        findsOneWidget,
+      );
+    }
+  });
 }
