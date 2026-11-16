@@ -44,4 +44,39 @@ void main() {
     final s = OnlineService(db, probe: () async => throw StateError('x'));
     expect(await s.canReach(), isFalse);
   });
+
+  test('audio defaults to off and persists across reopen', () {
+    final s = OnlineService(db, probe: () async => true);
+    expect(s.audioEnabled, isFalse);
+    s.setAudioEnabled(true);
+    expect(db.getSetting(SettingKeys.onlineEnabled), 'true');
+    final reopened = UserDatabase.open(File('${tmp.path}/user.db'));
+    addTearDown(reopened.close);
+    expect(OnlineService(reopened).audioEnabled, isTrue);
+    OnlineService(reopened).setAudioEnabled(false);
+    expect(OnlineService(reopened).audioEnabled, isFalse);
+  });
+
+  test('audio changes are emitted once per actual change', () async {
+    final s = OnlineService(db, probe: () async => true);
+    final seen = <bool>[];
+    final sub = s.audioEnabledChanges.listen(seen.add);
+    s.setAudioEnabled(false);
+    s.setAudioEnabled(true);
+    s.setAudioEnabled(true);
+    s.setAudioEnabled(false);
+    await Future<void>.delayed(Duration.zero);
+    expect(seen, [true, false]);
+    await sub.cancel();
+  });
+
+  test('audio and prayer sync are independent', () {
+    final s = OnlineService(db, probe: () async => true);
+    s.setAudioEnabled(true);
+    expect(s.prayerSyncEnabled, isFalse);
+    s.setPrayerSyncEnabled(true);
+    s.setAudioEnabled(false);
+    expect(s.prayerSyncEnabled, isTrue);
+    expect(s.audioEnabled, isFalse);
+  });
 }

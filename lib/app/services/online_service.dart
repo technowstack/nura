@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../data/sources/setting_keys.dart';
@@ -22,6 +24,20 @@ class OnlineService {
 
   void setPrayerSyncEnabled(bool v) =>
       _db.setSetting(SettingKeys.prayerSyncEnabled, v ? 'true' : 'false');
+
+  final _audioChanges = StreamController<bool>.broadcast();
+
+  /// Audio streaming switch (`online_enabled`); off by default.
+  bool get audioEnabled => _db.getSetting(SettingKeys.onlineEnabled) == 'true';
+
+  /// Emits the new value once per actual change of [audioEnabled].
+  Stream<bool> get audioEnabledChanges => _audioChanges.stream;
+
+  void setAudioEnabled(bool v) {
+    if (v == audioEnabled) return;
+    _db.setSetting(SettingKeys.onlineEnabled, v ? 'true' : 'false');
+    _audioChanges.add(v);
+  }
 
   Future<bool> canReach() async {
     try {
