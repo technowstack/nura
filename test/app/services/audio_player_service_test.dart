@@ -47,6 +47,9 @@ void main() {
   late Completer<void>? httpGate;
   late AudioPlayerService svc;
   var reachable = true;
+  var probeCalls = 0;
+  Completer<void>? probeGate;
+  late StreamController<bool> conn;
   const totals = {94: 8, 1: 7};
 
   setUp(() {
@@ -55,7 +58,18 @@ void main() {
     db = UserDatabase.open(File('${tmp.path}/user.db'));
     addTearDown(db.close);
     reachable = true;
-    online = OnlineService(db, probe: () async => reachable);
+    probeCalls = 0;
+    probeGate = null;
+    conn = StreamController<bool>.broadcast(sync: true);
+    addTearDown(conn.close);
+    online = OnlineService(
+      db,
+      probe: () async {
+        probeCalls++;
+        await probeGate?.future;
+        return reachable;
+      },
+    );
     online.setAudioEnabled(true);
     settings = _Settings();
     engine = FakeAudioEngine();
@@ -75,6 +89,7 @@ void main() {
       settings,
       engine,
       lifecycle: life.stream,
+      connectivity: conn.stream,
     );
     addTearDown(life.close);
   });
@@ -87,6 +102,7 @@ void main() {
     expect(await svc.playFrom(94, 1, 8), PlayResult.switchedOff);
     expect(engine.calls, isEmpty);
     expect(requests, isEmpty);
+    expect(probeCalls, 0);
   });
 
   test('offline: needsInternet, no engine or http calls', () async {
@@ -284,10 +300,136 @@ void main() {
     expect(engine.disposed, isTrue);
     expect(engine.hasListener, isFalse);
     engine.emit(const IndexChanged(3));
-    expect(svc.state.value, const PlaybackPlaying(94, 1));
+    expect(svc.state.value, isA<PlaybackIdle>());
     db.setSetting(SettingKeys.onlineEnabled, 'true');
     online.setAudioEnabled(false);
     await tick();
-    expect(svc.state.value, const PlaybackPlaying(94, 1));
+    expect(svc.state.value, isA<PlaybackIdle>());
+  });
+
+  group('review fixes', () {
+    test('(a) background while connectivity probe pending cancels', () async {
+      probeGate = Completer();
+      final f = svc.playAyah(94, 1, 8);
+      await tick();
+      life.add(AppLifecycleState.paused);
+      probeGate?.complete();
+      await f;
+      expect(engine.calls, isNot(contains('play')));
+      expect(svc.state.value, isA<PlaybackIdle>());
+    });
+
+    test('(b) background while api fetch pending cancels', () async {
+      httpGate = Completer();
+      final f = svc.playAyah(94, 1, 8);
+      await tick();
+      await tick();
+      life.add(AppLifecycleState.hidden);
+      httpGate?.complete();
+      await f;
+      expect(engine.calls, isNot(contains('play')));
+      expect(svc.state.value, isA<PlaybackIdle>());
+    });
+
+    test('(c) old queue playing, new play pending, background', () async {
+      await svc.playFrom(94, 1, 8);
+      engine.calls.clear();
+      probeGate = Completer();
+      final f = svc.playAyah(94, 5, 8);
+      await tick();
+      life.add(AppLifecycleState.detached);
+      probeGate?.complete();
+      await f;
+      await tick();
+      expect(engine.calls, isNot(contains('play')));
+      expect(svc.state.value, isA<PlaybackIdle>());
+    });
+
+    test('inactive does not pause', () async {
+      await svc.playFrom(94, 1, 8);
+      life.add(AppLifecycleState.inactive);
+      await tick();
+      expect(svc.state.value, const PlaybackPlaying(94, 1));
+    });
+
+    test('connection lost while playing stops, online no resume', () async {
+      await svc.playFrom(94, 1, 8);
+      conn.add(false);
+      await tick();
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(svc.lastError.value, 'Koneksi terputus. Pemutaran dihentikan.');
+      engine.calls.clear();
+      conn.add(true);
+      await tick();
+      expect(engine.calls, isEmpty);
+      expect(svc.state.value, isA<PlaybackIdle>());
+    });
+
+    test('connection lost while loading cancels the start', () async {
+      httpGate = Completer();
+      final f = svc.playAyah(94, 1, 8);
+      await tick();
+      await tick();
+      conn.add(false);
+      httpGate?.complete();
+      await f;
+      expect(engine.calls, isNot(contains('play')));
+      expect(svc.lastError.value, isNotNull);
+    });
+
+    test('failed results set lastError, needsInternet does not', () async {
+      status = 404;
+      expect(await svc.playAyah(94, 1, 8), PlayResult.failed);
+      expect(svc.lastError.value, 'Audio tidak dapat diputar.');
+      status = 200;
+      await svc.playAyah(94, 1, 8);
+      expect(svc.lastError.value, isNull);
+      reachable = false;
+      expect(await svc.playAyah(94, 1, 8), PlayResult.needsInternet);
+      expect(svc.lastError.value, isNull);
+    });
+
+    test('engine pause/resume throwing: idle + lastError, no throw', () async {
+      await svc.playFrom(94, 1, 8);
+      engine.pauseError = StateError('p');
+      await svc.pause();
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(svc.lastError.value, isNotNull);
+      engine.pauseError = null;
+      await svc.playFrom(94, 1, 8);
+      await svc.pause();
+      engine.playError = StateError('r');
+      await svc.resume();
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(svc.lastError.value, isNotNull);
+    });
+
+    test('dispose sets state idle and cancels connectivity', () async {
+      await svc.playFrom(94, 1, 8);
+      await svc.dispose();
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(conn.hasListener, isFalse);
+    });
+
+    test('no file-writing APIs in audio sources', () {
+      final files = [
+        ...Directory('lib/app/services').listSync().whereType<File>().where(
+          (f) => f.uri.pathSegments.last.startsWith('audio_'),
+        ),
+        File('lib/app/data/sources/audio_api_client.dart'),
+      ];
+      expect(files.length, greaterThanOrEqualTo(3));
+      for (final f in files) {
+        final t = f.readAsStringSync();
+        for (final bad in [
+          'LockCachingAudioSource',
+          'File(',
+          'writeAs',
+          'audio_download',
+        ]) {
+          expect(t.contains(bad), isFalse, reason: '${f.path} has $bad');
+        }
+      }
+    });
   });
 }

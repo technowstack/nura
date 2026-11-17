@@ -8,6 +8,8 @@ class FakeAudioEngine implements AudioEngine {
   final _ctl = StreamController<EngineEvent>.broadcast(sync: true);
   Object? setUrlsError;
   Completer<void>? setUrlsGate;
+  Object? pauseError;
+  Object? playError;
   bool disposed = false;
 
   void emit(EngineEvent e) => _ctl.add(e);
@@ -26,10 +28,18 @@ class FakeAudioEngine implements AudioEngine {
   }
 
   @override
-  Future<void> play() async => calls.add('play');
+  Future<void> play() async {
+    calls.add('play');
+    final e = playError;
+    if (e != null) throw e;
+  }
 
   @override
-  Future<void> pause() async => calls.add('pause');
+  Future<void> pause() async {
+    calls.add('pause');
+    final e = pauseError;
+    if (e != null) throw e;
+  }
 
   @override
   Future<void> stop() async => calls.add('stop');

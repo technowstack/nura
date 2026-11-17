@@ -55,9 +55,12 @@ enum PlayResult { ok, switchedOff, needsInternet, failed }
 
 /// Streaming-only ayah playback behind the online audio switch.
 ///
-/// Failures after a play started (engine error mid-queue) are exposed through
-/// [lastError]: a short Indonesian message, cleared on the next successful
-/// play. The UI shows a snackbar when it becomes non-null.
+/// [lastError] (short Indonesian message, cleared on the next successful play;
+/// the UI shows a snackbar when it becomes non-null) is set for: engine
+/// failure mid-queue, connection lost while loading/playing, and a `failed`
+/// result (bad response, not found, qari without URLs, engine setup error).
+/// It is NOT set for `needsInternet` or `switchedOff` (the control shows
+/// 'Butuh internet' / is hidden).
 class AudioPlayerService {
   AudioPlayerService(
     this._online,
@@ -65,6 +68,7 @@ class AudioPlayerService {
     this._settings,
     this._engine, {
     Stream<AppLifecycleState>? lifecycle,
+    Stream<bool>? connectivity,
   }) {
     _subs.add(_engine.events.listen(_onEngineEvent));
     _subs.add(
@@ -72,12 +76,28 @@ class AudioPlayerService {
         if (!on) unawaited(stop());
       }),
     );
+    if (connectivity != null) {
+      _subs.add(
+        connectivity.listen((online) {
+          if (online || _disposed) return;
+          if (_busy || state.value is! PlaybackIdle) {
+            unawaited(stop());
+            lastError.value = 'Koneksi terputus. Pemutaran dihentikan.';
+          }
+        }),
+      );
+    }
     if (lifecycle != null) {
       _subs.add(
         lifecycle.listen((s) {
-          if (s == AppLifecycleState.resumed) return;
-          // Never auto-resume on return to the foreground.
-          if (state.value is PlaybackLoading) {
+          // `inactive` is ignored (Android overlays/dialogs).
+          if (s == AppLifecycleState.resumed ||
+              s == AppLifecycleState.inactive) {
+            return;
+          }
+          // Never auto-resume on return to the foreground. A play still in
+          // flight (even before state is loading) is cancelled.
+          if (_busy || state.value is PlaybackLoading) {
             unawaited(stop());
           } else {
             unawaited(pause());
@@ -88,6 +108,7 @@ class AudioPlayerService {
   }
 
   final OnlineService _online;
+  // True while a play call is between its gate and its engine start.
   final AudioApiClient _api;
   final AudioSettingsStore _settings;
   final AudioEngine _engine;
@@ -97,6 +118,7 @@ class AudioPlayerService {
   final Rx<PlaybackState> state = Rx<PlaybackState>(const PlaybackIdle());
   final Rx<String?> lastError = Rx<String?>(null);
 
+  bool _busy = false;
   int _gen = 0;
   int _surah = 0;
   int _firstAyah = 0;
@@ -117,6 +139,21 @@ class AudioPlayerService {
   }) async {
     if (_disposed || !_online.audioEnabled) return PlayResult.switchedOff;
     final gen = ++_gen;
+    _busy = true;
+    try {
+      return await _run(gen, surah, ayah, total, single);
+    } finally {
+      if (gen == _gen) _busy = false;
+    }
+  }
+
+  Future<PlayResult> _run(
+    int gen,
+    int surah,
+    int ayah,
+    int total,
+    bool single,
+  ) async {
     if (!await _online.canReach()) {
       return gen == _gen ? PlayResult.needsInternet : PlayResult.ok;
     }
@@ -160,6 +197,7 @@ class AudioPlayerService {
   PlayResult _giveUp(int gen, PlayResult r) {
     if (gen != _gen) return PlayResult.ok;
     state.value = const PlaybackIdle();
+    if (r == PlayResult.failed) lastError.value = 'Audio tidak dapat diputar.';
     return r;
   }
 
@@ -194,6 +232,7 @@ class AudioPlayerService {
 
   Future<void> _failMidQueue() async {
     _gen++;
+    _busy = false;
     _accepting = false;
     state.value = const PlaybackIdle();
     lastError.value = 'Audio gagal diputar. Coba lagi nanti.';
@@ -225,6 +264,7 @@ class AudioPlayerService {
 
   Future<void> stop() async {
     _gen++;
+    _busy = false;
     _accepting = false;
     final wasIdle = state.value is PlaybackIdle;
     state.value = const PlaybackIdle();
@@ -248,6 +288,8 @@ class AudioPlayerService {
   Future<void> dispose() async {
     _disposed = true;
     _gen++;
+    _busy = false;
+    state.value = const PlaybackIdle();
     for (final s in _subs) {
       await s.cancel();
     }
