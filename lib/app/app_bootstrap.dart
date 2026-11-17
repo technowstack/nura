@@ -6,14 +6,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import 'core/app_lifecycle_stream.dart';
 import 'core/widgets/daily_widget_image.dart';
 import 'core/prayer_clock.dart';
 import 'core/theme/theme_controller.dart';
+import 'data/repositories/audio_settings_store.dart';
 import 'data/repositories/daily_content_repository.dart';
 import 'data/repositories/daily_settings_store.dart';
 import 'data/repositories/default_prayer_repository.dart';
 import 'data/repositories/prayer_repository.dart';
 import 'data/repositories/prayer_store.dart';
+import 'data/repositories/sqlite_audio_settings_store.dart';
 import 'data/repositories/sqlite_daily_content_repository.dart';
 import 'data/repositories/sqlite_daily_settings_store.dart';
 import 'data/repositories/sqlite_prayer_store.dart';
@@ -25,6 +28,7 @@ import 'data/repositories/search_repository.dart';
 import 'data/repositories/sqlite_quran_repository.dart';
 import 'data/repositories/sqlite_user_repository.dart';
 import 'data/repositories/user_repository.dart';
+import 'data/sources/audio_api_client.dart';
 import 'data/sources/content_database.dart';
 import 'data/sources/content_db_installer.dart';
 import 'data/sources/prayer_adjustments.dart';
@@ -34,6 +38,8 @@ import 'data/sources/prayer_regions_source.dart';
 import 'data/sources/region_coordinates.dart';
 import 'data/sources/widget_storage.dart';
 import 'data/sources/user_database.dart';
+import 'services/audio_engine.dart';
+import 'services/audio_player_service.dart';
 import 'services/daily_link_router.dart';
 import 'services/daily_notifier.dart';
 import 'services/daily_refresher.dart';
@@ -76,19 +82,32 @@ Future<BootstrapResult> bootstrap({
       IsolateSearchRepository.start,
   @visibleForTesting
   Future<PrayerRegions> Function() loadRegions = _defaultLoadRegions,
+  @visibleForTesting AudioEngine Function() createAudioEngine =
+      JustAudioEngine.new,
 }) async {
   ContentDatabase? content;
   UserDatabase? user;
   IsolateHadithRepository? hadith;
   IsolateSearchRepository? search;
+  AudioPlayerService? player;
+  AppLifecycleStream? lifecycle;
   try {
     final file = await installer.ensureInstalled();
     content = ContentDatabase.open(file);
     hadith = await startHadith(content.file);
     search = await startSearch(content.file);
     user = UserDatabase.open(File('${dataDir.path}/user.db'));
-    final regions = await loadRegions();
     final online = OnlineService(user);
+    lifecycle = AppLifecycleStream();
+    player = AudioPlayerService(
+      online,
+      AudioApiClient(defaultPrayerHttp),
+      SqliteAudioSettingsStore(user),
+      createAudioEngine(),
+      lifecycle: lifecycle.stream,
+      connectivity: online.connectivityChanges,
+    );
+    final regions = await loadRegions();
     final store = SqlitePrayerStore(user);
     const clock = PrayerClock();
     Get.put<ContentDatabase>(content, permanent: true);
@@ -100,6 +119,11 @@ Future<BootstrapResult> bootstrap({
     Get.put<PrayerRegions>(regions, permanent: true);
     Get.put<PrayerClock>(clock, permanent: true);
     Get.put<OnlineService>(online, permanent: true);
+    Get.put<AudioSettingsStore>(
+      SqliteAudioSettingsStore(user),
+      permanent: true,
+    );
+    Get.put<AudioPlayerService>(player, permanent: true);
     Get.put<PrayerStore>(store, permanent: true);
     Get.put<PrayerRepository>(
       DefaultPrayerRepository(
@@ -183,6 +207,8 @@ Future<BootstrapResult> bootstrap({
     FlutterError.reportError(
       FlutterErrorDetails(exception: e, stack: st, library: 'nura bootstrap'),
     );
+    await lifecycle?.close();
+    await player?.dispose();
     await hadith?.close();
     await search?.close();
     content?.close();
