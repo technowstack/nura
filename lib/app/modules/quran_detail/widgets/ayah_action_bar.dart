@@ -48,9 +48,9 @@ class AyahActionBar extends StatelessWidget {
       ),
       AyahAudioState.playing => IconButton(
         onPressed: onAudio,
-        tooltip: 'Jeda ayat',
+        tooltip: 'Jeda',
         constraints: box,
-        icon: const Icon(Icons.pause_rounded, semanticLabel: 'Jeda ayat'),
+        icon: const Icon(Icons.pause_rounded, semanticLabel: 'Jeda'),
       ),
       AyahAudioState.ready || AyahAudioState.paused => IconButton(
         onPressed: onAudio,

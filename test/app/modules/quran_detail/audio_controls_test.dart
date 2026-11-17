@@ -175,7 +175,7 @@ void main() {
     online.setAudioEnabled(false);
     await pumpPage(t);
     expect(find.byTooltip('Putar ayat'), findsNothing);
-    expect(find.byTooltip('Jeda ayat'), findsNothing);
+    expect(find.byTooltip('Jeda'), findsNothing);
     expect(find.byTooltip('Putar dari sini'), findsNothing);
     expect(find.byTooltip('Butuh internet'), findsNothing);
     expect(find.text('Putar surah'), findsNothing);
@@ -193,17 +193,17 @@ void main() {
     await settle(t);
     expect(engine.queues.single, [_u('05', 94, 1)]);
     expect(playingCard(t), 1);
-    expect(find.byTooltip('Jeda ayat'), findsOneWidget);
+    expect(find.byTooltip('Jeda'), findsOneWidget);
   });
 
   testWidgets('tap playing pauses, tap again resumes', (t) async {
     await pumpPage(t);
     await t.tap(play(2));
     await settle(t);
-    await t.tap(find.byTooltip('Jeda ayat'));
+    await t.tap(find.byTooltip('Jeda'));
     await settle(t);
     expect(player.state.value, const PlaybackPaused(94, 2));
-    expect(find.byTooltip('Jeda ayat'), findsNothing);
+    expect(find.byTooltip('Jeda'), findsNothing);
     await t.tap(play(2));
     await settle(t);
     expect(player.state.value, const PlaybackPlaying(94, 2));
@@ -215,7 +215,7 @@ void main() {
     await player.playAyah(1, 2, 3);
     await settle(t);
     expect(playingCard(t), isNull);
-    expect(find.byTooltip('Jeda ayat'), findsNothing);
+    expect(find.byTooltip('Jeda'), findsNothing);
     expect(find.byTooltip('Putar ayat'), findsWidgets);
   });
 
