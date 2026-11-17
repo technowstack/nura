@@ -165,7 +165,7 @@ void main() {
       expect(requests.length, 2);
       svc.onQariChanged();
       await svc.playAyah(94, 1, 8);
-      expect(requests.length, 3);
+      expect(requests.length, 2);
     },
   );
 
@@ -266,14 +266,14 @@ void main() {
     },
   );
 
-  test('qari change stops playback and clears the cache', () async {
+  test('qari change stops playback, keeps the cache', () async {
     await svc.playFrom(94, 1, 8);
     svc.onQariChanged();
     await tick();
     expect(svc.state.value, isA<PlaybackIdle>());
     settings.id = '01';
     await svc.playAyah(94, 1, 8);
-    expect(requests.length, 2);
+    expect(requests.length, 1);
     expect(engine.queues.last, [_u('01', 94, 1)]);
   });
 
@@ -402,6 +402,17 @@ void main() {
       await svc.resume();
       expect(svc.state.value, isA<PlaybackIdle>());
       expect(svc.lastError.value, isNotNull);
+    });
+
+    test('platform pause moves state to paused', () async {
+      await svc.playFrom(94, 2, 8);
+      engine.emit(const PausedByPlatform());
+      expect(svc.state.value, const PlaybackPaused(94, 2));
+      engine.calls.clear();
+      life.add(AppLifecycleState.paused);
+      await tick();
+      expect(engine.calls, ['pause']);
+      expect(svc.state.value, const PlaybackPaused(94, 2));
     });
 
     test('dispose sets state idle and cancels connectivity', () async {

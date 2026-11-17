@@ -108,7 +108,6 @@ class AudioPlayerService {
   }
 
   final OnlineService _online;
-  // True while a play call is between its gate and its engine start.
   final AudioApiClient _api;
   final AudioSettingsStore _settings;
   final AudioEngine _engine;
@@ -118,6 +117,7 @@ class AudioPlayerService {
   final Rx<PlaybackState> state = Rx<PlaybackState>(const PlaybackIdle());
   final Rx<String?> lastError = Rx<String?>(null);
 
+  // True while a play call is between its gate and its engine start.
   bool _busy = false;
   int _gen = 0;
   int _surah = 0;
@@ -223,6 +223,9 @@ class AudioPlayerService {
         if (s is PlaybackLoading || s is PlaybackPlaying) {
           state.value = PlaybackPlaying(_surah, _firstAyah + index);
         }
+      case PausedByPlatform():
+        final s = state.value;
+        if (s is PlaybackPlaying) state.value = PlaybackPaused(s.surah, s.ayah);
       case Completed():
         state.value = const PlaybackIdle();
       case Failed():
@@ -241,6 +244,14 @@ class AudioPlayerService {
 
   Future<void> pause() async {
     final s = state.value;
+    if (s is PlaybackPaused) {
+      // Already paused (maybe by the platform): still make sure the engine
+      // will not resume by itself when audio focus returns.
+      try {
+        await _engine.pause();
+      } catch (_) {}
+      return;
+    }
     if (s is! PlaybackPlaying) return;
     state.value = PlaybackPaused(s.surah, s.ayah);
     try {
@@ -273,7 +284,7 @@ class AudioPlayerService {
 
   /// Task 4 calls this after the qari setting changed.
   void onQariChanged() {
-    _cache.clear();
+    // The cached SurahAudio already holds every qari; only playback stops.
     unawaited(stop());
   }
 

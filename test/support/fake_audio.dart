@@ -19,7 +19,7 @@ class FakeAudioEngine implements AudioEngine {
   Stream<EngineEvent> get events => _ctl.stream;
 
   @override
-  Future<void> setUrls(List<Uri> urls, {int initialIndex = 0}) async {
+  Future<void> setUrls(List<Uri> urls) async {
     calls.add('setUrls');
     queues.add(urls);
     await setUrlsGate?.future;
