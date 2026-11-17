@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../data/sources/setting_keys.dart';
@@ -11,17 +13,43 @@ Future<bool> connectivityProbe() async {
 
 /// Gate for the optional online features.
 class OnlineService {
-  OnlineService(this._db, {Future<bool> Function()? probe})
-    : _probe = probe ?? connectivityProbe;
+  OnlineService(
+    this._db, {
+    Future<bool> Function()? probe,
+    Stream<List<ConnectivityResult>>? connectivity,
+  }) : _probe = probe ?? connectivityProbe,
+       _connectivity = connectivity;
 
   final UserDatabase _db;
   final Future<bool> Function() _probe;
+  final Stream<List<ConnectivityResult>>? _connectivity;
+
+  /// Emits true when any network is available, false when none. Created
+  /// lazily so tests never touch the platform channel.
+  Stream<bool> get connectivityChanges =>
+      (_connectivity ?? Connectivity().onConnectivityChanged).map(
+        (r) => r.any((c) => c != ConnectivityResult.none),
+      );
 
   bool get prayerSyncEnabled =>
       _db.getSetting(SettingKeys.prayerSyncEnabled) == 'true';
 
   void setPrayerSyncEnabled(bool v) =>
       _db.setSetting(SettingKeys.prayerSyncEnabled, v ? 'true' : 'false');
+
+  final _audioChanges = StreamController<bool>.broadcast();
+
+  /// Audio streaming switch (`online_enabled`); off by default.
+  bool get audioEnabled => _db.getSetting(SettingKeys.onlineEnabled) == 'true';
+
+  /// Emits the new value once per actual change of [audioEnabled].
+  Stream<bool> get audioEnabledChanges => _audioChanges.stream;
+
+  void setAudioEnabled(bool v) {
+    if (v == audioEnabled) return;
+    _db.setSetting(SettingKeys.onlineEnabled, v ? 'true' : 'false');
+    _audioChanges.add(v);
+  }
 
   Future<bool> canReach() async {
     try {

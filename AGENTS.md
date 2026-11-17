@@ -52,6 +52,7 @@ Catatan jalur: `docs/design/HANDOFF-flutter.md` menyebut `lib/core/theme/`. Di p
 - Model bersifat immutable dan non-nullable untuk field yang selalu ada.
 - Query besar (daftar hadis, pencarian) memakai paging dengan `LIMIT`/`OFFSET` atau keyset.
 - Fitur online: periksa `OnlineService.isEnabled` dan koneksi. Jika tidak tersedia, sembunyikan kontrol atau tampilkan keterangan. Jangan lempar error ke UI.
+- Setiap klien HTTP wajib punya minimal satu test terhadap transport asli (server loopback `HttpServer`, tanpa internet), bukan hanya HTTP tiruan. Sebab: klien audio Fase 7 lulus semua test dengan HTTP tiruan tetapi memakai transport yang selalu POST, dan di perangkat setiap pemutaran gagal (HTTP 405). Test itu harus memeriksa metode, header, dan penanganan status pada transport yang benar-benar dipakai produksi.
 
 ## Gaya Kode
 

@@ -16,6 +16,8 @@ import 'package:nura/app/data/repositories/daily_content_repository.dart';
 import 'package:nura/app/data/repositories/daily_settings_store.dart';
 import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/prayer_repository.dart';
+import 'package:nura/app/services/audio_player_service.dart';
+import 'package:nura/app/data/repositories/audio_settings_store.dart';
 import 'package:nura/app/services/online_service.dart';
 import 'package:nura/app/data/repositories/isolate_hadith_repository.dart';
 import 'package:nura/app/data/repositories/isolate_search_repository.dart';
@@ -31,6 +33,7 @@ import 'package:nura/app/services/daily_link_router.dart';
 import 'package:nura/app/services/daily_refresher.dart';
 import 'package:nura/app/services/home_widget_service.dart';
 
+import '../support/fake_audio.dart';
 import '../support/fixture_db.dart';
 import '../support/fake_repositories.dart';
 
@@ -111,6 +114,26 @@ void main() {
     expect(Get.find<HomeWidgetService>(), isA<HomeWidgetService>());
     expect(Get.find<DailyRefresher>(), isA<DailyRefresher>());
     expect(Get.find<DailyLinkRouter>(), isA<DailyLinkRouter>());
+  });
+
+  test('bootstrap registers the audio services', () async {
+    await ready();
+    expect(Get.find<AudioPlayerService>(), isA<AudioPlayerService>());
+    expect(Get.find<AudioSettingsStore>(), isA<AudioSettingsStore>());
+  });
+
+  test('failed bootstrap disposes the audio engine, registers nothing', () async {
+    final engine = FakeAudioEngine();
+    final r = await bootstrap(
+      installer: installer(),
+      dataDir: tmp,
+      createAudioEngine: () => engine,
+      loadRegions: () async => throw StateError('boom'),
+    );
+    expect(r, isA<BootstrapFailure>());
+    expect(engine.disposed, isTrue);
+    expect(Get.isRegistered<AudioPlayerService>(), isFalse);
+    expect(Get.isRegistered<AudioSettingsStore>(), isFalse);
   });
 
   test('failed region load registers nothing', () async {

@@ -44,10 +44,10 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 
 ### 5.2 Al-Qur'an (online, opsional)
 - Sakelar "Fitur Online" di Pengaturan, **mati secara default**.
-- Saat menyala: audio murottal per ayat dan per surah bisa diputar streaming atau diunduh per surah.
-- Audio yang sudah diunduh bisa diputar tanpa internet.
-- Saat sakelar mati atau tidak ada koneksi, kontrol audio disembunyikan atau diberi keterangan. Aplikasi tidak boleh error.
-- Hanya satu penyedia API audio yang dipakai.
+- Saat menyala: audio murottal per ayat dan per surah diputar **streaming**. Tidak ada unduhan dan aplikasi tidak menulis berkas audio ke penyimpanan (keputusan 2026-11-16).
+- Sakelar mati: nol permintaan jaringan audio dan semua kontrol audio tersembunyi. Sakelar nyala tetapi tidak ada koneksi: kontrol tampil dengan keterangan "Butuh internet". Aplikasi tidak boleh error.
+- Pemutaran hanya saat aplikasi terlihat, dijeda di latar belakang.
+- Hanya satu penyedia API audio yang dipakai: equran.id v2 (sumber audio: Verse By Verse Quran).
 
 ### 5.3 Hadis (offline)
 - Daftar 9 kitab: Bukhari, Muslim, Abu Daud, Tirmidzi, Nasai, Ibnu Majah, Ahmad, Malik, Darimi.
@@ -106,7 +106,7 @@ tool/verify_content_db.dart  verifikasi baris demi baris terhadap JSON
 
 assets/db/content.db         hasil konversi, dibundel ke app, dibuka READ-ONLY
 
-(di perangkat) user.db       bookmark, last read, pengaturan, status unduhan audio
+(di perangkat) user.db       bookmark, last read, pengaturan
 ```
 
 ### 7.2 Integritas data
@@ -161,7 +161,7 @@ Pakai `sqlite3` dan `sqlite3_flutter_libs` (bukan `sqflite`). Library SQLite dib
 |---|---|---|
 | Teks Arab, terjemahan, dan tafsir Al-Qur'an | Kementerian Agama RI | Perlu cek ketentuan tashih LPMQ untuk mushaf digital |
 | Hadis 9 kitab | github.com/gadingnst/hadith-api (MIT), data asal tafsirq.com | Lisensi MIT mencakup repo. Status lisensi teks terjemahan dari sumber asal perlu dikonfirmasi |
-| Audio murottal | API pihak ketiga (belum dipilih) | Perlu cek syarat penggunaan |
+| Audio murottal | equran.id v2 (`/api/v2/surat/{id}`; sumber audio: Verse By Verse Quran) | Diputuskan 2026-11-16. Syarat layanan dibaca (2026-11-16); konfirmasi tertulis dianjurkan sebelum rilis. Atribusi di Sumber & Atribusi |
 | Jadwal sholat (API) | equran.id v2 (`https://equran.id/api/v2/shalat`, dokumentasi `https://equran.id/apidev/shalat`); diputuskan | Syarat layanan belum dibaca: wajib dibaca sebelum rilis |
 | Info surah, juz, kota | Belum dipilih | Perlu sumber dengan lisensi jelas |
 | Daftar kurasi ayat harian | Disusun pemilik proyek | Menunggu daftar (Q9) |
@@ -180,7 +180,7 @@ Urutan fase mengikuti spec desain bagian 11.
 4. **Pencarian:** FTS ayat dan hadis, cuplikan hasil dan sorotan kata cocok.
 5. **Jadwal sholat:** lokasi, API dan cache, fallback perhitungan, notifikasi.
 6. **1 Hari 1 Ayat/Hadis:** kartu di aplikasi, aturan seleksi hadis (matan), widget Android (gambar dari Flutter), dan notifikasi harian.
-7. **Fitur online:** sakelar, audio streaming dan unduhan.
+7. **Fitur online:** sakelar dan audio streaming.
 8. **Polish dan rilis:** onboarding, atribusi, ikon, uji di perangkat, Play Store.
 
 Tanggal target belum ditetapkan.
@@ -189,7 +189,7 @@ Tanggal target belum ditetapkan.
 
 1. ~~**Application ID Android.**~~ Diputuskan: `com.technowstack.nura` (lihat bagian 4).
 2. **Nama aplikasi.** Nura masih perlu dicek di Play Store dan DJKI.
-3. **Penyedia API audio dan jadwal sholat.** Jadwal sholat: diputuskan equran.id v2 (syarat layanan belum dibaca; wajib sebelum rilis). Audio: kandidat equran.id, belum diputuskan.
+3. **Penyedia API audio dan jadwal sholat.** Jadwal sholat: diputuskan equran.id v2 (syarat layanan belum dibaca; wajib sebelum rilis). Audio: diputuskan equran.id v2 (2026-11-16), hanya streaming.
 4. **Sumber data meta** (info surah, juz, kota) dan transliterasi.
 5. **Parameter perhitungan offline** (cadangan jadwal sholat, termasuk ihtiyat). Perlu diverifikasi dengan jadwal Kemenag.
 6. **Ketentuan tashih LPMQ** untuk Al-Qur'an digital, dan **lisensi font Arab**: LPMQ Isep Misbah (cadangan KFGQPC Uthmanic Script Hafs). Lisensi kedua font wajib dicek sebelum rilis. LPMQ diambil dari sumber resmi (lajnah.kemenag.go.id/unduhan) dan tanggal unduh dicatat di catatan rilis.

@@ -26,18 +26,27 @@ final _unknownProvince = RegExp(r'^Provinsi ".*" tidak ditemukan');
 
 const _maxBodyBytes = 1 << 20;
 
-/// Default transport: one POST with a JSON body. [timeout] bounds connect,
-/// response headers and the body read each; the body is capped at 1 MB.
-/// Throws [TimeoutException], [IOException] or [FormatException] (invalid
-/// UTF-8 or oversize body); [PrayerApiClient] maps them.
+/// Default transport of the prayer API: one POST with a JSON body.
 Future<({int status, String body})> defaultPrayerHttp(
+  Uri url, {
+  String? jsonBody,
+  Duration timeout = const Duration(seconds: 15),
+}) => httpRequest('POST', url, jsonBody: jsonBody, timeout: timeout);
+
+/// One HTTP request with [method] (the audio API is GET-only, the prayer API
+/// POST-only). [timeout] bounds connect, response headers and the body read
+/// each; the body is capped at 1 MB. Throws [TimeoutException],
+/// [IOException] or [FormatException] (invalid UTF-8 or oversize body); the
+/// API clients map them.
+Future<({int status, String body})> httpRequest(
+  String method,
   Uri url, {
   String? jsonBody,
   Duration timeout = const Duration(seconds: 15),
 }) async {
   final client = HttpClient()..connectionTimeout = timeout;
   try {
-    final req = await client.postUrl(url);
+    final req = await client.openUrl(method, url);
     req.headers.contentType = ContentType.json;
     if (jsonBody != null) req.write(jsonBody);
     final res = await req.close().timeout(timeout);
