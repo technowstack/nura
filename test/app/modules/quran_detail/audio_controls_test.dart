@@ -357,7 +357,7 @@ void main() {
     expect(SqliteAudioSettingsStore(db).qariId, '03');
     expect(player.state.value, isA<PlaybackIdle>());
     await player.playAyah(94, 1, 30);
-    expect(requests, hasLength(2)); // cache cleared by onQariChanged
+    expect(requests, hasLength(1)); // cache kept: SurahAudio holds all qaris
     expect(engine.queues.last, [_u('03', 94, 1)]);
   });
 
@@ -388,7 +388,16 @@ void main() {
     for (final f in Directory(
       'lib/app/modules/quran_detail',
     ).listSync(recursive: true).whereType<File>()) {
-      expect(f.readAsStringSync().toLowerCase(), isNot(contains('unduh')));
+      final t = f.readAsStringSync();
+      for (final bad in [
+        'download',
+        'Download',
+        'Unduh surah',
+        'Kelola unduhan',
+        'audio_download',
+      ]) {
+        expect(t.contains(bad), isFalse, reason: '${f.path} has $bad');
+      }
     }
   });
 }

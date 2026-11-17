@@ -318,7 +318,7 @@ lib/
         user_repository.dart          setting, bookmark, last read
         prayer_repository.dart        API + cache + fallback perhitungan
         daily_content_repository.dart
-        audio_repository.dart         URL audio per surah (cache sesi), tanpa unduhan
+        (URL audio datang dari AudioApiClient dan di-cache sesi di AudioPlayerService; tanpa unduhan)
     services/
       online_service.dart        sakelar dan cek koneksi; gerbang semua request
       audio_player_service.dart  just_audio, antrian per ayat

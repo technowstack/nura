@@ -120,7 +120,7 @@ class _ReadingSettingsSheet extends StatelessWidget {
                 title: const Text('Fitur Online'),
                 subtitle: const Text(
                   'Audio murottal diputar lewat internet (streaming), '
-                  'tanpa disimpan di perangkat. Mati secara bawaan.',
+                  'tanpa unduhan. Mati secara bawaan.',
                 ),
                 value: audioOn,
                 onChanged: controller.setAudioEnabled,
