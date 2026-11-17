@@ -203,8 +203,6 @@ class QuranDetailController extends GetxController with WidgetsBindingObserver {
     await _start(ayah, (total) => player.playFrom(args.surah, ayah, total));
   }
 
-  Future<void> stopAudio() async => _player?.stop();
-
   Future<void> _start(
     int ayah,
     Future<PlayResult> Function(int total) play,
