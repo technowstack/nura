@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/ui_state.dart';
+import '../../../data/models/qari.dart';
 import '../controllers/quran_detail_controller.dart';
 
 Future<void> showReadingSettingsSheet(
@@ -45,6 +46,8 @@ class _ReadingSettingsSheet extends StatelessWidget {
           final prefs = controller.prefs.value;
           final mode = theme.mode.value;
           final s = controller.state.value;
+          final audioOn = controller.audioVisible.value;
+          final qariId = controller.qariId.value;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -107,6 +110,37 @@ class _ReadingSettingsSheet extends StatelessWidget {
                   ButtonSegment(value: ThemeMode.dark, label: Text('Gelap')),
                 ],
               ),
+              const SizedBox(height: NuraSpace.s16),
+              Semantics(
+                header: true,
+                child: Text('Audio', style: text.titleSmall),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Fitur Online'),
+                subtitle: const Text(
+                  'Audio murottal diputar lewat internet (streaming), '
+                  'tanpa disimpan di perangkat. Mati secara bawaan.',
+                ),
+                value: audioOn,
+                onChanged: controller.setAudioEnabled,
+              ),
+              if (audioOn) ...[
+                Text('Qari', style: text.labelLarge),
+                for (final q in kQaris)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    minTileHeight: 48,
+                    title: Text(q.name),
+                    selected: q.id == qariId,
+                    trailing: Icon(
+                      q.id == qariId
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    onTap: () => controller.setQari(q.id),
+                  ),
+              ],
             ],
           );
         }),

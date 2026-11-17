@@ -82,8 +82,8 @@ Future<BootstrapResult> bootstrap({
       IsolateSearchRepository.start,
   @visibleForTesting
   Future<PrayerRegions> Function() loadRegions = _defaultLoadRegions,
-  @visibleForTesting AudioEngine Function() createAudioEngine =
-      JustAudioEngine.new,
+  @visibleForTesting
+  AudioEngine Function() createAudioEngine = JustAudioEngine.new,
 }) async {
   ContentDatabase? content;
   UserDatabase? user;

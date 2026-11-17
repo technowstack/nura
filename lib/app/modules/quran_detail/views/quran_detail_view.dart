@@ -63,6 +63,15 @@ class QuranDetailView extends GetView<QuranDetailController> {
           final marked = c.bookmarked.toSet();
           final prefs = c.prefs.value;
           final lastRead = c.lastReadAyah.value;
+          // Computed here (not in itemBuilder) so audio changes rebuild.
+          final content = c.state.value;
+          final audio = content is UiData<SurahContent>
+              ? [
+                  for (final a in content.value.ayahs)
+                    c.audioStateOf(a.ayahNumber),
+                ]
+              : const <AyahAudioState>[];
+          final playing = c.playingAyah.value;
           return switch (c.state.value) {
             UiLoading() => const Center(child: CircularProgressIndicator()),
             UiEmpty() => const EmptyState(title: 'Ayat belum tersedia'),
@@ -84,6 +93,10 @@ class QuranDetailView extends GetView<QuranDetailController> {
                       surah: value.surah,
                       basmalah: value.basmalah,
                       showBismillah: n != 1 && n != 9,
+                      audio: audio.isEmpty
+                          ? AyahAudioState.hidden
+                          : audio.first,
+                      onPlaySurah: c.playSurah,
                     ),
                   );
                 }
@@ -93,6 +106,10 @@ class QuranDetailView extends GetView<QuranDetailController> {
                   bookmarked: marked.contains(ayah.ayahNumber),
                   lastRead: ayah.ayahNumber == lastRead,
                   prefs: prefs,
+                  playing: ayah.ayahNumber == playing,
+                  audio: audio[i - 1],
+                  onAudio: () => c.toggleAyahAudio(ayah.ayahNumber),
+                  onPlayFromHere: () => c.playFromAyah(ayah.ayahNumber),
                   onBookmark: () => c.toggleBookmark(ayah.ayahNumber),
                   onCopy: () => c.copyAyah(ayah),
                   onTafsir: () => showTafsirSheet(

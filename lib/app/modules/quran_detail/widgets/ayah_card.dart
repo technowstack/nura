@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../data/models/ayah.dart';
 import '../../../data/models/reading_prefs.dart';
+import '../controllers/quran_detail_controller.dart';
 import 'ayah_action_bar.dart';
 import 'ayah_number_badge.dart';
 
@@ -16,6 +17,10 @@ class AyahCard extends StatelessWidget {
     required this.onBookmark,
     required this.onCopy,
     required this.onTafsir,
+    this.audio = AyahAudioState.hidden,
+    this.playing = false,
+    this.onAudio,
+    this.onPlayFromHere,
     super.key,
   });
 
@@ -27,6 +32,12 @@ class AyahCard extends StatelessWidget {
   final VoidCallback onBookmark;
   final VoidCallback onCopy;
   final VoidCallback onTafsir;
+  final AyahAudioState audio;
+
+  /// True for the ayah currently playing (or paused) in this surah.
+  final bool playing;
+  final VoidCallback? onAudio;
+  final VoidCallback? onPlayFromHere;
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +73,9 @@ class AyahCard extends StatelessWidget {
               onBookmark: onBookmark,
               onCopy: onCopy,
               onTafsir: onTafsir,
+              audio: audio,
+              onAudio: onAudio,
+              onPlayFromHere: onPlayFromHere,
             ),
           ],
         ),
@@ -87,10 +101,15 @@ class AyahCard extends StatelessWidget {
         NuraSpace.s20,
         NuraSpace.s12,
       ),
-      child: lastRead
+      child: lastRead || playing
           ? DecoratedBox(
               decoration: BoxDecoration(
-                color: colors.lastReadHighlight,
+                color: playing
+                    ? Theme.of(context).colorScheme.primaryContainer
+                    : colors.lastReadHighlight,
+                border: playing
+                    ? Border.all(color: Theme.of(context).colorScheme.primary)
+                    : null,
                 borderRadius: BorderRadius.circular(NuraRadius.md),
               ),
               child: Padding(
