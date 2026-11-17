@@ -101,7 +101,7 @@ Future<BootstrapResult> bootstrap({
     lifecycle = AppLifecycleStream();
     player = AudioPlayerService(
       online,
-      AudioApiClient(defaultPrayerHttp),
+      AudioApiClient(defaultAudioHttp),
       SqliteAudioSettingsStore(user),
       createAudioEngine(),
       lifecycle: lifecycle.stream,

@@ -10,6 +10,13 @@ import 'prayer_api_client.dart';
 /// Same transport contract as the prayer client (GET ignores `jsonBody`).
 typedef AudioHttp = PrayerHttp;
 
+/// Default transport of the audio API: `GET /api/v2/surat/{id}` (a POST is
+/// answered with HTTP 405).
+Future<({int status, String body})> defaultAudioHttp(
+  Uri url, {
+  String? jsonBody,
+}) => httpRequest('GET', url);
+
 const _host = 'cdn.equran.id';
 
 /// Fetches per-ayah audio URLs. GET only, no cache, no disk writes; the
