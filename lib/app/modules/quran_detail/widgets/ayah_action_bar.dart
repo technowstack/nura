@@ -5,8 +5,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/tokens.dart';
 import '../controllers/quran_detail_controller.dart';
 
-/// Equal-width action cells: audio (hidden when unavailable), bookmark,
-/// tafsir, copy.
+/// Equal-width action cells: copy, bookmark, audio (hidden when
+/// unavailable), tafsir.
 class AyahActionBar extends StatelessWidget {
   const AyahActionBar({
     required this.bookmarked,
@@ -50,7 +50,9 @@ class AyahActionBar extends StatelessWidget {
       icon: NuraIcon(
         icon,
         filled: filled,
-        color: color ?? context.nuraColors.iconAccent,
+        color: onPressed == null
+            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
+            : color ?? context.nuraColors.iconAccent,
         semanticLabel: label,
       ),
     );
@@ -99,7 +101,12 @@ class AyahActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cells = <Widget>[
-      ?_audioCell(context),
+      _cell(
+        context,
+        icon: NuraIcons.contentCopy,
+        label: 'Salin ayat',
+        onPressed: onCopy,
+      ),
       _cell(
         context,
         icon: NuraIcons.bookmark,
@@ -108,17 +115,12 @@ class AyahActionBar extends StatelessWidget {
         filled: bookmarked,
         color: bookmarked ? Theme.of(context).colorScheme.primary : null,
       ),
+      ?_audioCell(context),
       _cell(
         context,
         icon: NuraIcons.menuBook,
         label: 'Lihat tafsir',
         onPressed: onTafsir,
-      ),
-      _cell(
-        context,
-        icon: NuraIcons.contentCopy,
-        label: 'Salin ayat',
-        onPressed: onCopy,
       ),
     ];
     return SizedBox(
