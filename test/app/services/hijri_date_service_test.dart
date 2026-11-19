@@ -50,6 +50,7 @@ void main() {
   });
 
   test('a full year never throws and day is 1..30', () {
+    int? prev;
     for (
       var d = DateTime(2026, 1, 1);
       d.year == 2026;
@@ -57,7 +58,21 @@ void main() {
     ) {
       final day = int.parse(s.format(d).split(' ').first);
       expect(day, inInclusiveRange(1, 30));
+      if (prev != null) {
+        expect(
+          day == prev + 1 || (day == 1 && (prev == 29 || prev == 30)),
+          isTrue,
+          reason: '$d: $prev -> $day',
+        );
+      }
+      prev = day;
     }
+  });
+
+  test('known dates map to the right Indonesian month', () {
+    expect(s.format(DateTime(2026, 2, 18)), '1 Ramadhan 1447 H');
+    expect(s.format(DateTime(2026, 5, 27)), '10 Zulhijah 1447 H');
+    expect(s.format(DateTime(2026, 6, 16)), '1 Muharram 1448 H');
   });
 
   test('12 unique Indonesian month names', () {
