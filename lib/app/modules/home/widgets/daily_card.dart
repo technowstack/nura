@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/widgets/nura_card.dart';
 import '../../../data/models/daily_content.dart';
 
 const _minTarget = Size(48, 48);
@@ -33,9 +34,9 @@ class _Body extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(
-            context,
-          ).textTheme.labelLarge?.copyWith(color: scheme.primary),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: context.nuraColors.iconAccent,
+          ),
         ),
         const SizedBox(height: NuraSpace.s12),
         SizedBox(
@@ -84,35 +85,31 @@ class DailyAyahCard extends StatelessWidget {
   final VoidCallback? onOpen;
 
   @override
-  Widget build(BuildContext context) => Card(
-    margin: EdgeInsets.zero,
-    clipBehavior: Clip.antiAlias,
-    color: Theme.of(context).colorScheme.primaryContainer,
-    child: InkWell(
-      onTap: onOpen,
-      child: Stack(
-        children: [
-          Positioned(
-            right: -NuraSpace.s24,
-            top: -NuraSpace.s24,
-            child: ExcludeSemantics(
-              child: NuraIcon(
-                NuraIcons.brightnessLow,
-                size: 120,
-                color: context.nuraColors.ornament,
-              ),
+  Widget build(BuildContext context) => NuraCard(
+    padding: EdgeInsets.zero,
+    onTap: onOpen,
+    child: Stack(
+      children: [
+        Positioned(
+          right: -NuraSpace.s24,
+          top: -NuraSpace.s24,
+          child: ExcludeSemantics(
+            child: NuraIcon(
+              NuraIcons.brightnessLow,
+              size: 120,
+              color: context.nuraColors.ornament,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(NuraSpace.s16),
-            child: _Body(
-              label: 'Ayat hari ini',
-              content: content,
-              reference: onOpen,
-            ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(NuraSpace.s16),
+          child: _Body(
+            label: 'Ayat hari ini',
+            content: content,
+            reference: onOpen,
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }
@@ -130,22 +127,16 @@ class DailyHadithCard extends StatelessWidget {
   final VoidCallback? onOpen;
 
   @override
-  Widget build(BuildContext context) => Card(
-    margin: EdgeInsets.zero,
-    elevation: 0,
-    color: Theme.of(context).colorScheme.surfaceContainerLow,
-    child: Padding(
-      padding: const EdgeInsets.all(NuraSpace.s16),
-      child: _Body(
-        label: 'Hadis hari ini',
-        content: content,
-        reference: onOpen,
-        maxLines: 6,
-        trailing: TextButton(
-          onPressed: onOpen,
-          style: TextButton.styleFrom(minimumSize: _minTarget),
-          child: const Text('Baca selengkapnya'),
-        ),
+  Widget build(BuildContext context) => NuraCard(
+    child: _Body(
+      label: 'Hadis hari ini',
+      content: content,
+      reference: onOpen,
+      maxLines: 6,
+      trailing: TextButton(
+        onPressed: onOpen,
+        style: TextButton.styleFrom(minimumSize: _minTarget),
+        child: const Text('Baca selengkapnya'),
       ),
     ),
   );

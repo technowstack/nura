@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:nura/app/core/theme/arabic_font.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
+import 'package:nura/app/core/widgets/nura_card.dart';
 import 'package:nura/app/data/models/daily_content.dart';
 import 'package:nura/app/data/repositories/daily_content_repository.dart';
 import 'package:nura/app/data/repositories/daily_settings_store.dart';
@@ -98,10 +99,13 @@ void main() {
     expect(find.text('Ayat hari ini'), findsNothing);
     final card = find.ancestor(
       of: find.text('Hadis hari ini'),
-      matching: find.byType(Card),
+      matching: find.byType(NuraCard),
     );
-    final header = find.text('Beranda');
-    final gap = tester.getTopLeft(card).dy - tester.getBottomLeft(header).dy;
+    final lastRead = find.ancestor(
+      of: find.text('Belum ada bacaan terakhir'),
+      matching: find.byType(NuraCard),
+    );
+    final gap = tester.getTopLeft(card).dy - tester.getBottomLeft(lastRead).dy;
     expect(gap, lessThan(40));
   });
 
@@ -144,6 +148,8 @@ void main() {
       find.text('QS. Asy-Syarh: 15'),
       find.text('Ayat hari 15'),
     ]) {
+      await tester.ensureVisible(target);
+      await tester.pumpAndSettle();
       await tester.tap(target);
       await tester.pumpAndSettle();
       expect(routeName, Routes.surah);

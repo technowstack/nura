@@ -9,6 +9,11 @@ import '../../../data/repositories/daily_content_repository.dart';
 import '../../../data/repositories/daily_settings_store.dart';
 import '../../../services/daily_notifier.dart';
 import '../../../services/daily_refresher.dart';
+import '../../../services/hijri_date_service.dart';
+import '../../../data/repositories/prayer_store.dart';
+import '../../../data/repositories/quran_repository.dart';
+import '../../../data/repositories/user_repository.dart';
+import '../widgets/home_hero_data.dart';
 
 /// Today's cards; at least one of them is non-null.
 class DailyCards {
@@ -44,6 +49,63 @@ class HomeController extends GetxController with WidgetsBindingObserver {
 
   /// Every daily notification failed to schedule.
   final notifyFailed = false.obs;
+
+  // Optional so the daily cards work without them.
+  final HijriDateService? _hijri = Get.isRegistered<HijriDateService>()
+      ? Get.find<HijriDateService>()
+      : null;
+  final QuranRepository? _quran = Get.isRegistered<QuranRepository>()
+      ? Get.find<QuranRepository>()
+      : null;
+  final UserRepository? _user = Get.isRegistered<UserRepository>()
+      ? Get.find<UserRepository>()
+      : null;
+  final PrayerStore? _prayerStore = Get.isRegistered<PrayerStore>()
+      ? Get.find<PrayerStore>()
+      : null;
+
+  late final hero = Rx<HomeHeroData>(_buildHero());
+  final lastRead = Rx<LastReadInfo?>(null);
+
+  DateTime now() => _now();
+
+  HomeHeroData _buildHero() {
+    final t = _now();
+    String region = '';
+    try {
+      region = _prayerStore?.getLocation()?.kabkota ?? '';
+    } on Object catch (e) {
+      debugPrint('HomeController: cannot read location: $e');
+    }
+    return HomeHeroData(
+      locationLabel: region.isEmpty ? 'Pilih wilayah' : region,
+      hijriDate: _hijri?.format(t) ?? '',
+      clock:
+          '${t.hour.toString().padLeft(2, '0')}:'
+          '${t.minute.toString().padLeft(2, '0')}',
+      emptyText: region.isEmpty
+          ? 'Pilih wilayah untuk melihat jadwal sholat'
+          : 'Jadwal belum tersedia',
+    );
+  }
+
+  void refreshLastRead() {
+    try {
+      final ref = _user?.getLastRead()?.ref;
+      final s = ref == null ? null : _quran?.getSurah(ref.surah);
+      lastRead.value = ref == null || s == null
+          ? null
+          : LastReadInfo(
+              surah: ref.surah,
+              ayah: ref.ayah,
+              nameArab: s.nameArab,
+              nameLatin: s.nameLatin,
+            );
+    } on Object catch (e) {
+      debugPrint('HomeController: last read unavailable: $e');
+      lastRead.value = null;
+    }
+  }
 
   Timer? _midnight;
 
@@ -116,6 +178,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
 
   void refreshForToday() {
     final day = _now();
+    hero.value = _buildHero();
+    refreshLastRead();
     try {
       final ayah = _repo.ayahFor(day);
       final hadith = _repo.hadithFor(day, hadithSource.value);
