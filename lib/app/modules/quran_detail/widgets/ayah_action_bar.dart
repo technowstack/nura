@@ -1,8 +1,12 @@
-import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:nura/app/core/nura_icons.dart';
 
+import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/tokens.dart';
 import '../controllers/quran_detail_controller.dart';
 
+/// Equal-width action cells: audio (hidden when unavailable), bookmark,
+/// tafsir, copy.
 class AyahActionBar extends StatelessWidget {
   const AyahActionBar({
     required this.bookmarked,
@@ -11,7 +15,6 @@ class AyahActionBar extends StatelessWidget {
     required this.onTafsir,
     this.audio = AyahAudioState.hidden,
     this.onAudio,
-    this.onPlayFromHere,
     super.key,
   });
 
@@ -21,95 +24,113 @@ class AyahActionBar extends StatelessWidget {
   final VoidCallback onTafsir;
   final AyahAudioState audio;
   final VoidCallback? onAudio;
-  final VoidCallback? onPlayFromHere;
 
-  Widget _audioButton() {
-    const box = BoxConstraints(minWidth: 48, minHeight: 48);
-    return switch (audio) {
-      AyahAudioState.hidden => const SizedBox.shrink(),
-      AyahAudioState.loading => const SizedBox(
-        width: 48,
-        height: 48,
-        child: Center(
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              semanticsLabel: 'Memuat audio',
-            ),
-          ),
-        ),
-      ),
-      AyahAudioState.needsInternet => const IconButton(
-        onPressed: null,
-        tooltip: 'Butuh internet',
-        constraints: box,
-        icon: NuraIcon(NuraIcons.playArrow, semanticLabel: 'Butuh internet'),
-      ),
-      AyahAudioState.playing => IconButton(
-        onPressed: onAudio,
-        tooltip: 'Jeda',
-        constraints: box,
-        icon: const NuraIcon(NuraIcons.pause, semanticLabel: 'Jeda'),
-      ),
-      AyahAudioState.ready || AyahAudioState.paused => IconButton(
-        onPressed: onAudio,
-        tooltip: 'Putar ayat',
-        constraints: box,
-        icon: const NuraIcon(NuraIcons.playArrow, semanticLabel: 'Putar ayat'),
-      ),
-    };
-  }
-
-  Widget _fromHereButton() {
-    final off =
-        audio == AyahAudioState.needsInternet ||
-        audio == AyahAudioState.loading;
+  Widget _cell(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    VoidCallback? onPressed,
+    String? tooltip,
+    bool filled = false,
+    Color? color,
+  }) {
+    final bg = Theme.of(context).colorScheme.surfaceContainerLow;
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(NuraRadius.md),
+    );
     return IconButton(
-      onPressed: off ? null : onPlayFromHere,
-      tooltip: audio == AyahAudioState.needsInternet
-          ? 'Butuh internet'
-          : 'Putar dari sini',
-      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-      icon: const NuraIcon(
-        NuraIcons.playlistPlay,
-        semanticLabel: 'Putar dari sini',
+      onPressed: onPressed,
+      tooltip: tooltip,
+      style: IconButton.styleFrom(
+        backgroundColor: bg,
+        disabledBackgroundColor: bg,
+        shape: shape,
+        minimumSize: const Size.fromHeight(48),
+      ),
+      icon: NuraIcon(
+        icon,
+        filled: filled,
+        color: color ?? context.nuraColors.iconAccent,
+        semanticLabel: label,
       ),
     );
   }
 
+  Widget? _audioCell(BuildContext context) => switch (audio) {
+    AyahAudioState.hidden => null,
+    AyahAudioState.loading => DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(NuraRadius.md),
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            semanticsLabel: 'Memuat audio',
+          ),
+        ),
+      ),
+    ),
+    AyahAudioState.needsInternet => _cell(
+      context,
+      icon: NuraIcons.playArrow,
+      label: 'Butuh internet',
+      tooltip: 'Butuh internet',
+    ),
+    AyahAudioState.playing => _cell(
+      context,
+      icon: NuraIcons.pause,
+      label: 'Jeda',
+      tooltip: 'Jeda',
+      onPressed: onAudio,
+    ),
+    AyahAudioState.ready || AyahAudioState.paused => _cell(
+      context,
+      icon: NuraIcons.playArrow,
+      label: 'Putar ayat',
+      tooltip: 'Putar ayat',
+      onPressed: onAudio,
+    ),
+  };
+
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      if (audio != AyahAudioState.hidden) ...[
-        _audioButton(),
-        _fromHereButton(),
-      ],
-      IconButton(
+  Widget build(BuildContext context) {
+    final cells = <Widget>[
+      ?_audioCell(context),
+      _cell(
+        context,
+        icon: NuraIcons.bookmark,
+        label: bookmarked ? 'Hapus bookmark' : 'Tambah bookmark',
         onPressed: onBookmark,
-        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        icon: NuraIcon(
-          NuraIcons.bookmark,
-          filled: bookmarked,
-          color: bookmarked ? Theme.of(context).colorScheme.primary : null,
-          semanticLabel: bookmarked ? 'Hapus bookmark' : 'Tambah bookmark',
-        ),
+        filled: bookmarked,
+        color: bookmarked ? Theme.of(context).colorScheme.primary : null,
       ),
-      IconButton(
+      _cell(
+        context,
+        icon: NuraIcons.menuBook,
+        label: 'Lihat tafsir',
         onPressed: onTafsir,
-        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        icon: const NuraIcon(NuraIcons.menuBook, semanticLabel: 'Lihat tafsir'),
       ),
-      IconButton(
+      _cell(
+        context,
+        icon: NuraIcons.contentCopy,
+        label: 'Salin ayat',
         onPressed: onCopy,
-        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        icon: const NuraIcon(
-          NuraIcons.contentCopy,
-          semanticLabel: 'Salin ayat',
-        ),
       ),
-    ],
-  );
+    ];
+    return SizedBox(
+      height: 48,
+      child: Row(
+        children: [
+          for (var i = 0; i < cells.length; i++) ...[
+            if (i > 0) const SizedBox(width: NuraSpace.s8),
+            Expanded(child: cells[i]),
+          ],
+        ],
+      ),
+    );
+  }
 }

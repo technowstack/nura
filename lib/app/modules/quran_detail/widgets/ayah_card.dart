@@ -40,6 +40,24 @@ class AyahCard extends StatelessWidget {
   final VoidCallback? onAudio;
   final VoidCallback? onPlayFromHere;
 
+  // Transitional: moves into the card menu in Task 7.
+  Widget _fromHereButton() {
+    final off =
+        audio == AyahAudioState.needsInternet ||
+        audio == AyahAudioState.loading;
+    return IconButton(
+      onPressed: off ? null : onPlayFromHere,
+      tooltip: audio == AyahAudioState.needsInternet
+          ? 'Butuh internet'
+          : 'Putar dari sini',
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      icon: const NuraIcon(
+        NuraIcons.playlistPlay,
+        semanticLabel: 'Putar dari sini',
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.nuraColors;
@@ -69,17 +87,18 @@ class AyahCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             AyahNumberBadge(number: ayah.ayahNumber),
-            AyahActionBar(
-              bookmarked: bookmarked,
-              onBookmark: onBookmark,
-              onCopy: onCopy,
-              onTafsir: onTafsir,
-              audio: audio,
-              onAudio: onAudio,
-              onPlayFromHere: onPlayFromHere,
-            ),
+            if (audio != AyahAudioState.hidden) _fromHereButton(),
           ],
         ),
+        AyahActionBar(
+          bookmarked: bookmarked,
+          onBookmark: onBookmark,
+          onCopy: onCopy,
+          onTafsir: onTafsir,
+          audio: audio,
+          onAudio: onAudio,
+        ),
+        const SizedBox(height: NuraSpace.s8),
         Text(
           ayah.arab,
           textAlign: TextAlign.right,

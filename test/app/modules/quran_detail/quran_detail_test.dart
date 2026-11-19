@@ -71,8 +71,9 @@ void main() {
     WidgetTester tester,
     int surah, {
     double scale = 1,
+    double height = 640,
   }) async {
-    tester.view.physicalSize = const Size(360, 640);
+    tester.view.physicalSize = Size(360, height);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     Get.put(
@@ -145,7 +146,7 @@ void main() {
   });
 
   testWidgets('ayat follow repository order', (tester) async {
-    await pumpPage(tester, 2);
+    await pumpPage(tester, 2, height: 1200); // action bar row made cards taller
     final ys = [
       for (final n in [1, 2, 3]) tester.getTopLeft(find.text('arab2:$n')).dy,
     ];
