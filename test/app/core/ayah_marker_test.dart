@@ -21,4 +21,14 @@ void main() {
     expect(out.startsWith(input), isTrue);
     expect(ayahDisplayText('كلمة', 7), 'كلمة ۝٧');
   });
+
+  test('only U+0020 is stripped', () {
+    expect(ayahDisplayText('أ\u00A0', 1), 'أ\u00A0\u00A0۝١');
+    expect(ayahDisplayText('أ\n', 1), 'أ\n\u00A0۝١');
+  });
+
+  test('negative numbers throw ArgumentError', () {
+    expect(() => toArabicIndic(-1), throwsArgumentError);
+    expect(() => ayahDisplayText('أ', -1), throwsArgumentError);
+  });
 }

@@ -1,9 +1,12 @@
 /// Converts [n] to Arabic-Indic digits (U+0660 to U+0669).
-String toArabicIndic(int n) => n
-    .toString()
-    .split('')
-    .map((d) => String.fromCharCode(0x0660 + int.parse(d)))
-    .join();
+String toArabicIndic(int n) {
+  if (n < 0) throw ArgumentError.value(n, 'n', 'must be non-negative');
+  return n
+      .toString()
+      .split('')
+      .map((d) => String.fromCharCode(0x0660 + int.parse(d)))
+      .join();
+}
 
 /// Appends the ayah end marker. Only trailing ASCII U+0020 of [arab] is
 /// stripped; the text is otherwise untouched.
