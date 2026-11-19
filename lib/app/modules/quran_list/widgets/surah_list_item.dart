@@ -27,6 +27,17 @@ class SurahListItem extends StatelessWidget {
     _ => '',
   };
 
+  /// A separator dot kept with the item after it: it never starts a wrapped
+  /// line and screen readers skip it.
+  Widget _dotted(Text item) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      ExcludeSemantics(child: Text('·', style: item.style)),
+      const SizedBox(width: NuraSpace.s4),
+      Flexible(child: item),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
@@ -52,14 +63,14 @@ class SurahListItem extends StatelessWidget {
                   Text(surah.nameLatin, style: text.titleMedium),
                   Wrap(
                     spacing: NuraSpace.s4,
+                    runSpacing: NuraSpace.s4,
                     children: [
                       Text(surah.nameId, style: text.bodyMedium),
-                      Text('·', style: text.bodyMedium),
-                      Text('${surah.ayahCount} ayat', style: text.bodyMedium),
-                      if (revelation.isNotEmpty) ...[
-                        Text('·', style: text.bodyMedium),
-                        Text(revelation, style: text.bodyMedium),
-                      ],
+                      _dotted(
+                        Text('${surah.ayahCount} ayat', style: text.bodyMedium),
+                      ),
+                      if (revelation.isNotEmpty)
+                        _dotted(Text(revelation, style: text.bodyMedium)),
                       if (state == SurahItemState.lastRead)
                         Row(
                           mainAxisSize: MainAxisSize.min,
