@@ -31,7 +31,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 
 | Item | Status | Catatan |
 |---|---|---|
-| Putaran desain 1 (Fondasi dan Fase 2) | Selesai, diserahkan 2026-11-11 | Brief: `docs/design/2026-11-09-nura-ui-design-brief.md`. Handoff ke Flutter: `docs/design/HANDOFF-flutter.md`. Token: `docs/design/tokens.json`. Di Figma (`Nura — UI v1`): 9 layar Fase 1 dan 16 layar Fase 2, masing-masing Light dan Dark |
+| Putaran desain 1 (Fondasi dan Fase 2) dan putaran 1.5 (penyegaran visual) | Selesai: putaran 1 diserahkan 2026-11-11, putaran 1.5 diserahkan 2026-11-19 (`docs/design/2026-11-17-nura-penyegaran-visual.md`, `tokens.json` 89 variabel, `screenshots/`). Acuan untuk Task 10 (UI Fase 8: onboarding, splash, pengaturan) ada di `docs/design/` | Brief: `docs/design/2026-11-09-nura-ui-design-brief.md`. Handoff ke Flutter: `docs/design/HANDOFF-flutter.md`. Token: `docs/design/tokens.json`. Di Figma (`Nura — UI v1`): 9 layar Fase 1 dan 16 layar Fase 2, masing-masing Light dan Dark |
 | Putaran desain 2 | Belum | Layar hadis (termasuk detail dengan sanad), jadwal sholat bulanan, pengaturan notifikasi lengkap, pengunduhan audio, pengaturan umum, daftar kota, ikon aplikasi final, materi Play Store |
 | Tema dari token desain | Selesai di kode (branch `feat/phase-2-quran`) | `ColorScheme`, `NuraColors`, `NuraTextStyles`, dan konstanta jarak/radius ada di `lib/app/core/theme/`, diturunkan dari `tokens.json` |
 | Font Latin Plus Jakarta Sans | Dibundel (2026-11-13) | Regular 400, Medium 500, dan SemiBold 600 di `assets/fonts/PlusJakartaSans/` beserta `OFL.txt` (SIL OFL 1.1, Copyright 2020 The Plus Jakarta Sans Project Authors). Zip kiriman pemilik (`assets/fonts/*.zip`) diabaikan git |

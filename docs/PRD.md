@@ -41,6 +41,7 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 - Bookmark ayat dan Last Read.
 - Pencarian di terjemahan dan teks Arab. Hasil dikelompokkan per surah. Terjemahan tampil sebagai cuplikan (maksimal 3 baris) yang berpusat pada kata cocok, dan semua kata cocok disorot (aturan lengkap di spec bagian 5.5).
 - Pengaturan baca: ukuran font Arab (20–40, default 28), sakelar tampil/sembunyi terjemahan, dan pilihan tema. Ukuran font terjemahan tetap, tidak diatur pengguna.
+- Teks Arab ayat diakhiri penanda akhir ayat ۝ (U+06DD) dan nomor ayat Arab-Indik (U+0660 sampai U+0669). Penanda dilekatkan dengan U+00A0 (spasi tak terputus) agar tidak jatuh sendirian ke baris baru. Sambungan ini hanya di lapisan tampilan: teks di `content.db` dan `data-source/` tidak diubah (Aturan Mutlak 3).
 
 ### 5.2 Al-Qur'an (online, opsional)
 - Sakelar "Fitur Online" di Pengaturan, **mati secara default**.
