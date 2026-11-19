@@ -25,8 +25,7 @@ class IsolateSearchRepository implements SearchRepository {
   static Future<IsolateSearchRepository> start(
     File contentDb, {
     @visibleForTesting Duration timeout = const Duration(seconds: 10),
-    @visibleForTesting
-    void Function(List<Object>) entry = searchWorkerMain,
+    @visibleForTesting void Function(List<Object>) entry = searchWorkerMain,
   }) async {
     final repo = IsolateSearchRepository._();
     try {

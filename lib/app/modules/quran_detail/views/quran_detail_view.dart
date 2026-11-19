@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
@@ -49,7 +50,7 @@ class QuranDetailView extends GetView<QuranDetailController> {
             IconButton(
               tooltip: 'Pengaturan tampilan',
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              icon: const Icon(Icons.tune),
+              icon: const NuraIcon(NuraIcons.tune),
               onPressed: () => showReadingSettingsSheet(
                 context,
                 controller: c,

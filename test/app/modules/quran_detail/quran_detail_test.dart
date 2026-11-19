@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/widgets/error_state.dart';
@@ -38,6 +39,11 @@ Ayah _a(int s, int n, {String? arab, String? tr}) => Ayah(
 );
 
 const _basmalah = 'BASMALAH-FROM-REPO';
+
+Finder bookmarkIcon({required bool filled}) => find.byWidgetPredicate(
+  (w) =>
+      w is Icon && w.icon == NuraIcons.bookmark && w.fill == (filled ? 1 : 0),
+);
 
 void main() {
   _robustnessTests();
@@ -195,7 +201,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(user.ayahBookmarks[2], {1});
     expect(find.bySemanticsLabel('Hapus bookmark'), findsOneWidget);
-    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+    expect(bookmarkIcon(filled: true), findsOneWidget);
     await tester.pump(Duration.zero);
     handle.dispose();
   });
@@ -208,8 +214,8 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Hapus bookmark'));
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Hapus bookmark'), findsNothing);
-    expect(find.byIcon(Icons.bookmark), findsNothing);
-    expect(find.byIcon(Icons.bookmark_border), findsWidgets);
+    expect(bookmarkIcon(filled: true), findsNothing);
+    expect(bookmarkIcon(filled: false), findsWidgets);
     expect(user.ayahBookmarks[2], isEmpty);
     handle.dispose();
   });
@@ -306,7 +312,7 @@ void _robustnessTests() {
     await tester.pumpWidget(const GetMaterialApp(home: QuranDetailView()));
     await tester.pumpAndSettle();
     u.failure = StateError('db');
-    await tester.tap(find.byIcon(Icons.bookmark_border).first);
+    await tester.tap(bookmarkIcon(filled: false).first);
     await tester.pump();
     expect(Get.find<QuranDetailController>().bookmarked, isEmpty);
     expect(find.text('Gagal menyimpan bookmark'), findsOneWidget);

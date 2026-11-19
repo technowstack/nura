@@ -87,10 +87,7 @@ CREATE TABLE prayer_month (
 }
 
 /// Index i migrates the schema from version i to i + 1.
-final List<void Function(Database)> _migrations = [
-  _migrateToV1,
-  _migrateToV2,
-];
+final List<void Function(Database)> _migrations = [_migrateToV1, _migrateToV2];
 
 /// The real migration list, for tests that stop at or fail after a version.
 @visibleForTesting

@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/tokens.dart';
@@ -19,7 +20,7 @@ class HadithBookTile extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: NuraSpace.s16),
       title: Text(item.book.name, style: text.titleMedium),
       subtitle: Text(item.countLabel, style: text.bodyMedium),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const NuraIcon(NuraIcons.chevronRight),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -53,8 +54,8 @@ class DailyWidgetImage extends StatelessWidget {
                     Positioned(
                       right: -NuraSpace.s24,
                       top: -NuraSpace.s24,
-                      child: Icon(
-                        Icons.brightness_low,
+                      child: NuraIcon(
+                        NuraIcons.brightnessLow,
                         size: 120,
                         color: context.nuraColors.ornament,
                       ),

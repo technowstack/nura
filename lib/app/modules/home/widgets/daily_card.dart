@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -95,8 +96,8 @@ class DailyAyahCard extends StatelessWidget {
             right: -NuraSpace.s24,
             top: -NuraSpace.s24,
             child: ExcludeSemantics(
-              child: Icon(
-                Icons.brightness_low,
+              child: NuraIcon(
+                NuraIcons.brightnessLow,
                 size: 120,
                 color: context.nuraColors.ornament,
               ),

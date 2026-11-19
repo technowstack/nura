@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -31,7 +32,7 @@ class RegionPickerView extends StatelessWidget {
               child: TextField(
                 onChanged: c.setQuery,
                 decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.search),
+                  prefixIcon: NuraIcon(NuraIcons.search),
                   hintText: 'Cari kota atau kabupaten',
                   border: OutlineInputBorder(),
                 ),
@@ -53,11 +54,8 @@ class RegionPickerView extends StatelessWidget {
       }
       return ListView.builder(
         itemCount: rs.length,
-        itemBuilder: (_, i) => _tile(
-          rs[i].kabkota,
-          () => pick(rs[i]),
-          subtitle: rs[i].provinsi,
-        ),
+        itemBuilder: (_, i) =>
+            _tile(rs[i].kabkota, () => pick(rs[i]), subtitle: rs[i].provinsi),
       );
     }
     if (c.province == null) {
@@ -67,7 +65,7 @@ class RegionPickerView extends StatelessWidget {
         itemBuilder: (_, i) => _tile(
           ps[i],
           () => c.openProvince(ps[i]),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const NuraIcon(NuraIcons.chevronRight),
         ),
       );
     }

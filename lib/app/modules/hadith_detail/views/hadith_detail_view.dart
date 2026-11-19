@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -47,8 +48,9 @@ class HadithDetailView extends GetView<HadithDetailController> {
                     minWidth: 48,
                     minHeight: 48,
                   ),
-                  icon: Icon(
-                    on ? Icons.bookmark : Icons.bookmark_border,
+                  icon: NuraIcon(
+                    NuraIcons.bookmark,
+                    filled: on,
                     color: on ? Theme.of(context).colorScheme.primary : null,
                     semanticLabel: on ? 'Hapus bookmark' : 'Tambah bookmark',
                   ),
@@ -59,7 +61,10 @@ class HadithDetailView extends GetView<HadithDetailController> {
                     minWidth: 48,
                     minHeight: 48,
                   ),
-                  icon: const Icon(Icons.copy, semanticLabel: 'Salin hadis'),
+                  icon: const NuraIcon(
+                    NuraIcons.contentCopy,
+                    semanticLabel: 'Salin hadis',
+                  ),
                 ),
               ],
             );

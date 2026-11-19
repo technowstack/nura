@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -44,23 +45,23 @@ class ShellView extends StatelessWidget {
         onDestinationSelected: c.select,
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            icon: NuraIcon(NuraIcons.home),
+            selectedIcon: NuraIcon(NuraIcons.home, filled: true),
             label: 'Beranda',
           ),
           NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(Icons.menu_book),
+            icon: NuraIcon(NuraIcons.menuBook),
+            selectedIcon: NuraIcon(NuraIcons.menuBook, filled: true),
             label: "Al-Qur'an",
           ),
           NavigationDestination(
-            icon: Icon(Icons.auto_stories_outlined),
-            selectedIcon: Icon(Icons.auto_stories),
+            icon: NuraIcon(NuraIcons.autoStories),
+            selectedIcon: NuraIcon(NuraIcons.autoStories, filled: true),
             label: 'Hadis',
           ),
           NavigationDestination(
-            icon: Icon(Icons.access_time),
-            selectedIcon: Icon(Icons.access_time_filled),
+            icon: NuraIcon(NuraIcons.schedule),
+            selectedIcon: NuraIcon(NuraIcons.schedule, filled: true),
             label: 'Sholat',
           ),
         ],

@@ -78,10 +78,7 @@ void main() {
     final a =
         jsonDecode(storage.data['daily_ayah_2026-11-15_light_4x2']!)
             as Map<String, dynamic>;
-    expect(
-      a['description'],
-      'Ayat hari ini. QS. Asy-Syarh: 15. Ayat hari 15',
-    );
+    expect(a['description'], 'Ayat hari ini. QS. Asy-Syarh: 15. Ayat hari 15');
     final h =
         jsonDecode(storage.data['daily_hadith_2026-11-15_light_4x2']!)
             as Map<String, dynamic>;
@@ -100,8 +97,9 @@ void main() {
       settings: settings,
       storage: storage,
       directory: dir,
-      render: (c, {required dp, required pixelRatio, required brightness}) async =>
-          Uint8List(1),
+      render:
+          (c, {required dp, required pixelRatio, required brightness}) async =>
+              Uint8List(1),
       now: () => clock,
       pixelRatio: () => 1,
     );
@@ -118,11 +116,14 @@ void main() {
     expect(body.startsWith('Dia berkata "ya"\nlalu'), isTrue);
   });
 
-  test('notifies the widgets exactly once, after the entries are written', () async {
-    await service.refresh();
-    expect(storage.notifies, 1);
-    expect(storage.entriesAtNotify.single, 56);
-  });
+  test(
+    'notifies the widgets exactly once, after the entries are written',
+    () async {
+      await service.refresh();
+      expect(storage.notifies, 1);
+      expect(storage.entriesAtNotify.single, 56);
+    },
+  );
 
   test('no notify when nothing was written', () async {
     repo.withAyah = false;

@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -133,10 +134,10 @@ class _ReadingSettingsSheet extends StatelessWidget {
                     minTileHeight: 48,
                     title: Text(q.name),
                     selected: q.id == qariId,
-                    trailing: Icon(
+                    trailing: NuraIcon(
                       q.id == qariId
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
+                          ? NuraIcons.radioChecked
+                          : NuraIcons.radioUnchecked,
                     ),
                     onTap: () => controller.setQari(q.id),
                   ),

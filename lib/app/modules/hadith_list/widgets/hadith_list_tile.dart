@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/tokens.dart';
@@ -25,7 +26,7 @@ class HadithListTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       trailing: item.bookmarked
-          ? const Icon(Icons.bookmark, semanticLabel: 'Ditandai')
+          ? const NuraIcon(NuraIcons.bookmark, semanticLabel: 'Ditandai')
           : null,
     );
   }

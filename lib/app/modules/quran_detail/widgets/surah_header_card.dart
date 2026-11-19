@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -58,13 +59,13 @@ class SurahHeaderCard extends StatelessWidget {
             if (audio == AyahAudioState.needsInternet)
               OutlinedButton.icon(
                 onPressed: null,
-                icon: Icon(Icons.play_arrow_rounded),
+                icon: NuraIcon(NuraIcons.playArrow),
                 label: Text('Putar surah · Butuh internet'),
               )
             else
               OutlinedButton.icon(
                 onPressed: audio == AyahAudioState.loading ? null : onPlaySurah,
-                icon: const Icon(Icons.play_arrow_rounded),
+                icon: const NuraIcon(NuraIcons.playArrow),
                 label: const Text('Putar surah'),
               ),
           ],

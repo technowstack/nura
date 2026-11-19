@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -35,7 +36,7 @@ class HomeView extends GetView<HomeController> {
                 Expanded(child: Text('Beranda', style: text.headlineSmall)),
                 IconButton(
                   tooltip: 'Pengaturan harian',
-                  icon: const Icon(Icons.tune),
+                  icon: const NuraIcon(NuraIcons.tune),
                   style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
                   onPressed: () => showDailySettingsSheet(context),
                 ),

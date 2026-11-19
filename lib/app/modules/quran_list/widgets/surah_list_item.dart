@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -73,7 +74,7 @@ class SurahListItem extends StatelessWidget {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.history, size: 16),
+                                const NuraIcon(NuraIcons.history, size: 16),
                                 Flexible(
                                   child: Text(
                                     'Terakhir dibaca',
@@ -91,8 +92,8 @@ class SurahListItem extends StatelessWidget {
                 if (state == SurahItemState.bookmarked)
                   const Padding(
                     padding: EdgeInsets.only(left: NuraSpace.s8),
-                    child: Icon(
-                      Icons.bookmark,
+                    child: NuraIcon(
+                      NuraIcons.bookmark,
                       semanticLabel: 'Ditandai bookmark',
                     ),
                   ),

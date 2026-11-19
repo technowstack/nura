@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/widgets/empty_state.dart';
@@ -111,14 +112,14 @@ void main() {
     await pump(tester);
     await tester.pumpAndSettle();
     expect(find.text('Terakhir dibaca'), findsOneWidget);
-    expect(find.byIcon(Icons.history), findsOneWidget);
+    expect(find.byIcon(NuraIcons.history), findsOneWidget);
     expect(
       find.byWidgetPredicate(
         (w) => w is Icon && w.semanticLabel == 'Ditandai bookmark',
       ),
       findsOneWidget,
     );
-    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+    expect(find.byIcon(NuraIcons.bookmark), findsOneWidget);
     handle.dispose();
   });
 
@@ -167,13 +168,13 @@ void main() {
   ) async {
     await pump(tester);
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.history), findsNothing);
+    expect(find.byIcon(NuraIcons.history), findsNothing);
     final c = Get.find<QuranListController>();
     c.lastReadSurah.value = 2;
     c.bookmarkedSurahs.add(1);
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.history), findsOneWidget);
-    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+    expect(find.byIcon(NuraIcons.history), findsOneWidget);
+    expect(find.byIcon(NuraIcons.bookmark), findsOneWidget);
   });
 
   testWidgets('returning from surah page refreshes markers', (tester) async {
@@ -188,8 +189,8 @@ void main() {
     user.bookmarkedSurahs = {1};
     Get.back<void>();
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.history), findsOneWidget);
-    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+    expect(find.byIcon(NuraIcons.history), findsOneWidget);
+    expect(find.byIcon(NuraIcons.bookmark), findsOneWidget);
   });
 
   testWidgets('tapping juz row opens route with start surah and ayah', (

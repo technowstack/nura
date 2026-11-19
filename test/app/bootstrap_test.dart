@@ -122,19 +122,22 @@ void main() {
     expect(Get.find<AudioSettingsStore>(), isA<AudioSettingsStore>());
   });
 
-  test('failed bootstrap disposes the audio engine, registers nothing', () async {
-    final engine = FakeAudioEngine();
-    final r = await bootstrap(
-      installer: installer(),
-      dataDir: tmp,
-      createAudioEngine: () => engine,
-      loadRegions: () async => throw StateError('boom'),
-    );
-    expect(r, isA<BootstrapFailure>());
-    expect(engine.disposed, isTrue);
-    expect(Get.isRegistered<AudioPlayerService>(), isFalse);
-    expect(Get.isRegistered<AudioSettingsStore>(), isFalse);
-  });
+  test(
+    'failed bootstrap disposes the audio engine, registers nothing',
+    () async {
+      final engine = FakeAudioEngine();
+      final r = await bootstrap(
+        installer: installer(),
+        dataDir: tmp,
+        createAudioEngine: () => engine,
+        loadRegions: () async => throw StateError('boom'),
+      );
+      expect(r, isA<BootstrapFailure>());
+      expect(engine.disposed, isTrue);
+      expect(Get.isRegistered<AudioPlayerService>(), isFalse);
+      expect(Get.isRegistered<AudioSettingsStore>(), isFalse);
+    },
+  );
 
   test('failed region load registers nothing', () async {
     final r = await bootstrap(

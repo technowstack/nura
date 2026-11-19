@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -52,7 +53,7 @@ class AyahCard extends StatelessWidget {
               height: 24,
               child: Row(
                 children: [
-                  const Icon(Icons.history_rounded, size: 16),
+                  const NuraIcon(NuraIcons.history, size: 16),
                   const SizedBox(width: NuraSpace.s4),
                   Flexible(
                     child: Text(

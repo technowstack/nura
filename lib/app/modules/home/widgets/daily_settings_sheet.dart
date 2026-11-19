@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -67,7 +68,9 @@ class DailySettingsSheet extends GetView<HomeController> {
                   minTileHeight: 48,
                   selected: source == current,
                   title: Text(label),
-                  trailing: source == current ? const Icon(Icons.check) : null,
+                  trailing: source == current
+                      ? const NuraIcon(NuraIcons.check)
+                      : null,
                   onTap: () => controller.setHadithSource(source),
                 ),
               if (current == HadithSource.allBooks)

@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../controllers/quran_detail_controller.dart';
@@ -44,19 +45,19 @@ class AyahActionBar extends StatelessWidget {
         onPressed: null,
         tooltip: 'Butuh internet',
         constraints: box,
-        icon: Icon(Icons.play_arrow_rounded, semanticLabel: 'Butuh internet'),
+        icon: NuraIcon(NuraIcons.playArrow, semanticLabel: 'Butuh internet'),
       ),
       AyahAudioState.playing => IconButton(
         onPressed: onAudio,
         tooltip: 'Jeda',
         constraints: box,
-        icon: const Icon(Icons.pause_rounded, semanticLabel: 'Jeda'),
+        icon: const NuraIcon(NuraIcons.pause, semanticLabel: 'Jeda'),
       ),
       AyahAudioState.ready || AyahAudioState.paused => IconButton(
         onPressed: onAudio,
         tooltip: 'Putar ayat',
         constraints: box,
-        icon: const Icon(Icons.play_arrow_rounded, semanticLabel: 'Putar ayat'),
+        icon: const NuraIcon(NuraIcons.playArrow, semanticLabel: 'Putar ayat'),
       ),
     };
   }
@@ -71,7 +72,10 @@ class AyahActionBar extends StatelessWidget {
           ? 'Butuh internet'
           : 'Putar dari sini',
       constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-      icon: const Icon(Icons.playlist_play, semanticLabel: 'Putar dari sini'),
+      icon: const NuraIcon(
+        NuraIcons.playlistPlay,
+        semanticLabel: 'Putar dari sini',
+      ),
     );
   }
 
@@ -86,8 +90,9 @@ class AyahActionBar extends StatelessWidget {
       IconButton(
         onPressed: onBookmark,
         constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        icon: Icon(
-          bookmarked ? Icons.bookmark : Icons.bookmark_border,
+        icon: NuraIcon(
+          NuraIcons.bookmark,
+          filled: bookmarked,
           color: bookmarked ? Theme.of(context).colorScheme.primary : null,
           semanticLabel: bookmarked ? 'Hapus bookmark' : 'Tambah bookmark',
         ),
@@ -95,12 +100,15 @@ class AyahActionBar extends StatelessWidget {
       IconButton(
         onPressed: onTafsir,
         constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        icon: const Icon(Icons.menu_book, semanticLabel: 'Lihat tafsir'),
+        icon: const NuraIcon(NuraIcons.menuBook, semanticLabel: 'Lihat tafsir'),
       ),
       IconButton(
         onPressed: onCopy,
         constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        icon: const Icon(Icons.copy, semanticLabel: 'Salin ayat'),
+        icon: const NuraIcon(
+          NuraIcons.contentCopy,
+          semanticLabel: 'Salin ayat',
+        ),
       ),
     ],
   );

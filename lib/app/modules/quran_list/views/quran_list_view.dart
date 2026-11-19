@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -36,7 +37,7 @@ class QuranListView extends GetView<QuranListController> {
               ),
               IconButton(
                 tooltip: 'Cari',
-                icon: const Icon(Icons.search),
+                icon: const NuraIcon(NuraIcons.search),
                 onPressed: () => Get.toNamed(
                   Routes.search,
                   arguments: const SearchArgs(SearchScope.quran),

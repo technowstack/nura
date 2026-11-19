@@ -57,9 +57,7 @@ class NextPrayerCard extends StatelessWidget {
               if (estimated)
                 Text(
                   'perkiraan',
-                  style: text.bodyMedium?.copyWith(
-                    fontStyle: FontStyle.italic,
-                  ),
+                  style: text.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
                 ),
             ],
           ),
