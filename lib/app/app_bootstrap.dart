@@ -44,6 +44,7 @@ import 'services/daily_link_router.dart';
 import 'services/daily_notifier.dart';
 import 'services/daily_refresher.dart';
 import 'services/flutter_local_notifications_scheduler.dart';
+import 'services/hijri_date_service.dart';
 import 'services/home_widget_service.dart';
 import 'services/notification_scheduler.dart';
 import 'services/online_service.dart';
@@ -119,6 +120,7 @@ Future<BootstrapResult> bootstrap({
     Get.put<PrayerRegions>(regions, permanent: true);
     Get.put<PrayerClock>(clock, permanent: true);
     Get.put<OnlineService>(online, permanent: true);
+    Get.put<HijriDateService>(HijriDateService(user: user), permanent: true);
     Get.put<AudioSettingsStore>(
       SqliteAudioSettingsStore(user),
       permanent: true,

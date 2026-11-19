@@ -22,4 +22,5 @@ abstract final class SettingKeys {
   static const dailyHadithSource = 'daily_hadith_source';
   static const dailyNotifyEnabled = 'daily_notify_enabled';
   static const dailyNotifyTime = 'daily_notify_time';
+  static const hijriAdjust = 'hijri_adjust';
 }

@@ -18,6 +18,7 @@ import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/prayer_repository.dart';
 import 'package:nura/app/services/audio_player_service.dart';
 import 'package:nura/app/data/repositories/audio_settings_store.dart';
+import 'package:nura/app/services/hijri_date_service.dart';
 import 'package:nura/app/services/online_service.dart';
 import 'package:nura/app/data/repositories/isolate_hadith_repository.dart';
 import 'package:nura/app/data/repositories/isolate_search_repository.dart';
@@ -104,6 +105,7 @@ void main() {
     expect(Get.find<PrayerRepository>(), isA<DefaultPrayerRepository>());
     expect(Get.find<PrayerRegions>().provinces, isNotEmpty);
     expect(Get.isRegistered<OnlineService>(), isTrue);
+    expect(Get.isRegistered<HijriDateService>(), isTrue);
     expect(Get.isRegistered<PrayerClock>(), isTrue);
   });
 
