@@ -33,6 +33,8 @@ import 'package:nura/app/nura_app.dart';
 import 'package:nura/app/services/daily_link_router.dart';
 import 'package:nura/app/services/daily_refresher.dart';
 import 'package:nura/app/services/home_widget_service.dart';
+import 'package:nura/app/data/repositories/prayer_store.dart';
+import 'package:nura/app/modules/home/controllers/home_controller.dart';
 import 'package:nura/app/modules/home/home_view.dart';
 
 import '../support/fake_audio.dart';
@@ -284,6 +286,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Beranda'), findsOneWidget); // nav label
     expect(find.byType(HomeView), findsOneWidget);
+    for (final registered in [
+      Get.isRegistered<HijriDateService>(),
+      Get.isRegistered<QuranRepository>(),
+      Get.isRegistered<UserRepository>(),
+      Get.isRegistered<PrayerStore>(),
+    ]) {
+      expect(registered, isTrue);
+    }
+    // Resolved by HomeController: the Hijri date comes from the service.
+    expect(Get.find<HomeController>().hero.value.hijriDate, isNotEmpty);
   });
 
   for (final (setting, expected) in [

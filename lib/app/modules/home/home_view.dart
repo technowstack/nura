@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../core/theme/tokens.dart';
@@ -22,29 +23,27 @@ class HomeView extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Obx(
-              () => HomeHero(
-                data: controller.hero.value,
-                onTune: () => showDailySettingsSheet(context),
+    // The hero is dark green in both themes, so the icons are always light.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      key: const Key('home-overlay'),
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+      ),
+      child: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Obx(
+                () => HomeHero(
+                  data: controller.hero.value,
+                  onTune: () => showDailySettingsSheet(context),
+                ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            // Pulls the sheet over the hero; the hero reserves this space.
-            child: Transform.translate(
-              offset: const Offset(0, -heroSheetOverlap),
+            SliverToBoxAdapter(
               child: Container(
                 key: const Key('home-sheet'),
-                decoration: BoxDecoration(
-                  color: scheme.surface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(NuraRadius.xl),
-                  ),
-                ),
+                color: scheme.surface,
                 padding: const EdgeInsets.all(NuraSpace.s16),
                 child: Column(
                   children: [
@@ -67,8 +66,8 @@ class HomeView extends GetView<HomeController> {
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

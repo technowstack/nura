@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:nura/app/core/widgets/nura_card.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/nura_icons.dart';
@@ -17,6 +19,7 @@ import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/data/sources/user_database.dart';
 import 'package:nura/app/modules/home/controllers/home_controller.dart';
 import 'package:nura/app/modules/home/home_view.dart';
+import 'package:nura/app/modules/home/widgets/hero_silhouette.dart';
 import 'package:nura/app/modules/home/widgets/home_hero.dart';
 import 'package:nura/app/modules/home/widgets/home_hero_data.dart';
 import 'package:nura/app/modules/quran_detail/surah_args.dart';
@@ -43,6 +46,18 @@ const _times = [
   HeroPrayerTime(name: 'Maghrib', time: '17:44', icon: NuraIcons.schedule),
   HeroPrayerTime(name: 'Isya', time: '18:55', icon: NuraIcons.schedule),
 ];
+
+class _Recorder implements Canvas {
+  final paints = <Paint>[];
+
+  @override
+  dynamic noSuchMethod(Invocation i) {
+    for (final a in i.positionalArguments) {
+      if (a is Paint) paints.add(a);
+    }
+    return null;
+  }
+}
 
 void main() {
   late FakeUserRepository user;
@@ -151,12 +166,18 @@ void main() {
       );
       expect(find.byKey(const Key('hero-next-dot')), findsOneWidget);
       expect(find.text('Jadwal perkiraan'), findsOneWidget);
-      final painted = find.byWidgetPredicate(
-        (w) =>
-            w is CustomPaint &&
-            w.painter.toString().contains('HeroSilhouettePainter'),
-      );
-      expect(painted, findsOneWidget);
+      final painter = tester
+          .widgetList<CustomPaint>(find.byType(CustomPaint))
+          .map((w) => w.painter)
+          .whereType<HeroSilhouettePainter>()
+          .single;
+      final rec = _Recorder();
+      painter.paint(rec as Canvas, const Size(360, 110));
+      expect(rec.paints, isNotEmpty);
+      for (final paint in rec.paints) {
+        expect(paint.color.toARGB32(), colors.heroShape.toARGB32());
+        expect(paint.shader, isNull);
+      }
       expect(tester.takeException(), isNull);
     });
   }
@@ -182,17 +203,70 @@ void main() {
     expect(find.textContaining(RegExp(r'\d\d:\d\d')), findsOneWidget);
   });
 
-  tw('sheet overlaps hero by 24 with xl top radius', (tester) async {
+  tw('sheet cap overlaps hero by 24 with xl radius; body follows', (
+    tester,
+  ) async {
     await pumpApp(tester);
     final heroRect = tester.getRect(find.byType(HomeHero));
-    final sheet = find.byKey(const Key('home-sheet'));
-    expect(heroRect.bottom - tester.getTopLeft(sheet).dy, NuraSpace.s24);
-    final deco = tester.widget<Container>(sheet).decoration! as BoxDecoration;
+    final cap = find.byKey(const Key('home-sheet-cap'));
+    expect(tester.getSize(cap).height, NuraSpace.s24);
+    expect(tester.getRect(cap).bottom, heroRect.bottom);
+    final deco = tester.widget<DecoratedBox>(cap).decoration as BoxDecoration;
     expect(
       deco.borderRadius,
       const BorderRadius.vertical(top: Radius.circular(NuraRadius.xl)),
     );
+    // No dead scroll space: the body starts exactly where the hero ends.
+    expect(
+      tester.getTopLeft(find.byKey(const Key('home-sheet'))).dy,
+      heroRect.bottom,
+    );
     expect(heroRect.top, 0);
+  });
+
+  tw('top edge of the last read card is tappable', (tester) async {
+    user.lastRead = LastRead(
+      ref: const AyahRef(2, 3),
+      updatedAt: DateTime(2026),
+    );
+    await pumpApp(tester);
+    final card = tester.getRect(
+      find.ancestor(
+        of: find.text('Lanjutkan'),
+        matching: find.byType(NuraCard),
+      ),
+    );
+    final hit = tester.hitTestOnBinding(card.topCenter + const Offset(0, 2));
+    expect(
+      hit.path.any(
+        (e) =>
+            e.target is RenderBox && (e.target as RenderBox).size == card.size,
+      ),
+      isTrue,
+    );
+  });
+
+  tw('status bar icons are light and the page has a heading', (tester) async {
+    final handle = tester.ensureSemantics();
+    await pumpApp(tester);
+    final region = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+      find.byKey(const Key('home-overlay')),
+    );
+    expect(region.value.statusBarColor, Colors.transparent);
+    expect(
+      region.value.statusBarIconBrightness,
+      SystemUiOverlayStyle.light.statusBarIconBrightness,
+    );
+    final node = tester.getSemantics(find.byKey(const Key('home-hero')));
+    expect(node.label, startsWith('Beranda'));
+    expect(node.getSemanticsData().flagsCollection.isHeader, isTrue);
+    handle.dispose();
+  });
+
+  tw('six real times at 130% on 360x640 have no overflow', (tester) async {
+    await pumpApp(tester, scale: 1.3, home: hero(data));
+    expect(tester.takeException(), isNull);
+    expect(find.text('18:55'), findsOneWidget);
   });
 
   tw('last read empty shows a message and no button', (tester) async {

@@ -25,83 +25,106 @@ class HomeHero extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final top = MediaQuery.paddingOf(context).top;
     final onHero = TextStyle(color: c.onHero);
-    return Container(
-      color: c.hero,
-      constraints: BoxConstraints(minHeight: 360 + top),
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: 110,
-            child: ExcludeSemantics(
-              child: CustomPaint(painter: HeroSilhouettePainter(c.heroShape)),
+    return Semantics(
+      container: true,
+      header: true,
+      label: 'Beranda',
+      child: Container(
+        key: const Key('home-hero'),
+        color: c.hero,
+        constraints: BoxConstraints(minHeight: 360 + top),
+        child: Stack(
+          children: [
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: heroSilhouetteHeight,
+              child: ExcludeSemantics(
+                child: CustomPaint(painter: HeroSilhouettePainter(c.heroShape)),
+              ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              NuraSpace.s16,
-              top + NuraSpace.s8,
-              NuraSpace.s8,
-              heroSheetOverlap + NuraSpace.s16,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    NuraIcon(NuraIcons.locationOn, color: c.onHero),
-                    const SizedBox(width: NuraSpace.s8),
-                    Expanded(
-                      child: Text(
-                        data.locationLabel,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: text.titleMedium?.merge(onHero),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                NuraSpace.s16,
+                top + NuraSpace.s8,
+                NuraSpace.s8,
+                heroSheetOverlap + NuraSpace.s16,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      NuraIcon(NuraIcons.locationOn, color: c.onHero),
+                      const SizedBox(width: NuraSpace.s8),
+                      Expanded(
+                        child: Text(
+                          data.locationLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.titleMedium?.merge(onHero),
+                        ),
                       ),
-                    ),
-                    _action(
-                      'Pengaturan harian',
-                      NuraIcons.tune,
-                      c.onHero,
-                      onTune,
-                    ),
-                    _action(
-                      'Cari',
-                      NuraIcons.search,
-                      c.onHero,
-                      () => Get.toNamed(Routes.search),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: NuraSpace.s16),
-                Text(data.hijriDate, style: text.titleMedium?.merge(onHero)),
-                Text(
-                  data.clock,
-                  style: text.displaySmall
-                      ?.merge(onHero)
-                      .copyWith(fontSize: 48),
-                ),
-                if (data.countdownText case final t?)
-                  Text(
-                    t,
-                    style: text.titleMedium?.copyWith(color: c.onHeroAccent),
+                      _action(
+                        'Pengaturan harian',
+                        NuraIcons.tune,
+                        c.onHero,
+                        onTune,
+                      ),
+                      _action(
+                        'Cari',
+                        NuraIcons.search,
+                        c.onHero,
+                        () => Get.toNamed(Routes.search),
+                      ),
+                    ],
                   ),
-                if (data.approximate)
+                  const SizedBox(height: NuraSpace.s16),
+                  Text(data.hijriDate, style: text.titleMedium?.merge(onHero)),
                   Text(
-                    'Jadwal perkiraan',
-                    style: text.bodyMedium?.merge(onHero),
+                    data.clock,
+                    style: text.displaySmall
+                        ?.merge(onHero)
+                        .copyWith(fontSize: 48),
                   ),
-                const SizedBox(height: NuraSpace.s24),
-                if (data.times.isEmpty)
-                  Text(data.emptyText, style: text.bodyLarge?.merge(onHero))
-                else
-                  _times(context, c, text),
-              ],
+                  if (data.countdownText case final t?)
+                    Text(
+                      t,
+                      style: text.titleMedium?.copyWith(color: c.onHeroAccent),
+                    ),
+                  if (data.approximate)
+                    Text(
+                      'Jadwal perkiraan',
+                      style: text.bodyMedium?.merge(onHero),
+                    ),
+                  const SizedBox(height: NuraSpace.s24),
+                  if (data.times.isEmpty)
+                    Text(data.emptyText, style: text.bodyLarge?.merge(onHero))
+                  else
+                    _times(context, c, text),
+                ],
+              ),
             ),
-          ),
-        ],
+            // The sheet's rounded top edge, drawn over the hero's reserved
+            // bottom space so the body below needs no negative layout.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: heroSheetOverlap,
+              child: DecoratedBox(
+                key: const Key('home-sheet-cap'),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(NuraRadius.xl),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

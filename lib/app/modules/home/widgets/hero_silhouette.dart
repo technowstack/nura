@@ -1,4 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
+const double heroSilhouetteHeight = 110;
 
 /// Flat one-tone dome and minaret skyline; no gradient.
 class HeroSilhouettePainter extends CustomPainter {
@@ -16,8 +20,8 @@ class HeroSilhouettePainter extends CustomPainter {
     for (final (cx, r) in [(0.18, 0.09), (0.5, 0.17), (0.82, 0.09)]) {
       canvas.drawArc(
         Rect.fromCircle(center: Offset(w * cx, h), radius: w * r),
-        3.14159,
-        3.14159,
+        math.pi,
+        math.pi,
         true,
         p,
       );
