@@ -197,6 +197,17 @@ void main() {
       );
       expect(ornament, findsNWidgets(n));
     }
+    for (final (b, want) in [
+      (Brightness.light, NuraColors.light.ornament),
+      (Brightness.dark, NuraColors.dark.ornament),
+    ]) {
+      await tester.pumpWidget(
+        _host(
+          DailyWidgetImage(content: fakeAyah(1), size: _s42, brightness: b),
+        ),
+      );
+      expect(tester.widget<Icon>(ornament).color, want, reason: '$b');
+    }
   });
 
   testWidgets('long surah name at narrow width does not overflow', (

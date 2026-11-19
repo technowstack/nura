@@ -133,6 +133,23 @@ void main() {
     expect(plain(t), ayahDisplayText(s.text, 45));
   });
 
+  testWidgets('whole-ayah snippet with a trailing space: one marker space', (
+    t,
+  ) async {
+    const ar = '$_ar ';
+    final s = buildArabicSnippet(ar, [
+      normalizeArabicWithOffsets(ar).text.substring(0, 3),
+    ]);
+    expect(s.cutStart || s.cutEnd, isFalse);
+    expect(s.text.endsWith(' '), isTrue);
+    await t.pumpWidget(
+      _host(AppTheme.light, SearchResultTile(item: _item(s), onTap: () {})),
+    );
+    expect(plain(t), ayahDisplayText(ar, 45));
+    expect(plain(t), isNot(contains('  ')));
+    expect(marked(t), isNotEmpty);
+  });
+
   testWidgets('cut Arabic snippet never gets the marker', (t) async {
     final long = List.filled(30, 'بِالصَّبْرِ').join(' ');
     final s = buildArabicSnippet(long, ['بالصبر']);

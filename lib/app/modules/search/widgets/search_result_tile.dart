@@ -18,15 +18,24 @@ InlineSpan snippetSpan(
 }) {
   final mark = TextStyle(backgroundColor: highlight);
   final children = <InlineSpan>[if (s.cutStart) const TextSpan(text: '…')];
+  // The marker follows the text directly, so trailing ASCII spaces go.
+  var end = s.text.length;
+  if (suffix.isNotEmpty) {
+    while (end > 0 && s.text.codeUnitAt(end - 1) == 0x20) {
+      end--;
+    }
+  }
   var at = 0;
   for (final h in s.highlights) {
-    if (h.start > at) {
-      children.add(TextSpan(text: s.text.substring(at, h.start)));
+    final hs = h.start.clamp(0, end);
+    final he = h.end.clamp(0, end);
+    if (hs > at) children.add(TextSpan(text: s.text.substring(at, hs)));
+    if (he > hs) {
+      children.add(TextSpan(text: s.text.substring(hs, he), style: mark));
     }
-    children.add(TextSpan(text: s.text.substring(h.start, h.end), style: mark));
-    at = h.end;
+    at = he > at ? he : at;
   }
-  if (at < s.text.length) children.add(TextSpan(text: s.text.substring(at)));
+  if (at < end) children.add(TextSpan(text: s.text.substring(at, end)));
   if (s.cutEnd) children.add(const TextSpan(text: '…'));
   if (suffix.isNotEmpty) children.add(TextSpan(text: suffix));
   return TextSpan(style: base, children: children);

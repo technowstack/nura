@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 
 import '../../data/models/daily_content.dart';
 import '../theme/app_theme.dart';
+import '../theme/nura_colors.dart';
 import '../theme/tokens.dart';
 
 /// Static widget drawn into the home screen widget PNG (no buttons). Provides
@@ -55,7 +56,9 @@ class DailyWidgetImage extends StatelessWidget {
                       child: NuraIcon(
                         NuraIcons.brightnessLow,
                         size: 120,
-                        color: context.nuraColors.ornament,
+                        color:
+                            (theme.extension<NuraColors>() ?? NuraColors.light)
+                                .ornament,
                       ),
                     ),
                   Padding(
@@ -112,7 +115,7 @@ class DailyWidgetImage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: NuraSpace.s4),
-            // Device fonts (Arabic fallback) can have taller line metrics than
+            // Arabic glyphs can have taller line metrics than
             // the token line height: the strut pins the line height, and the
             // flex shares shrink the two texts instead of overflowing.
             Flexible(
