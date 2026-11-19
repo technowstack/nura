@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/nura_icons.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/widgets/nura_card.dart';
+import '../../../core/widgets/ornament_badge.dart';
 import '../../../data/models/juz.dart';
 
 class JuzListItem extends StatelessWidget {
@@ -12,14 +15,32 @@ class JuzListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return ListTile(
-      onTap: onTap,
-      minTileHeight: 56,
-      contentPadding: const EdgeInsets.symmetric(horizontal: NuraSpace.s16),
-      title: Text('Juz ${juz.number}', style: text.titleMedium),
-      subtitle: Text(
-        '${juz.startSurah}:${juz.startAyah} – ${juz.endSurah}:${juz.endAyah}',
-        style: text.bodyMedium,
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: NuraSpace.s16,
+        vertical: NuraSpace.s4,
+      ),
+      child: NuraCard(
+        onTap: onTap,
+        child: Row(
+          children: [
+            OrnamentBadge(label: '${juz.number}'),
+            const SizedBox(width: NuraSpace.s12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Juz ${juz.number}', style: text.titleMedium),
+                  Text(
+                    '${juz.startSurah}:${juz.startAyah} – ${juz.endSurah}:${juz.endAyah}',
+                    style: text.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            const NuraIcon(NuraIcons.chevronRight),
+          ],
+        ),
       ),
     );
   }

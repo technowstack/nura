@@ -66,6 +66,15 @@ abstract final class AppTheme {
     colorScheme: scheme,
     scaffoldBackgroundColor: scheme.surface,
     textTheme: _textTheme,
+    tabBarTheme: TabBarThemeData(
+      labelColor: scheme.primary,
+      unselectedLabelColor: scheme.onSurface,
+      indicator: UnderlineTabIndicator(
+        borderSide: BorderSide(color: scheme.primary, width: 2),
+      ),
+      indicatorSize: TabBarIndicatorSize.tab,
+      dividerColor: Colors.transparent,
+    ),
     extensions: [colors, NuraTextStyles.standard],
   );
 

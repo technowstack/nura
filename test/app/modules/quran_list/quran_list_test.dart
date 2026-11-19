@@ -4,6 +4,12 @@ import '../../../support/icon_finders.dart';
 import 'package:nura/app/core/nura_icons.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
+import 'package:nura/app/core/theme/app_theme.dart';
+import 'package:nura/app/core/theme/nura_colors.dart';
+import 'package:nura/app/core/theme/nura_text_styles.dart';
+import 'package:nura/app/core/widgets/nura_card.dart';
+import 'package:nura/app/core/widgets/ornament_badge.dart';
+import 'package:nura/app/modules/quran_list/widgets/surah_list_item.dart';
 import 'package:nura/app/core/widgets/empty_state.dart';
 import 'package:nura/app/core/widgets/error_state.dart';
 import 'package:nura/app/data/models/ayah.dart';
@@ -256,5 +262,108 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('stub search'), findsOneWidget);
     expect((routeArgs as SearchArgs).scope, SearchScope.quran);
+  });
+
+  group('restyle', () {
+    testWidgets('surah item is a NuraCard with badge and token colors', (
+      tester,
+    ) async {
+      user.lastRead = LastRead(
+        ref: const AyahRef(1, 3),
+        updatedAt: DateTime(2000),
+      );
+      await pump(tester);
+      await tester.pumpAndSettle();
+      expect(find.byType(NuraCard), findsWidgets);
+      expect(
+        find.descendant(
+          of: find.byType(NuraCard).first,
+          matching: find.byType(OrnamentBadge),
+        ),
+        findsOneWidget,
+      );
+      final arab = tester.widget<Text>(find.text('ArabSurah1'));
+      expect(arab.style?.color, NuraColors.light.iconAccent);
+      final card = tester.widget<NuraCard>(
+        find.ancestor(of: find.text('Latin1'), matching: find.byType(NuraCard)),
+      );
+      expect(card.color, NuraColors.light.lastReadHighlight);
+      final other = tester.widget<NuraCard>(
+        find.ancestor(of: find.text('Latin2'), matching: find.byType(NuraCard)),
+      );
+      expect(other.color, isNull);
+    });
+
+    testWidgets('juz item has badge and chevron', (tester) async {
+      await pump(tester);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Juz'));
+      await tester.pumpAndSettle();
+      expect(find.byType(OrnamentBadge), findsOneWidget);
+      expect(find.byIcon(NuraIcons.chevronRight), findsOneWidget);
+    });
+
+    testWidgets('dark arabic color and 2px primary tab indicator', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        GetMaterialApp(
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: ThemeMode.dark,
+          home: Scaffold(
+            body: SurahListItem(
+              surah: _s(1, 'makkiyah'),
+              state: SurahItemState.normal,
+              onTap: () {},
+            ),
+          ),
+        ),
+      );
+      final arab = tester.widget<Text>(find.text('ArabSurah1'));
+      expect(arab.style?.color, NuraColors.dark.iconAccent);
+      final tb = AppTheme.light.tabBarTheme;
+      expect(tb.labelColor, AppTheme.light.colorScheme.primary);
+      final ind = tb.indicator as UnderlineTabIndicator;
+      expect(ind.borderSide.width, 2);
+      expect(ind.borderSide.color, AppTheme.light.colorScheme.primary);
+    });
+
+    testWidgets('arabic size 36 at 130% no overflow', (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          builder: (c, child) => MediaQuery(
+            data: MediaQuery.of(
+              c,
+            ).copyWith(textScaler: const TextScaler.linear(1.3)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: Theme(
+              data: AppTheme.light.copyWith(
+                extensions: [
+                  NuraColors.light,
+                  NuraTextStyles.standard.copyWith(
+                    arabicTitle: NuraTextStyles.standard.arabicTitle.copyWith(
+                      fontSize: 36,
+                    ),
+                  ),
+                ],
+              ),
+              child: SurahListItem(
+                surah: _s(3, 'madaniyah', ayat: 200),
+                state: SurahItemState.bookmarked,
+                onTap: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+    });
   });
 }

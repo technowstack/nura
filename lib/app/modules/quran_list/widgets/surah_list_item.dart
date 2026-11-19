@@ -1,4 +1,6 @@
 import 'package:nura/app/core/nura_icons.dart';
+import 'package:nura/app/core/widgets/nura_card.dart';
+import 'package:nura/app/core/widgets/ornament_badge.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -29,87 +31,72 @@ class SurahListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final revelation = revelationLabel(surah.revelation);
-    return Material(
-      color: state == SurahItemState.lastRead
-          ? context.nuraColors.lastReadHighlight
-          : Colors.transparent,
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: NuraSpace.s16,
+        vertical: NuraSpace.s4,
+      ),
+      child: NuraCard(
+        color: state == SurahItemState.lastRead
+            ? context.nuraColors.lastReadHighlight
+            : null,
         onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 72),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: NuraSpace.s16,
-              vertical: NuraSpace.s12,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: context.nuraColors.ornament,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text('${surah.number}', style: text.labelLarge),
-                ),
-                const SizedBox(width: NuraSpace.s12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          children: [
+            OrnamentBadge(label: '${surah.number}'),
+            const SizedBox(width: NuraSpace.s12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(surah.nameLatin, style: text.titleMedium),
+                  Wrap(
+                    spacing: NuraSpace.s4,
                     children: [
-                      Text(surah.nameLatin, style: text.titleMedium),
                       Text(surah.nameId, style: text.bodyMedium),
-                      Wrap(
-                        spacing: NuraSpace.s8,
-                        children: [
-                          Text(
-                            '${surah.ayahCount} ayat',
-                            style: text.bodySmall,
-                          ),
-                          if (revelation.isNotEmpty)
-                            Text(revelation, style: text.bodySmall),
-                          if (state == SurahItemState.lastRead) ...[
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const NuraIcon(NuraIcons.history, size: 16),
-                                Flexible(
-                                  child: Text(
-                                    'Terakhir dibaca',
-                                    style: text.labelMedium,
-                                  ),
-                                ),
-                              ],
+                      Text('·', style: text.bodyMedium),
+                      Text('${surah.ayahCount} ayat', style: text.bodyMedium),
+                      if (revelation.isNotEmpty) ...[
+                        Text('·', style: text.bodyMedium),
+                        Text(revelation, style: text.bodyMedium),
+                      ],
+                      if (state == SurahItemState.lastRead)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const NuraIcon(NuraIcons.history, size: 16),
+                            Flexible(
+                              child: Text(
+                                'Terakhir dibaca',
+                                style: text.labelMedium,
+                              ),
                             ),
                           ],
-                        ],
-                      ),
+                        ),
                     ],
                   ),
-                ),
-                if (state == SurahItemState.bookmarked)
-                  const Padding(
-                    padding: EdgeInsets.only(left: NuraSpace.s8),
-                    child: NuraIcon(
-                      NuraIcons.bookmark,
-                      filled: true,
-                      semanticLabel: 'Ditandai bookmark',
-                    ),
-                  ),
-                const SizedBox(width: NuraSpace.s8),
-                Flexible(
-                  child: Text(
-                    surah.nameArab,
-                    style: context.nuraText.arabicTitle.copyWith(
-                      color: context.nuraColors.arabicText,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+            if (state == SurahItemState.bookmarked)
+              const Padding(
+                padding: EdgeInsets.only(left: NuraSpace.s8),
+                child: NuraIcon(
+                  NuraIcons.bookmark,
+                  filled: true,
+                  semanticLabel: 'Ditandai bookmark',
+                ),
+              ),
+            const SizedBox(width: NuraSpace.s8),
+            Flexible(
+              child: Text(
+                surah.nameArab,
+                style: context.nuraText.arabicTitle.copyWith(
+                  color: context.nuraColors.iconAccent,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
