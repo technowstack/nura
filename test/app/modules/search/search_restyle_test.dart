@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nura/app/core/ayah_marker.dart';
-import 'package:nura/app/core/nura_icons.dart';
 import 'package:nura/app/core/search_snippet.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
-import 'package:nura/app/core/theme/nura_colors.dart';
 import 'package:nura/app/core/widgets/nura_card.dart';
 import 'package:nura/app/data/models/search_hit.dart';
 import 'package:nura/app/modules/bookmarks/controllers/bookmark_item.dart';
 import 'package:nura/app/modules/bookmarks/widgets/bookmark_tile.dart';
 import 'package:nura/app/data/models/ayah.dart';
+import 'package:nura/app/data/models/hadith.dart';
 import 'package:nura/app/modules/search/controllers/search_results_controller.dart';
 import 'package:nura/app/modules/search/widgets/search_result_tile.dart';
 
@@ -37,10 +36,7 @@ Widget _host(ThemeData theme, Widget child, {double scale = 1}) => MaterialApp(
 );
 
 void main() {
-  for (final (theme, colors) in [
-    (AppTheme.light, NuraColors.light),
-    (AppTheme.dark, NuraColors.dark),
-  ]) {
+  for (final theme in [AppTheme.light, AppTheme.dark]) {
     testWidgets('result and bookmark are NuraCards (${theme.brightness})', (
       t,
     ) async {
@@ -67,14 +63,20 @@ void main() {
         ),
       );
       expect(find.byType(NuraCard), findsNWidgets(2));
-      final icon = t.widget<Icon>(
-        find.descendant(
-          of: find.byType(BookmarkTile),
-          matching: find.byIcon(NuraIcons.bookmark),
-        ),
+      for (final card in t.widgetList<NuraCard>(find.byType(NuraCard))) {
+        expect(card.color, isNull); // default fill: surfaceContainerLowest
+      }
+      final m = t.widget<Material>(
+        find
+            .descendant(
+              of: find.byType(NuraCard).first,
+              matching: find.byType(Material),
+            )
+            .first,
       );
-      expect(icon.color, colors.iconAccent);
-      expect(icon.fill, 1);
+      expect(m.color, theme.colorScheme.surfaceContainerLowest);
+      final side = (m.shape! as RoundedRectangleBorder).side;
+      expect(side.color, theme.colorScheme.outlineVariant);
     });
   }
 
@@ -102,12 +104,21 @@ void main() {
     expect(hl, ['sabar']);
   });
 
-  String plain(WidgetTester t) => t
-      .widget<Text>(
-        find.byWidgetPredicate((w) => w is Text && w.textSpan != null),
-      )
-      .textSpan!
-      .toPlainText();
+  Text rich(WidgetTester t) => t.widget<Text>(
+    find.descendant(
+      of: find.byType(SearchResultTile),
+      matching: find.byWidgetPredicate((w) => w is Text && w.textSpan != null),
+    ),
+  );
+  String plain(WidgetTester t) => rich(t).textSpan!.toPlainText();
+  List<String> marked(WidgetTester t) {
+    final out = <String>[];
+    rich(t).textSpan!.visitChildren((s) {
+      if (s is TextSpan && s.style?.backgroundColor != null) out.add(s.text!);
+      return true;
+    });
+    return out;
+  }
 
   testWidgets('full-ayah Arabic gets the end marker, highlights intact', (
     t,
@@ -141,6 +152,38 @@ void main() {
           onTap: () {},
         ),
       ),
+    );
+    expect(plain(t).contains('۝'), isFalse);
+  });
+
+  testWidgets('marker keeps all highlights; end match stops before it', (
+    t,
+  ) async {
+    const ar = 'بِسْمِ اللّٰهِ بِسْمِ';
+    final s = buildArabicSnippet(ar, ['بسم']);
+    expect(s.highlights.length, 2);
+    await t.pumpWidget(
+      _host(AppTheme.light, SearchResultTile(item: _item(s), onTap: () {})),
+    );
+    final hl = marked(t);
+    expect(hl.length, 2);
+    expect(hl.last, ar.substring(ar.lastIndexOf('بِ')));
+    expect(hl.any((h) => h.contains('۝')), isFalse);
+    expect(plain(t), ayahDisplayText(ar, 45));
+  });
+
+  testWidgets('hadith hit with Arabic text never gets the marker', (t) async {
+    final item = SearchItem(
+      HadithSearchHit(
+        rowId: 1,
+        snippet: buildArabicSnippet(_ar, ['صبر']),
+        ref: const HadithRef('bukhari', 1),
+        bookName: 'Shahih Bukhari',
+      ),
+      'No. 1',
+    );
+    await t.pumpWidget(
+      _host(AppTheme.light, SearchResultTile(item: item, onTap: () {})),
     );
     expect(plain(t).contains('۝'), isFalse);
   });
