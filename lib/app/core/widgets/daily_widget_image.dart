@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -47,6 +48,16 @@ class DailyWidgetImage extends StatelessWidget {
               borderRadius: BorderRadius.circular(NuraRadius.xl),
               child: Stack(
                 children: [
+                  if (content.kind == DailyKind.ayah)
+                    Positioned(
+                      right: -NuraSpace.s24,
+                      top: -NuraSpace.s24,
+                      child: NuraIcon(
+                        NuraIcons.brightnessLow,
+                        size: 120,
+                        color: context.nuraColors.ornament,
+                      ),
+                    ),
                   Padding(
                     padding: const EdgeInsets.all(NuraSpace.s12),
                     child: _content(theme, compact),
@@ -74,8 +85,9 @@ class DailyWidgetImage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
+                Flexible(
                   child: Text(
                     content.kind == DailyKind.ayah
                         ? 'Ayat hari ini'
@@ -86,12 +98,16 @@ class DailyWidgetImage extends StatelessWidget {
                   ),
                 ),
                 if (surahName != null)
-                  Text(
-                    surahName,
-                    textDirection: TextDirection.rtl,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.nuraText.arabicTitle.copyWith(color: accent),
+                  Flexible(
+                    child: Text(
+                      surahName,
+                      textDirection: TextDirection.rtl,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.nuraText.arabicTitle.copyWith(
+                        color: accent,
+                      ),
+                    ),
                   ),
               ],
             ),

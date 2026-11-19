@@ -125,6 +125,9 @@ void main() {
     tester,
   ) async {
     final ayah = fakeAyah(1);
+    final name = ayah.surahNameArab;
+    expect(name, isNotNull);
+    if (name == null) return;
     await tester.pumpWidget(
       _host(
         DailyWidgetImage(
@@ -134,9 +137,9 @@ void main() {
         ),
       ),
     );
-    final name = tester.widget<Text>(find.text(ayah.surahNameArab ?? 'none'));
-    expect(name.style?.color, NuraColors.light.iconAccent);
-    expect(name.style?.fontFamily, nuraArabicFont);
+    final nameText = tester.widget<Text>(find.text(name));
+    expect(nameText.style?.color, NuraColors.light.iconAccent);
+    expect(nameText.style?.fontFamily, nuraArabicFont);
     await tester.pumpWidget(
       _host(
         DailyWidgetImage(
@@ -146,7 +149,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text(ayah.surahNameArab ?? 'none'), findsNothing);
+    expect(find.text(name), findsNothing);
   });
 
   testWidgets('token colors per brightness', (tester) async {
@@ -175,5 +178,49 @@ void main() {
       final label = tester.widget<Text>(find.text('Ayat hari ini'));
       expect(label.style?.color, colors.iconAccent);
     }
+  });
+
+  testWidgets('ornament only for Ayat', (tester) async {
+    final ornament = find.byWidgetPredicate((w) => w is Icon && w.size == 120);
+    for (final (c, n) in [
+      (fakeAyah(1), 1),
+      (fakeHadith(1, HadithSource.defaultBm), 0),
+    ]) {
+      await tester.pumpWidget(
+        _host(
+          DailyWidgetImage(
+            content: c,
+            size: _s42,
+            brightness: Brightness.light,
+          ),
+        ),
+      );
+      expect(ornament, findsNWidgets(n));
+    }
+  });
+
+  testWidgets('long surah name at narrow width does not overflow', (
+    tester,
+  ) async {
+    final base = fakeAyah(1);
+    final long = DailyContent(
+      kind: base.kind,
+      arab: base.arab,
+      translation: base.translation,
+      reference: base.reference,
+      deepLink: base.deepLink,
+      ayahRef: base.ayahRef,
+      surahNameArab: List.filled(30, 'ٱلشَّرْحِ').join(' '),
+    );
+    await tester.pumpWidget(
+      _host(
+        DailyWidgetImage(
+          content: long,
+          size: const Size(200, 152),
+          brightness: Brightness.light,
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
   });
 }
