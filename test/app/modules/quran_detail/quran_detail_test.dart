@@ -1,3 +1,4 @@
+import 'package:nura/app/core/ayah_marker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -148,7 +149,8 @@ void main() {
   testWidgets('ayat follow repository order', (tester) async {
     await pumpPage(tester, 2, height: 1200); // action bar row made cards taller
     final ys = [
-      for (final n in [1, 2, 3]) tester.getTopLeft(find.text('arab2:$n')).dy,
+      for (final n in [1, 2, 3])
+        tester.getTopLeft(find.text(ayahDisplayText('arab2:$n', n))).dy,
     ];
     expect(ys, [...ys]..sort());
   });
@@ -180,12 +182,12 @@ void main() {
       ),
     );
     await t.pumpWidget(card(prefs));
-    expect(find.text(arab), findsOneWidget);
+    expect(find.text(ayahDisplayText(arab, 5)), findsOneWidget);
     expect(find.text(tr), findsOneWidget);
     await t.pumpWidget(
       card(const ReadingPrefs(arabicFontSize: 28, showTranslation: false)),
     );
-    expect(find.text(arab), findsOneWidget);
+    expect(find.text(ayahDisplayText(arab, 5)), findsOneWidget);
     expect(find.text(tr), findsNothing);
   });
 
@@ -267,7 +269,7 @@ void main() {
     await tester.tap(find.text('Coba lagi'));
     await tester.pumpAndSettle();
     expect(find.byType(ErrorState), findsNothing);
-    expect(find.text('arab2:1'), findsOneWidget);
+    expect(find.text(ayahDisplayText('arab2:1', 1)), findsOneWidget);
   });
 }
 
@@ -372,7 +374,7 @@ void _robustnessTests() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('arab1:1'), findsNothing);
+    expect(find.text(ayahDisplayText('arab1:1', 1)), findsNothing);
     expect(find.byType(SurahHeaderCard), findsNothing);
     expect(find.byType(AyahCard), findsNothing);
   });

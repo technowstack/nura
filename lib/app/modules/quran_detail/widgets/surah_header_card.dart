@@ -27,54 +27,85 @@ class SurahHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(NuraSpace.s20),
-      decoration: BoxDecoration(
-        color: context.nuraColors.ornament,
-        borderRadius: BorderRadius.circular(NuraRadius.lg),
+    final colors = context.nuraColors;
+    final label = Theme.of(
+      context,
+    ).textTheme.bodyMedium?.copyWith(color: colors.onHero);
+    final value = label?.copyWith(
+      color: colors.onHeroAccent,
+      fontWeight: FontWeight.w600,
+    );
+    Widget row(String l, String v) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: '$l  ', style: label),
+            TextSpan(text: v, style: value),
+          ],
+        ),
       ),
-      child: Column(
-        children: [
-          Text(
-            surah.nameArab,
-            textDirection: TextDirection.rtl,
-            style: context.nuraText.arabicTitle.copyWith(
-              color: context.nuraColors.arabicText,
-            ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(NuraSpace.s20),
+          decoration: BoxDecoration(
+            color: colors.hero,
+            borderRadius: BorderRadius.circular(NuraRadius.lg),
           ),
-          Text(
-            surah.nameLatin,
-            style: text.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-          Text(
-            surah.nameId,
-            style: text.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-          if (audio != AyahAudioState.hidden) ...[
-            const SizedBox(height: NuraSpace.s12),
-            if (audio == AyahAudioState.needsInternet)
-              OutlinedButton.icon(
-                onPressed: null,
-                icon: NuraIcon(NuraIcons.playArrow),
-                label: Text('Putar surah · Butuh internet'),
-              )
-            else
-              OutlinedButton.icon(
-                onPressed: audio == AyahAudioState.loading ? null : onPlaySurah,
-                icon: const NuraIcon(NuraIcons.playArrow),
-                label: const Text('Putar surah'),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    row('Nama', surah.nameLatin),
+                    if (surah.nameId.isNotEmpty) row('Arti', surah.nameId),
+                    row('Jumlah ayat', '${surah.ayahCount}'),
+                    row('Tempat turun', '[Q4]'),
+                  ],
+                ),
               ),
-          ],
-          if (showBismillah) ...[
-            const SizedBox(height: NuraSpace.s16),
-            BismillahHeader(text: basmalah),
-          ],
+              const SizedBox(width: NuraSpace.s12),
+              Flexible(
+                flex: 2,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    surah.nameArab,
+                    textDirection: TextDirection.rtl,
+                    style: context.nuraText.arabicHero.copyWith(
+                      color: colors.onHero,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (audio != AyahAudioState.hidden) ...[
+          const SizedBox(height: NuraSpace.s12),
+          if (audio == AyahAudioState.needsInternet)
+            OutlinedButton.icon(
+              onPressed: null,
+              icon: const NuraIcon(NuraIcons.playArrow),
+              label: const Text('Putar surah · Butuh internet'),
+            )
+          else
+            OutlinedButton.icon(
+              onPressed: audio == AyahAudioState.loading ? null : onPlaySurah,
+              icon: const NuraIcon(NuraIcons.playArrow),
+              label: const Text('Putar surah'),
+            ),
         ],
-      ),
+        if (showBismillah) ...[
+          const SizedBox(height: NuraSpace.s12),
+          BismillahHeader(text: basmalah),
+        ],
+      ],
     );
   }
 }

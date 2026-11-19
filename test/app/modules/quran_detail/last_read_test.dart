@@ -1,3 +1,4 @@
+import 'package:nura/app/core/ayah_marker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -134,7 +135,7 @@ void main() {
   // tester.drag pumps no frame mid-gesture; a real drag lays out while held.
   Future<void> dragUp(WidgetTester t) async {
     final g = await t.startGesture(const Offset(180, 500));
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < 8; i++) {
       await g.moveBy(const Offset(0, -150));
       await t.pump(const Duration(milliseconds: 16));
     }
@@ -164,9 +165,12 @@ void main() {
 
   testWidgets('SurahArgs ayah 30 is jumped to', (t) async {
     await pump(t, const SurahArgs(1, 30));
-    expect(find.text('arab1:30'), findsOneWidget);
-    expect(find.text('arab1:2'), findsNothing);
-    expect(t.getTopLeft(find.text('arab1:30')).dy, lessThan(300));
+    expect(find.text(ayahDisplayText('arab1:30', 30)), findsOneWidget);
+    expect(find.text(ayahDisplayText('arab1:2', 2)), findsNothing);
+    expect(
+      t.getTopLeft(find.text(ayahDisplayText('arab1:30', 30))).dy,
+      lessThan(300),
+    );
   });
 
   testWidgets('opening a surah does not overwrite last read', (t) async {

@@ -1,3 +1,4 @@
+import 'package:nura/app/core/ayah_marker.dart';
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:io';
@@ -132,7 +133,7 @@ void main() {
     int surah = 94,
     double scale = 1,
   }) async {
-    t.view.physicalSize = const Size(360, 640);
+    t.view.physicalSize = const Size(360, 1200);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
     Get.put(
@@ -164,7 +165,7 @@ void main() {
       .firstOrNull;
 
   Finder play(int ayah) => find.descendant(
-    of: find.widgetWithText(AyahCard, 'arab94:$ayah'),
+    of: find.widgetWithText(AyahCard, ayahDisplayText('arab94:$ayah', ayah)),
     matching: find.byTooltip('Putar ayat'),
   );
 
@@ -176,7 +177,7 @@ void main() {
     await pumpPage(t);
     expect(find.byTooltip('Putar ayat'), findsNothing);
     expect(find.byTooltip('Jeda'), findsNothing);
-    expect(find.byTooltip('Putar dari sini'), findsNothing);
+    expect(find.byTooltip('Menu ayat'), findsNothing);
     expect(find.byTooltip('Butuh internet'), findsNothing);
     expect(find.text('Putar surah'), findsNothing);
     expect(find.textContaining('Butuh internet'), findsNothing);
@@ -247,15 +248,18 @@ void main() {
     await settle(t);
     expect(engine.queues.last, [for (var i = 1; i <= 30; i++) _u('05', 94, i)]);
     await t.scrollUntilVisible(
-      find.text('arab94:3'),
+      find.text(ayahDisplayText('arab94:3', 3)),
       100,
       scrollable: find.byType(Scrollable).first,
     );
-    final row = find.descendant(
-      of: find.widgetWithText(AyahCard, 'arab94:3'),
-      matching: find.byTooltip('Putar dari sini'),
+    await t.tap(
+      find.descendant(
+        of: find.widgetWithText(AyahCard, ayahDisplayText('arab94:3', 3)),
+        matching: find.byTooltip('Menu ayat'),
+      ),
     );
-    await t.tap(row);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Putar dari sini'));
     await settle(t);
     expect(engine.queues.last.first, _u('05', 94, 3));
     expect(engine.queues.last, hasLength(28));
@@ -267,16 +271,16 @@ void main() {
     await t.tap(find.text('Putar surah'));
     await settle(t);
     expect(playingCard(t), 1);
-    expect(find.text('arab94:26'), findsNothing);
+    expect(find.text(ayahDisplayText('arab94:26', 26)), findsNothing);
     engine.emit(const IndexChanged(25));
     await settle(t);
     expect(playingCard(t), 26);
-    expect(find.text('arab94:26'), findsOneWidget);
+    expect(find.text(ayahDisplayText('arab94:26', 26)), findsOneWidget);
     expect(Get.find<QuranDetailController>().playingAyah.value, 26);
     engine.emit(const IndexChanged(1));
     await settle(t);
     expect(playingCard(t), 2);
-    expect(find.text('arab94:2'), findsOneWidget);
+    expect(find.text(ayahDisplayText('arab94:2', 2)), findsOneWidget);
   });
 
   testWidgets('failure shows one snackbar, not an error screen', (t) async {
@@ -363,7 +367,7 @@ void main() {
 
   testWidgets('audio tap targets are at least 48dp', (t) async {
     await pumpPage(t);
-    for (final f in [play(1), find.byTooltip('Putar dari sini').first]) {
+    for (final f in [play(1), find.byTooltip('Menu ayat').first]) {
       final size = t.getSize(f);
       expect(size.width, greaterThanOrEqualTo(48));
       expect(size.height, greaterThanOrEqualTo(48));
