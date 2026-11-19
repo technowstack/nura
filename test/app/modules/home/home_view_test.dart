@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:nura/app/core/theme/arabic_font.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
-import 'package:nura/app/core/theme/nura_text_styles.dart';
 import 'package:nura/app/data/models/daily_content.dart';
 import 'package:nura/app/data/repositories/daily_content_repository.dart';
 import 'package:nura/app/data/repositories/daily_settings_store.dart';

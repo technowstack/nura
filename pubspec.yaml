@@ -35,7 +35,11 @@ flutter:
     - assets/db/content.version
     - data-source/meta/prayer_regions.json
     - assets/fonts/PlusJakartaSans/OFL.txt
+    - assets/fonts/ScheherazadeNew/OFL.txt
   fonts:
+    - family: Scheherazade New
+      fonts:
+        - asset: assets/fonts/ScheherazadeNew/ScheherazadeNew-Regular.ttf
     - family: Plus Jakarta Sans
       fonts:
         - asset: assets/fonts/PlusJakartaSans/PlusJakartaSans-Regular.ttf

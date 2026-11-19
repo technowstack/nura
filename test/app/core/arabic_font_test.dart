@@ -1,0 +1,112 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:nura/app/core/theme/arabic_font.dart';
+
+/// Minimal TrueType cmap reader (formats 4 and 12) returning mapped code points.
+bool Function(int) cmapLookup(Uint8List bytes) {
+  final d = ByteData.sublistView(bytes);
+  final n = d.getUint16(4);
+  var cmapOff = -1;
+  for (var i = 0; i < n; i++) {
+    final r = 12 + i * 16;
+    if (String.fromCharCodes(bytes.sublist(r, r + 4)) == 'cmap') {
+      cmapOff = d.getUint32(r + 8);
+    }
+  }
+  if (cmapOff < 0) throw StateError('no cmap table');
+  final subs = d.getUint16(cmapOff + 2);
+  final ranges = <List<int>>[];
+  for (var i = 0; i < subs; i++) {
+    final off = cmapOff + d.getUint32(cmapOff + 4 + i * 8 + 4);
+    final fmt = d.getUint16(off);
+    if (fmt == 12) {
+      final groups = d.getUint32(off + 12);
+      for (var g = 0; g < groups; g++) {
+        final o = off + 16 + g * 12;
+        ranges.add([d.getUint32(o), d.getUint32(o + 4)]);
+      }
+    } else if (fmt == 4) {
+      final segX2 = d.getUint16(off + 6);
+      final seg = segX2 ~/ 2;
+      final endO = off + 14;
+      final startO = endO + segX2 + 2;
+      final deltaO = startO + segX2;
+      final rangeO = deltaO + segX2;
+      for (var s = 0; s < seg; s++) {
+        final start = d.getUint16(startO + s * 2);
+        final end = d.getUint16(endO + s * 2);
+        final ro = d.getUint16(rangeO + s * 2);
+        final delta = d.getInt16(deltaO + s * 2);
+        for (var c = start; c <= end && c != 0xFFFF; c++) {
+          int gid;
+          if (ro == 0) {
+            gid = (c + delta) & 0xFFFF;
+          } else {
+            final p = rangeO + s * 2 + ro + (c - start) * 2;
+            final g = d.getUint16(p);
+            gid = g == 0 ? 0 : (g + delta) & 0xFFFF;
+          }
+          if (gid != 0) ranges.add([c, c]);
+        }
+      }
+    }
+  }
+  return (cp) => ranges.any((r) => cp >= r[0] && cp <= r[1]);
+}
+
+void main() {
+  const fontPath = 'assets/fonts/ScheherazadeNew/ScheherazadeNew-Regular.ttf';
+
+  test('Arabic font name lives only in arabic_font.dart', () {
+    expect(nuraArabicFont, 'Scheherazade New');
+    final offenders = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.dart'))
+        .where((f) => !f.path.endsWith('arabic_font.dart'))
+        .where((f) => f.readAsStringSync().contains('Scheherazade'))
+        .map((f) => f.path);
+    expect(offenders, isEmpty);
+  });
+
+  test('pubspec registers the same family and the asset exists', () {
+    final pub = File('pubspec.yaml').readAsStringSync();
+    expect(pub, contains('family: $nuraArabicFont'));
+    expect(pub, contains(fontPath));
+    expect(pub, contains('assets/fonts/ScheherazadeNew/OFL.txt'));
+    expect(File(fontPath).existsSync(), isTrue);
+    expect(File('assets/fonts/ScheherazadeNew/OFL.txt').existsSync(), isTrue);
+  });
+
+  test('font cmap covers every non-ASCII code point in data-source/quran', () {
+    final has = cmapLookup(File(fontPath).readAsBytesSync());
+    final used = <int>{};
+    void walk(Object? v) {
+      if (v is String) {
+        used.addAll(v.runes.where((r) => r > 0x7F));
+      } else if (v is Map) {
+        v.values.forEach(walk);
+      } else if (v is List) {
+        v.forEach(walk);
+      }
+    }
+
+    for (final f in Directory(
+      'data-source/quran',
+    ).listSync().whereType<File>()) {
+      if (f.path.endsWith('.json')) walk(jsonDecode(f.readAsStringSync()));
+    }
+    expect(used, isNotEmpty);
+    final missing = used.where((c) => !has(c)).map((c) => c.toRadixString(16));
+    expect(missing, isEmpty);
+  });
+
+  test('cmap reader reports absent code points', () {
+    final has = cmapLookup(File(fontPath).readAsBytesSync());
+    expect(has(0x0627), isTrue);
+    expect(has(0x10FFFF), isFalse);
+  });
+}

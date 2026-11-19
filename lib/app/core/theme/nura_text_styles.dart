@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:nura/app/core/theme/arabic_font.dart';
 
-/// Font families from design tokens (`type/font/*`). The Arabic family is not
-/// bundled yet and falls back to the system font.
+/// Latin font family from design tokens (`type/font/latin`). The Arabic family
+/// is in arabic_font.dart.
 const String nuraLatinFont = 'Plus Jakarta Sans';
-const String nuraArabicFont = 'LPMQ Isep Misbah';
 
 /// Builds a style from token size and line height (Flutter height = ratio).
 TextStyle nuraTextStyle({

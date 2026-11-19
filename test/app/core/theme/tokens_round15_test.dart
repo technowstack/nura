@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nura/app/core/theme/arabic_font.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
 import 'package:nura/app/core/theme/nura_colors.dart';
 import 'package:nura/app/core/theme/nura_text_styles.dart';
