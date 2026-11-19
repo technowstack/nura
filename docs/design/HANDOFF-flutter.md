@@ -117,7 +117,7 @@ Scrim `ColorScheme.scrim` alpha 32%; sheet rata bawah, tinggi maksimum 90% tingg
 | Hal | Status |
 |---|---|
 | **Q4** (Makkiyah/Madaniyah, juz, rentang ayat) | Slot ada di SurahListItem, SurahHeaderCard, dan tab Juz; berisi "[Q4]" dengan layer berakhiran "(menunggu Q4)". Data-source tidak punya field ini; jangan diisi dari ingatan. |
-| **~XXX MB** | Layar error ruang penyimpanan: teks "~XXX MB" (layer "storage-size (isi setelah Task 7)"). Isi setelah angka Task 7 tersedia. |
+| **Angka ruang (ex "~XXX MB")** | Layar error ruang penyimpanan: angka dihitung saat runtime, bukan teks tetap. Rumus: ukuran asset `content.db` × 1,10, dibulatkan ke atas per 5 MB (data sekarang ≈ 125 MB), dibandingkan dengan ruang kosong perangkat sebelum penyalinan. Layer "storage-size" di Figma hanyalah contoh. Aturan lengkap: spec bagian 5.4. |
 | **Jam 06.00** | Jam default notifikasi harian adalah asumsi, belum diputuskan produk. |
 | **Lisensi font Q6** | Plus Jakarta Sans (OFL); LPMQ Isep Misbah dan cadangan KFGQPC Uthmanic Script Hafs: lisensi wajib dicek sebelum rilis. LPMQ diambil dari sumber resmi LPMQ (lajnah.kemenag.go.id/unduhan); catat tanggal unduh di catatan rilis. |
 | **Ikon dan ilustrasi** | Ikon fungsi sudah Material Symbols Rounded 300; ikon aplikasi final (brief bagian 10) dan ilustrasi EmptyState/ErrorState/onboarding (kini lingkaran/frame kosong) belum ada. |

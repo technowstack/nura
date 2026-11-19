@@ -36,7 +36,7 @@ Cabang utama: `main`. Setiap fase dikerjakan di branch sendiri (`feat/phase-N-<n
 | Tema dari token desain | Selesai di kode (branch `feat/phase-2-quran`) | `ColorScheme`, `NuraColors`, `NuraTextStyles`, dan konstanta jarak/radius ada di `lib/app/core/theme/`, diturunkan dari `tokens.json` |
 | Font Latin Plus Jakarta Sans | Dibundel (2026-11-13) | Regular 400, Medium 500, dan SemiBold 600 di `assets/fonts/PlusJakartaSans/` beserta `OFL.txt` (SIL OFL 1.1, Copyright 2020 The Plus Jakarta Sans Project Authors). Zip kiriman pemilik (`assets/fonts/*.zip`) diabaikan git |
 | Font Arab LPMQ | Belum didaftarkan | Menunggu Q6 (lisensi). Sementara teks Arab memakai font fallback sistem. `LPMQ IsepMisbah.zip` ada di folder lokal tetapi diabaikan git dan tidak didaftarkan |
-| Placeholder di desain | Ada | Slot "[Q4]" (tempat turun, juz). Teks "~XXX MB" di layar error ruang penyimpanan: isi saat layar itu dibangun (ukuran `content.db` 112,38 MB; perhitungkan ruang `.tmp` saat pembaruan). Ikon selain `history` dan ilustrasi masih placeholder. Wordmark sementara (Q2) |
+| Placeholder di desain | Ada | Slot "[Q4]" (tempat turun, juz). Angka di layar error ruang penyimpanan dihitung saat runtime (aturan di spec 5.4: ukuran `content.db` × 1,10, ke atas per 5 MB, ≈ 125 MB); pengecekan dan layarnya belum diimplementasikan. Ikon selain `history` dan ilustrasi masih placeholder. Wordmark sementara (Q2) |
 
 ## Fitur v1
 
