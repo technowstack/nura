@@ -9,6 +9,11 @@ class NuraColors extends ThemeExtension<NuraColors> {
     required this.searchHighlight,
     required this.ornament,
     required this.offlineBadge,
+    required this.hero,
+    required this.heroShape,
+    required this.onHero,
+    required this.onHeroAccent,
+    required this.iconAccent,
   });
 
   static const NuraColors light = NuraColors(
@@ -17,6 +22,11 @@ class NuraColors extends ThemeExtension<NuraColors> {
     searchHighlight: Color(0xFFFFE3A3),
     ornament: Color(0x141F6F5C),
     offlineBadge: Color(0xFF2B7430),
+    hero: Color(0xFF185A4B),
+    heroShape: Color(0xFF1B6252),
+    onHero: Color(0xFFF8F7F3),
+    onHeroAccent: Color(0xFFEBCB8B),
+    iconAccent: Color(0xFF8A6A3E),
   );
 
   static const NuraColors dark = NuraColors(
@@ -25,6 +35,11 @@ class NuraColors extends ThemeExtension<NuraColors> {
     searchHighlight: Color(0xFF5A4A1E),
     ornament: Color(0x0F7FC8B2),
     offlineBadge: Color(0xFF81C784),
+    hero: Color(0xFF0F3F34),
+    heroShape: Color(0xFF124A3D),
+    onHero: Color(0xFFF1F2EF),
+    onHeroAccent: Color(0xFFEBCB8B),
+    iconAccent: Color(0xFFD9BE92),
   );
 
   final Color arabicText;
@@ -32,6 +47,11 @@ class NuraColors extends ThemeExtension<NuraColors> {
   final Color searchHighlight;
   final Color ornament;
   final Color offlineBadge;
+  final Color hero;
+  final Color heroShape;
+  final Color onHero;
+  final Color onHeroAccent;
+  final Color iconAccent;
 
   @override
   NuraColors copyWith({
@@ -40,12 +60,22 @@ class NuraColors extends ThemeExtension<NuraColors> {
     Color? searchHighlight,
     Color? ornament,
     Color? offlineBadge,
+    Color? hero,
+    Color? heroShape,
+    Color? onHero,
+    Color? onHeroAccent,
+    Color? iconAccent,
   }) => NuraColors(
     arabicText: arabicText ?? this.arabicText,
     lastReadHighlight: lastReadHighlight ?? this.lastReadHighlight,
     searchHighlight: searchHighlight ?? this.searchHighlight,
     ornament: ornament ?? this.ornament,
     offlineBadge: offlineBadge ?? this.offlineBadge,
+    hero: hero ?? this.hero,
+    heroShape: heroShape ?? this.heroShape,
+    onHero: onHero ?? this.onHero,
+    onHeroAccent: onHeroAccent ?? this.onHeroAccent,
+    iconAccent: iconAccent ?? this.iconAccent,
   );
 
   @override
@@ -62,6 +92,12 @@ class NuraColors extends ThemeExtension<NuraColors> {
       ornament: Color.lerp(ornament, other.ornament, t) ?? ornament,
       offlineBadge:
           Color.lerp(offlineBadge, other.offlineBadge, t) ?? offlineBadge,
+      hero: Color.lerp(hero, other.hero, t) ?? hero,
+      heroShape: Color.lerp(heroShape, other.heroShape, t) ?? heroShape,
+      onHero: Color.lerp(onHero, other.onHero, t) ?? onHero,
+      onHeroAccent:
+          Color.lerp(onHeroAccent, other.onHeroAccent, t) ?? onHeroAccent,
+      iconAccent: Color.lerp(iconAccent, other.iconAccent, t) ?? iconAccent,
     );
   }
 }
