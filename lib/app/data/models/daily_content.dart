@@ -22,6 +22,7 @@ class DailyContent {
     required this.deepLink,
     this.ayahRef,
     this.hadithRef,
+    this.surahNameArab,
   });
 
   final DailyKind kind;
@@ -31,4 +32,7 @@ class DailyContent {
   final String deepLink;
   final AyahRef? ayahRef;
   final HadithRef? hadithRef;
+
+  /// Arabic surah name as stored; null for hadith.
+  final String? surahNameArab;
 }

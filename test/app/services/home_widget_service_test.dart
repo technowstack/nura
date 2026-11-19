@@ -374,6 +374,7 @@ class _TextRepo extends FakeDailyContentRepository {
       reference: base.reference,
       deepLink: base.deepLink,
       ayahRef: base.ayahRef,
+      surahNameArab: base.surahNameArab,
     );
   }
 }

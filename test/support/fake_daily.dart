@@ -11,6 +11,7 @@ DailyContent fakeAyah(int day) => DailyContent(
   reference: 'QS. Asy-Syarh: $day',
   deepLink: 'nura://ayah/94/$day',
   ayahRef: AyahRef(94, day),
+  surahNameArab: 'ٱلشَّرْحِ',
 );
 
 DailyContent fakeHadith(int day, HadithSource source) => DailyContent(

@@ -26,7 +26,7 @@ class SqliteDailyContentRepository implements DailyContentRepository {
     if (n == 0) return null;
     final rows = _db.raw.select(
       'SELECT a.surah_number, a.ayah_number, a.arab, a.translation_id, '
-      's.name_latin FROM daily_ayah d JOIN ayah a ON a.id = d.ayah_id '
+      's.name_latin, s.name_arab FROM daily_ayah d JOIN ayah a ON a.id = d.ayah_id '
       'JOIN surah s ON s.number = a.surah_number WHERE d.seq = ?',
       [_seq(localDate, n)],
     );
@@ -41,6 +41,7 @@ class SqliteDailyContentRepository implements DailyContentRepository {
       reference: 'QS. ${r['name_latin']}: $ayah',
       deepLink: 'nura://ayah/$surah/$ayah',
       ayahRef: AyahRef(surah, ayah),
+      surahNameArab: r['name_arab'] as String,
     );
   }
 

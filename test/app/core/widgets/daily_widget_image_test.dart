@@ -2,7 +2,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nura/app/core/theme/app_theme.dart';
 import 'package:nura/app/core/theme/arabic_font.dart';
+import 'package:nura/app/core/theme/nura_colors.dart';
 import 'package:nura/app/core/widgets/daily_widget_image.dart';
 import 'package:nura/app/data/models/daily_content.dart';
 
@@ -116,6 +118,62 @@ void main() {
         find.text(fakeHadith(3, HadithSource.defaultBm).reference),
         findsOneWidget,
       );
+    }
+  });
+
+  testWidgets('Arabic surah name only for Ayat, in arabicTitle/iconAccent', (
+    tester,
+  ) async {
+    final ayah = fakeAyah(1);
+    await tester.pumpWidget(
+      _host(
+        DailyWidgetImage(
+          content: ayah,
+          size: _s42,
+          brightness: Brightness.light,
+        ),
+      ),
+    );
+    final name = tester.widget<Text>(find.text(ayah.surahNameArab ?? 'none'));
+    expect(name.style?.color, NuraColors.light.iconAccent);
+    expect(name.style?.fontFamily, nuraArabicFont);
+    await tester.pumpWidget(
+      _host(
+        DailyWidgetImage(
+          content: fakeHadith(1, HadithSource.defaultBm),
+          size: _s42,
+          brightness: Brightness.light,
+        ),
+      ),
+    );
+    expect(find.text(ayah.surahNameArab ?? 'none'), findsNothing);
+  });
+
+  testWidgets('token colors per brightness', (tester) async {
+    for (final b in Brightness.values) {
+      final theme = b == Brightness.dark ? AppTheme.dark : AppTheme.light;
+      final colors = b == Brightness.dark ? NuraColors.dark : NuraColors.light;
+      await tester.pumpWidget(
+        _host(
+          DailyWidgetImage(content: fakeAyah(1), size: _s42, brightness: b),
+        ),
+      );
+      final box = tester.widget<DecoratedBox>(
+        find
+            .descendant(
+              of: find.byType(DailyWidgetImage),
+              matching: find.byType(DecoratedBox),
+            )
+            .first,
+      );
+      final deco = box.decoration as BoxDecoration;
+      expect(deco.color, theme.colorScheme.surfaceContainerLowest);
+      expect(
+        (deco.border as Border).top.color,
+        theme.colorScheme.outlineVariant,
+      );
+      final label = tester.widget<Text>(find.text('Ayat hari ini'));
+      expect(label.style?.color, colors.iconAccent);
     }
   });
 }
