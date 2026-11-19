@@ -12,7 +12,6 @@ abstract final class NuraIcons {
   static const IconData arrowForward = Symbols.arrow_forward_rounded;
   static const IconData playArrow = Symbols.play_arrow_rounded;
   static const IconData pause = Symbols.pause_rounded;
-  static const IconData playlistPlay = Symbols.playlist_play_rounded;
   static const IconData bookmark = Symbols.bookmark_rounded;
   static const IconData menuBook = Symbols.menu_book_rounded;
   static const IconData contentCopy = Symbols.content_copy_rounded;
