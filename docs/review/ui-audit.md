@@ -99,3 +99,7 @@ Onboarding dan error hanya ikut komponen (ikon `location_on`/`chevron_right`, wa
 3. Ikon Material Symbols: izinkan font/aset ikon (Apache 2.0), atau pakai `Icons.*` sampai putaran 2?
 4. Tanggal Hijriah di hero: dihitung offline, dari API, atau ditunda?
 5. Nasib kontrol audio Fase 7 ("Putar surah", "Putar dari sini", "Jeda") di bilah aksi 5 sel: butuh keputusan desain.
+
+## 6. Status pelaksanaan (2026-11-19)
+
+UA-1 sampai UA-8 selesai di branch `feat/ui-alignment` (rencana `docs/plans/2026-11-19-nura-ui-alignment.md`); UA-9 (uji perangkat) menunggu pemilik; checklist di `docs/STATUS.md` (butir 0b). Keputusan atas pertanyaan di bagian 5: perangkat ditunda ke akhir; font Arab cadangan Scheherazade New dengan satu titik penggantian; ikon `material_symbols_icons`; Hijriah offline dengan penyesuaian −1/0/+1; audio: sel putar di bilah dan "Putar dari sini" di menu ⋯. Tersisa: kartu ayat penuh di pencarian dan bookmark (F-pencarian), "Bagikan" (paket baru).
