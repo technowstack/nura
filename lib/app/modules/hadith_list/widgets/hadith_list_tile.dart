@@ -26,7 +26,11 @@ class HadithListTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       trailing: item.bookmarked
-          ? const NuraIcon(NuraIcons.bookmark, semanticLabel: 'Ditandai')
+          ? const NuraIcon(
+              NuraIcons.bookmark,
+              filled: true,
+              semanticLabel: 'Ditandai',
+            )
           : null,
     );
   }

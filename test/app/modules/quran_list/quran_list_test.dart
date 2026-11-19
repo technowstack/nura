@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/icon_finders.dart';
 import 'package:nura/app/core/nura_icons.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
@@ -119,7 +120,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.byIcon(NuraIcons.bookmark), findsOneWidget);
+    expect(bookmarkIcon(filled: true), findsOneWidget);
     handle.dispose();
   });
 
@@ -174,7 +175,7 @@ void main() {
     c.bookmarkedSurahs.add(1);
     await tester.pumpAndSettle();
     expect(find.byIcon(NuraIcons.history), findsOneWidget);
-    expect(find.byIcon(NuraIcons.bookmark), findsOneWidget);
+    expect(bookmarkIcon(filled: true), findsOneWidget);
   });
 
   testWidgets('returning from surah page refreshes markers', (tester) async {
@@ -190,7 +191,7 @@ void main() {
     Get.back<void>();
     await tester.pumpAndSettle();
     expect(find.byIcon(NuraIcons.history), findsOneWidget);
-    expect(find.byIcon(NuraIcons.bookmark), findsOneWidget);
+    expect(bookmarkIcon(filled: true), findsOneWidget);
   });
 
   testWidgets('tapping juz row opens route with start surah and ayah', (

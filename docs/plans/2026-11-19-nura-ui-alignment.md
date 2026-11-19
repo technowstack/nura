@@ -66,7 +66,7 @@
 
 **Files:** Modify `pubspec.yaml` (`material_symbols_icons: ^4.2960.0`), semua berkas `lib/` yang memakai `Icons.` (cari dengan grep); Create `lib/app/core/nura_icons.dart`; Test `test/app/core/nura_icons_test.dart`.
 
-**Interfaces:** Produces: `abstract final class NuraIcons` berisi konstanta `IconData` (dari `Symbols.<nama>_rounded`) untuk setiap ikon yang dipakai aplikasi sekarang, ditambah `moreHoriz`, `history`, `locationOn`, `chevronRight`, `contentCopy`, `search`. Widget `NuraIcon(IconData icon, {double size = 24, Color? color, bool filled = false, String? semanticLabel})` membungkus `Icon` dengan `weight: 300`, `fill: filled ? 1 : 0`.
+**Interfaces:** Produces: `abstract final class NuraIcons` berisi konstanta `IconData` (dari `Symbols.<nama>_rounded`) untuk setiap ikon yang dipakai aplikasi sekarang, ditambah `moreHoriz`, `history`, `locationOn`, `chevronRight`, `contentCopy`, `search`. Widget `NuraIcon(IconData icon, {double? size, Color? color, bool filled = false, String? semanticLabel})` membungkus `Icon` dengan `weight: 300`, `fill: filled ? 1 : 0`. Deviasi: `size` dan `color` nullable (mewarisi IconTheme), bukan `size = 24`.
 
 - [ ] **Step 1: Write failing tests**: (a) memindai `lib/`: gagal bila ada `Icons.` dan bila ada impor `material_symbols_icons/get.dart` atau `symbols_map.dart`; (b) `NuraIcon` merender `Icon` dengan weight 300 dan fill sesuai; (c) tes widget yang mencari `Icons.x` diubah ke `NuraIcons.x`.
 - [ ] **Step 2–4: Run fail, ganti semua `Icons.*` ke `NuraIcons`/`NuraIcon` secara mekanis (perilaku dan semantik tidak berubah), run pass.**

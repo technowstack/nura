@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nura/app/core/nura_icons.dart';
+import '../../../support/icon_finders.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/widgets/error_state.dart';
@@ -39,11 +39,6 @@ Ayah _a(int s, int n, {String? arab, String? tr}) => Ayah(
 );
 
 const _basmalah = 'BASMALAH-FROM-REPO';
-
-Finder bookmarkIcon({required bool filled}) => find.byWidgetPredicate(
-  (w) =>
-      w is Icon && w.icon == NuraIcons.bookmark && w.fill == (filled ? 1 : 0),
-);
 
 void main() {
   _robustnessTests();

@@ -94,6 +94,7 @@ class SurahListItem extends StatelessWidget {
                     padding: EdgeInsets.only(left: NuraSpace.s8),
                     child: NuraIcon(
                       NuraIcons.bookmark,
+                      filled: true,
                       semanticLabel: 'Ditandai bookmark',
                     ),
                   ),

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/icon_finders.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/ui_state.dart';
@@ -270,6 +271,7 @@ void main() {
     user.toggleHadithBookmark(const HadithRef(_slug, 2));
     await pump(tester);
     expect(find.bySemanticsLabel(RegExp('Ditandai')), findsOneWidget);
+    expect(bookmarkIcon(filled: true), findsOneWidget);
     await tester.tap(find.text('No. 1'));
     await tester.pumpAndSettle();
     user.toggleHadithBookmark(const HadithRef(_slug, 3));
