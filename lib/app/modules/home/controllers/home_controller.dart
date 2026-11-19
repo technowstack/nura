@@ -80,6 +80,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   PrayerDay? _today;
   PrayerDay? _tomorrow;
   String? _loadedFor;
+  String? _tomorrowTriedFor;
   bool _loadingTomorrow = false;
   Timer? _minute;
 
@@ -99,6 +100,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     final t = _now();
     return r == null ? t : t.toUtc().add(Duration(hours: r.zone.offsetHours));
   }
+
+  static String _keyOf(PrayerRegion r, String date) => '${r.key}|$date';
 
   static String _dateOf(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-'
@@ -125,6 +128,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     if (repo == null || r == null) {
       _today = _tomorrow = null;
       _loadedFor = null;
+      _tomorrowTriedFor = null;
       hero.value = _buildHero();
       return;
     }
@@ -139,7 +143,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
       _today = null;
     }
     _tomorrow = null;
-    _loadedFor = date;
+    _tomorrowTriedFor = null;
+    _loadedFor = _keyOf(r, date);
     _rebuild();
   }
 
@@ -152,8 +157,10 @@ class HomeController extends GetxController with WidgetsBindingObserver {
         _today != null &&
         h.nextIndex == null &&
         _tomorrow == null &&
+        _tomorrowTriedFor != _loadedFor &&
         !_loadingTomorrow) {
       _loadingTomorrow = true;
+      _tomorrowTriedFor = _loadedFor; // retried only on resume or day change
       final r = _region;
       final next = DateTime.utc(
         _wall(r).year,
@@ -182,7 +189,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     _minute?.cancel();
     final t = _now();
     _minute = Timer(Duration(seconds: 60 - t.second), () {
-      if (_loadedFor != _dateOf(_wall(_region))) {
+      final r = _region;
+      if (r == null || _loadedFor != _keyOf(r, _dateOf(_wall(r)))) {
         unawaited(_loadPrayer());
       } else {
         _rebuild();

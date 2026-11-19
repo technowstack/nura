@@ -182,4 +182,25 @@ void main() {
     expect(fresh.nextIndex, 0);
     expect(fresh.clock, '00:00');
   });
+
+  test('Terbit is never the next prayer', () {
+    for (final t in [
+      DateTime(2026, 11, 19, 5),
+      DateTime(2026, 11, 19, 5, 50),
+    ]) {
+      final h = build(t);
+      expect(h.nextIndex, 2);
+      expect(h.countdownText, startsWith('Dzuhur dalam'));
+      expect(h.times[1].name, 'Terbit');
+    }
+  });
+
+  test('exactly at Isya the next is tomorrow Subuh', () {
+    final h = build(
+      DateTime(2026, 11, 19, 19, 10),
+      tomorrow: day('2026-11-20', subuh: '04:29'),
+    );
+    expect(h.nextIndex, 0);
+    expect(h.countdownText, 'Subuh dalam 9 jam 19 menit');
+  });
 }

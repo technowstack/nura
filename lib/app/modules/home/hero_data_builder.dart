@@ -54,7 +54,8 @@ HomeHeroData buildHeroData({
   DateTime? nextAt;
   for (final (i, s) in slots.indexed) {
     final t = s.$3;
-    if (t == null) continue;
+    // Terbit (index 1) is not a prayer: never the next one.
+    if (t == null || i == 1) continue;
     final at = _at(now, t);
     if (at != null && at.isAfter(wall)) {
       next = i;

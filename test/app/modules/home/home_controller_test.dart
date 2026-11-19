@@ -14,7 +14,7 @@ import 'package:nura/app/services/daily_refresher.dart';
 
 import '../../../support/fake_daily.dart';
 import '../../../support/fake_prayer.dart';
-import '../../../support/prayer_harness.dart' show jakarta, api;
+import '../../../support/prayer_harness.dart' show jakarta, makassar, api;
 
 void main() {
   late FakeDailyContentRepository repo;
@@ -239,6 +239,40 @@ void main() {
       await tester.pump();
       expect(c.hero.value.times, isEmpty);
       expect(c.hero.value.emptyText, 'Jadwal belum tersedia');
+    });
+
+    // Plain testWidgets: the framework itself fails on a leaked timer.
+    testWidgets('onClose leaves no pending timer', (tester) async {
+      make();
+      await tester.pump();
+      Get.delete<HomeController>(force: true);
+    });
+
+    tc('an empty tomorrow is not retried every minute', (tester) async {
+      prayer.days.remove('2026-11-20');
+      clock = DateTime.utc(2026, 11, 19, 14).toLocal(); // 21:00 local
+      make();
+      await tester.pump();
+      expect(prayer.calls.where((c) => c == 'day:2026-11-20'), hasLength(1));
+      for (var i = 0; i < 3; i++) {
+        clock = clock.add(const Duration(minutes: 1));
+        await tester.pump(const Duration(seconds: 60));
+      }
+      expect(prayer.calls.where((c) => c == 'day:2026-11-20'), hasLength(1));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(prayer.calls.where((c) => c == 'day:2026-11-20'), hasLength(2));
+    });
+
+    tc('a region change refreshes the hero on the next tick', (tester) async {
+      final c = make();
+      await tester.pump();
+      expect(c.hero.value.locationLabel, 'Kota Jakarta');
+      prayer.region = makassar;
+      clock = clock.add(const Duration(minutes: 1));
+      await tester.pump(const Duration(seconds: 60));
+      await tester.pump();
+      expect(c.hero.value.locationLabel, 'Kota Makassar');
     });
   });
 }

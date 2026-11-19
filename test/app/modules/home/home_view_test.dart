@@ -57,7 +57,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     // A fixed clock: the fakes derive their text from the day of the month.
-    Get.put(HomeController(now: () => DateTime(2026, 11, 15, 12)));
+    Get.put(HomeController(now: () => DateTime.utc(2026, 11, 15, 4).toLocal()));
     await tester.pumpWidget(
       GetMaterialApp(
         theme: theme ?? AppTheme.light,
