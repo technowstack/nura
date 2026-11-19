@@ -59,12 +59,17 @@ void main() {
   });
   tearDown(Get.reset);
 
-  Future<void> pump(WidgetTester tester, {double scale = 1}) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    double scale = 1,
+    ThemeData? theme,
+  }) async {
     tester.view.physicalSize = const Size(360, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       GetMaterialApp(
+        theme: theme,
         builder: (c, child) => MediaQuery(
           data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(scale)),
           child: child ?? const SizedBox.shrink(),
@@ -327,6 +332,64 @@ void main() {
       final ind = tb.indicator as UnderlineTabIndicator;
       expect(ind.borderSide.width, 2);
       expect(ind.borderSide.color, AppTheme.light.colorScheme.primary);
+    });
+
+    testWidgets('bookmarked surah: default card, filled icon, label', (
+      tester,
+    ) async {
+      user.bookmarkedSurahs = {2};
+      final handle = tester.ensureSemantics();
+      await pump(tester);
+      await tester.pumpAndSettle();
+      final card = find.ancestor(
+        of: find.text('Latin2'),
+        matching: find.byType(NuraCard),
+      );
+      expect(tester.widget<NuraCard>(card).color, isNull);
+      expect(
+        find.descendant(of: card, matching: bookmarkIcon(filled: true)),
+        findsOneWidget,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Icon && w.semanticLabel == 'Ditandai bookmark',
+        ),
+        findsOneWidget,
+      );
+      expect(tester.getSemantics(card).label, contains('Ditandai bookmark'));
+      handle.dispose();
+    });
+
+    for (final theme in [AppTheme.light, AppTheme.dark]) {
+      testWidgets(
+        'real TabBar has a 2px primary indicator (${theme.brightness})',
+        (tester) async {
+          await pump(tester, theme: theme);
+          await tester.pumpAndSettle();
+          final bar = find.byType(TabBar);
+          expect(bar, findsOneWidget);
+          expect(tester.widget<TabBar>(bar).indicator, isNull);
+          final t = Theme.of(tester.element(bar)).tabBarTheme;
+          final ind = t.indicator as UnderlineTabIndicator;
+          expect(ind.borderSide.width, 2);
+          expect(ind.borderSide.color, theme.colorScheme.primary);
+          expect(t.labelColor, theme.colorScheme.primary);
+        },
+      );
+    }
+
+    testWidgets('separator dots are hidden from semantics and paired', (
+      tester,
+    ) async {
+      await pump(tester);
+      await tester.pumpAndSettle();
+      final dots = find.text('·');
+      expect(dots, findsWidgets);
+      expect(
+        find.descendant(of: find.byType(ExcludeSemantics), matching: dots),
+        findsNWidgets(tester.widgetList(dots).length),
+      );
+      expect(find.text('7 ayat'), findsWidgets);
     });
 
     testWidgets('arabic size 36 at 130% no overflow', (tester) async {

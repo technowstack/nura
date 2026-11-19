@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nura/app/core/ayah_marker.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
+import 'package:nura/app/core/theme/nura_colors.dart';
+import 'package:nura/app/core/widgets/nura_card.dart';
 import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/models/reading_prefs.dart';
 import 'package:nura/app/data/models/surah.dart';
@@ -22,18 +24,20 @@ Widget _host(Widget child, {ThemeData? theme, double scale = 1}) => MaterialApp(
 
 AyahCard _card({
   double size = 28,
+  bool lastRead = false,
+  String arab = _arab,
   AyahAudioState audio = AyahAudioState.hidden,
   VoidCallback? onPlay,
 }) => AyahCard(
-  ayah: const Ayah(
+  ayah: Ayah(
     surahNumber: 2,
     ayahNumber: 7,
-    arab: _arab,
+    arab: arab,
     translation: 'terjemah',
     tafsir: '',
   ),
   bookmarked: false,
-  lastRead: false,
+  lastRead: lastRead,
   prefs: ReadingPrefs(arabicFontSize: size, showTranslation: true),
   onBookmark: () {},
   onCopy: () {},
@@ -127,4 +131,93 @@ void main() {
       expect(find.textContaining('[Q4]', findRichText: true), findsOneWidget);
     });
   }
+
+  for (final (theme, c) in [
+    (AppTheme.light, NuraColors.light),
+    (AppTheme.dark, NuraColors.dark),
+  ]) {
+    testWidgets('ayah card tokens (${theme.brightness})', (t) async {
+      await t.pumpWidget(_host(_card(lastRead: true), theme: theme));
+      expect(t.widget<Text>(find.text('7')).style?.color, c.iconAccent);
+      expect(
+        t.widget<Divider>(find.byType(Divider)).color,
+        theme.colorScheme.outlineVariant,
+      );
+      expect(
+        t.widget<NuraCard>(find.byType(NuraCard)).color,
+        c.lastReadHighlight,
+      );
+    });
+
+    testWidgets('header label and value colors (${theme.brightness})', (
+      t,
+    ) async {
+      await t.pumpWidget(
+        _host(
+          const SurahHeaderCard(
+            surah: Surah(
+              number: 2,
+              nameArab: 'البقرة',
+              nameLatin: 'Al-Baqarah',
+              nameId: 'Sapi',
+              ayahCount: 286,
+              revelation: 'madaniyah',
+            ),
+            basmalah: 'b',
+            showBismillah: false,
+          ),
+          theme: theme,
+        ),
+      );
+      final name = t
+          .widgetList<RichText>(find.byType(RichText))
+          .map((r) => r.text)
+          .whereType<TextSpan>()
+          .firstWhere((s) => s.toPlainText().startsWith('Nama'));
+      final parts = (name.children!.single as TextSpan).children!
+          .cast<TextSpan>();
+      expect(parts[0].style?.color, c.onHero);
+      expect(parts[1].style?.color, c.onHeroAccent);
+    });
+  }
+
+  testWidgets('ayah data is shown unchanged and has no marker of its own', (
+    t,
+  ) async {
+    final card = _card();
+    await t.pumpWidget(_host(card));
+    expect(t.widget<AyahCard>(find.byType(AyahCard)).ayah.arab, _arab);
+    expect(card.ayah.arab, _arab);
+    expect(card.ayah.arab.contains('۝'), isFalse);
+  });
+
+  testWidgets('arabic 36 at 130% with a long ayah has no overflow', (t) async {
+    t.view.physicalSize = const Size(360, 640);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await t.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        builder: (c, w) => MediaQuery(
+          data: MediaQuery.of(
+            c,
+          ).copyWith(textScaler: const TextScaler.linear(1.3)),
+          child: w ?? const SizedBox.shrink(),
+        ),
+        // No scroll view: width stays tight so an overflow shows.
+        home: Scaffold(
+          body: OverflowBox(
+            maxHeight: double.infinity,
+            alignment: Alignment.topCenter,
+            child: _card(
+              size: 36,
+              audio: AyahAudioState.ready,
+              arab: List.filled(12, _arab).join(' '),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(t.takeException(), isNull);
+  });
 }

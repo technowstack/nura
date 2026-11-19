@@ -174,6 +174,7 @@ void main() {
 
   testWidgets('switch off: no audio control and zero audio calls', (t) async {
     online.setAudioEnabled(false);
+    reachable = false; // a broken switch would then show 'Butuh internet'
     await pumpPage(t);
     expect(find.byTooltip('Putar ayat'), findsNothing);
     expect(find.byTooltip('Jeda'), findsNothing);
