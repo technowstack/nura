@@ -83,6 +83,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   String? _tomorrowTriedFor;
   bool _loadingTomorrow = false;
   Timer? _minute;
+  int _loadGen = 0; // only the newest _loadPrayer may publish
 
   DateTime now() => _now();
 
@@ -123,6 +124,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   /// Loads today's day (and tomorrow's once today is over) like the Sholat
   /// screen does; failures leave the hero in its honest empty state.
   Future<void> _loadPrayer() async {
+    final gen = ++_loadGen;
     final repo = _prayer;
     final r = _region;
     if (repo == null || r == null) {
@@ -133,15 +135,22 @@ class HomeController extends GetxController with WidgetsBindingObserver {
       return;
     }
     final date = _dateOf(_wall(r));
+    if (_loadedFor != _keyOf(r, date)) {
+      // Other region or date: never show the old times under the new label.
+      _today = _tomorrow = null;
+      hero.value = _buildHero();
+    }
+    PrayerDay? day;
     try {
       final res = await repo.dayFor(date);
       final ok =
           res.outcome == DayOutcome.api || res.outcome == DayOutcome.calc;
-      _today = ok ? res.day : null;
+      day = ok ? res.day : null;
     } on Object catch (e) {
       debugPrint('HomeController: prayer times unavailable: $e');
-      _today = null;
     }
+    if (gen != _loadGen) return; // a newer load owns the hero now
+    _today = day;
     _tomorrow = null;
     _tomorrowTriedFor = null;
     _loadedFor = _keyOf(r, date);
@@ -161,6 +170,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
         !_loadingTomorrow) {
       _loadingTomorrow = true;
       _tomorrowTriedFor = _loadedFor; // retried only on resume or day change
+      final gen = _loadGen;
       final r = _region;
       final next = DateTime.utc(
         _wall(r).year,
@@ -171,13 +181,15 @@ class HomeController extends GetxController with WidgetsBindingObserver {
         () async {
           try {
             final res = await repo.dayFor(_dateOf(next));
-            if (res.outcome == DayOutcome.api ||
-                res.outcome == DayOutcome.calc) {
+            if (gen == _loadGen &&
+                (res.outcome == DayOutcome.api ||
+                    res.outcome == DayOutcome.calc)) {
               _tomorrow = res.day;
             }
           } on Object catch (e) {
             debugPrint('HomeController: tomorrow unavailable: $e');
           }
+          if (gen != _loadGen) return;
           if (_tomorrow != null) hero.value = _buildHero();
         }().whenComplete(() => _loadingTomorrow = false),
       );
@@ -242,6 +254,9 @@ class HomeController extends GetxController with WidgetsBindingObserver {
       refreshForToday();
       unawaited(_loadPrayer());
       _armMinute();
+    } else if (state == AppLifecycleState.paused) {
+      _minute?.cancel();
+      _midnight?.cancel();
     }
   }
 

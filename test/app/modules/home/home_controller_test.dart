@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/ui_state.dart';
 import 'package:nura/app/data/models/daily_content.dart';
+import 'package:nura/app/data/models/prayer_day.dart';
 import 'package:nura/app/data/repositories/prayer_repository.dart';
 import 'package:nura/app/data/repositories/daily_content_repository.dart';
 import 'package:nura/app/data/repositories/daily_settings_store.dart';
@@ -274,5 +275,76 @@ void main() {
       await tester.pump();
       expect(c.hero.value.locationLabel, 'Kota Makassar');
     });
+
+    tc('out-of-order prayer loads keep the latest result', (tester) async {
+      final slow = _Pending(region: jakarta);
+      Get.delete<PrayerRepository>(force: true);
+      Get.put<PrayerRepository>(slow);
+      final c = make(); // load 1
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      expect(slow.pending, hasLength(2)); // load 2
+      slow.pending[1].complete(DayResult(DayOutcome.api, _day('18:00')));
+      await tester.pump();
+      slow.pending[0].complete(
+        DayResult(DayOutcome.api, _day('18:30')),
+      ); // stale, finishes last
+      await tester.pump();
+      expect(c.hero.value.times.map((t) => t.time), contains('18:00'));
+      expect(c.hero.value.times.map((t) => t.time), isNot(contains('18:30')));
+    });
+
+    tc('resume after a region change drops the old region times', (
+      tester,
+    ) async {
+      final slow = _Pending(region: jakarta);
+      Get.delete<PrayerRepository>(force: true);
+      Get.put<PrayerRepository>(slow);
+      final c = make();
+      slow.pending[0].complete(DayResult(DayOutcome.api, _day('18:00')));
+      await tester.pump();
+      expect(c.hero.value.times, isNotEmpty);
+      slow.region = makassar;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      expect(c.hero.value.locationLabel, 'Kota Makassar');
+      expect(c.hero.value.times, isEmpty, reason: 'no stale Jakarta times');
+    });
+
+    tc('pausing cancels the minute and midnight timers', (tester) async {
+      make();
+      await tester.pump();
+      prayer.calls.clear();
+      final before = repo.calls;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump(const Duration(hours: 30));
+      expect(prayer.calls, isEmpty);
+      expect(repo.calls, before, reason: 'midnight refresh is cancelled');
+    });
   });
+}
+
+PrayerDay _day(String maghrib) => PrayerDay(
+  date: '2026-11-19',
+  subuh: '04:30',
+  dzuhur: '11:50',
+  ashar: '15:10',
+  maghrib: maghrib,
+  isya: '19:10',
+  source: PrayerSource.api,
+  fetchedAt: 1,
+);
+
+/// Answers each `dayFor` with a completer the test finishes by hand.
+class _Pending extends FakePrayerRepository {
+  _Pending({super.region});
+
+  final pending = <Completer<DayResult>>[];
+
+  Future<DayResult> _next() {
+    final c = Completer<DayResult>();
+    pending.add(c);
+    return c.future;
+  }
+
+  @override
+  Future<DayResult> dayFor(String date) => _next();
 }

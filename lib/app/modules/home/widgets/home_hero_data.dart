@@ -19,7 +19,8 @@ class HomeHeroData {
     required this.locationLabel,
     required this.hijriDate,
     required this.clock,
-    this.countdownText,
+    this.countdownLabel,
+    this.countdownDuration,
     this.times = const [],
     this.nextIndex,
     this.approximate = false,
@@ -29,7 +30,14 @@ class HomeHeroData {
   final String locationLabel;
   final String hijriDate;
   final String clock;
-  final String? countdownText;
+
+  /// "Maghrib dalam " and "27 menit": styled apart, read as one sentence.
+  final String? countdownLabel;
+  final String? countdownDuration;
+
+  String? get countdownText => countdownLabel == null
+      ? null
+      : '$countdownLabel${countdownDuration ?? ''}';
   final List<HeroPrayerTime> times;
   final int? nextIndex;
   final bool approximate;

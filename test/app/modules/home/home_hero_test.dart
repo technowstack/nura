@@ -130,7 +130,8 @@ void main() {
     locationLabel: 'Sampang',
     hijriDate: '28 Jumadilawal 1448 H',
     clock: '17:17',
-    countdownText: 'Maghrib dalam 27 menit',
+    countdownLabel: 'Maghrib dalam ',
+    countdownDuration: '27 menit',
     times: _times,
     nextIndex: 4,
     approximate: true,
@@ -164,8 +165,15 @@ void main() {
         tester.widget<Text>(find.text('04:06')).style?.color,
         colors.onHero,
       );
+      final cd = tester.widget<Text>(find.text('Maghrib dalam 27 menit'));
+      final root = cd.textSpan! as TextSpan;
+      expect(root.text, 'Maghrib dalam ');
+      expect(root.style?.color, colors.onHero);
+      final dur = root.children!.single as TextSpan;
+      expect(dur.text, '27 menit');
+      expect(dur.style?.color, colors.onHeroAccent);
       expect(find.byKey(const Key('hero-next-dot')), findsOneWidget);
-      expect(find.text('Jadwal perkiraan'), findsOneWidget);
+      expect(find.text('Jadwal perkiraan, dihitung offline'), findsOneWidget);
       final painter = tester
           .widgetList<CustomPaint>(find.byType(CustomPaint))
           .map((w) => w.painter)
@@ -257,9 +265,24 @@ void main() {
       region.value.statusBarIconBrightness,
       SystemUiOverlayStyle.light.statusBarIconBrightness,
     );
-    final node = tester.getSemantics(find.byKey(const Key('home-hero')));
-    expect(node.label, startsWith('Beranda'));
+    final node = tester.getSemantics(
+      find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.label == 'Beranda',
+      ),
+    );
     expect(node.getSemanticsData().flagsCollection.isHeader, isTrue);
+    // Only a tiny node is the heading, not the whole hero block.
+    expect(node.rect.size, const Size(1, 1));
+    final hero = tester.getSemantics(find.byKey(const Key('home-hero')));
+    expect(hero.getSemanticsData().flagsCollection.isHeader, isFalse);
+    handle.dispose();
+  });
+
+  tw('countdown reads as one sentence once', (tester) async {
+    final handle = tester.ensureSemantics();
+    await pumpApp(tester, home: hero(data));
+    final label = tester.getSemantics(find.byKey(const Key('home-hero'))).label;
+    expect('Maghrib dalam 27 menit'.allMatches(label), hasLength(1));
     handle.dispose();
   });
 

@@ -75,9 +75,7 @@ HomeHeroData buildHeroData({
       }
     }
   }
-  final countdown = next == null || nextAt == null
-      ? null
-      : '${slots[next].$1} dalam ${_duration(nextAt.difference(wall))}';
+  final hasNext = next != null && nextAt != null;
   return HomeHeroData(
     locationLabel: base.locationLabel,
     hijriDate: hijri,
@@ -88,7 +86,8 @@ HomeHeroData buildHeroData({
         HeroPrayerTime(name: s.$1, time: s.$3 ?? _noTime, icon: s.$2),
     ],
     nextIndex: next,
-    countdownText: countdown,
+    countdownLabel: hasNext ? '${slots[next].$1} dalam ' : null,
+    countdownDuration: hasNext ? _duration(nextAt.difference(wall)) : null,
     approximate: today?.source != PrayerSource.api,
   );
 }

@@ -27,14 +27,21 @@ class HomeHero extends StatelessWidget {
     final onHero = TextStyle(color: c.onHero);
     return Semantics(
       container: true,
-      header: true,
-      label: 'Beranda',
       child: Container(
         key: const Key('home-hero'),
         color: c.hero,
         constraints: BoxConstraints(minHeight: 360 + top),
         child: Stack(
           children: [
+            // The page heading for screen readers: first in reading order,
+            // a 1 dp node that draws nothing.
+            Positioned(
+              left: 0,
+              top: 0,
+              width: 1,
+              height: 1,
+              child: Semantics(container: true, header: true, label: 'Beranda'),
+            ),
             Positioned(
               left: 0,
               right: 0,
@@ -88,14 +95,22 @@ class HomeHero extends StatelessWidget {
                         ?.merge(onHero)
                         .copyWith(fontSize: 48),
                   ),
-                  if (data.countdownText case final t?)
-                    Text(
-                      t,
-                      style: text.titleMedium?.copyWith(color: c.onHeroAccent),
+                  if (data.countdownLabel case final label?)
+                    Text.rich(
+                      TextSpan(
+                        text: label,
+                        style: text.titleMedium?.merge(onHero),
+                        children: [
+                          TextSpan(
+                            text: data.countdownDuration,
+                            style: TextStyle(color: c.onHeroAccent),
+                          ),
+                        ],
+                      ),
                     ),
                   if (data.approximate)
                     Text(
-                      'Jadwal perkiraan',
+                      'Jadwal perkiraan, dihitung offline',
                       style: text.bodyMedium?.merge(onHero),
                     ),
                   const SizedBox(height: NuraSpace.s24),
