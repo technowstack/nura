@@ -26,6 +26,9 @@ abstract final class NuraIcons {
   static const IconData chevronRight = Symbols.chevron_right_rounded;
   static const IconData close = Symbols.close_rounded;
   static const IconData locationOn = Symbols.location_on_rounded;
+  static const IconData bedtime = Symbols.bedtime_rounded;
+  static const IconData twilight = Symbols.wb_twilight_rounded;
+  static const IconData sunny = Symbols.wb_sunny_rounded;
   static const IconData moreHoriz = Symbols.more_horiz_rounded;
 }
 

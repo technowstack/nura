@@ -15,6 +15,9 @@ import 'package:nura/app/modules/quran_detail/surah_args.dart';
 import 'package:nura/app/routes/app_routes.dart';
 
 import '../../../support/fake_daily.dart';
+import '../../../support/fake_prayer.dart';
+import '../../../support/prayer_harness.dart' show jakarta, api;
+import 'package:nura/app/data/repositories/prayer_repository.dart';
 
 const _notice =
     'Kitab selain Bukhari dan Muslim memuat hadis dengan derajat yang beragam.';
@@ -218,4 +221,27 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  tw('hero shows real prayer times when a schedule exists', (tester) async {
+    Get.put<PrayerRepository>(
+      FakePrayerRepository(
+        region: jakarta,
+        days: {'2026-11-15': api('2026-11-15')},
+      ),
+    );
+    await pump(tester);
+    await tester.pump();
+    expect(find.text('04:30'), findsOneWidget);
+    expect(find.text('Maghrib'), findsOneWidget);
+    expect(find.text('Dzuhur dalam 50 menit'), findsOneWidget);
+  });
+
+  tw('hero shows the honest empty state without a schedule', (tester) async {
+    await pump(tester);
+    expect(
+      find.text('Pilih wilayah untuk melihat jadwal sholat'),
+      findsOneWidget,
+    );
+    expect(find.text('04:30'), findsNothing);
+  });
 }

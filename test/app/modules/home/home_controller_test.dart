@@ -6,12 +6,15 @@ import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/ui_state.dart';
 import 'package:nura/app/data/models/daily_content.dart';
+import 'package:nura/app/data/repositories/prayer_repository.dart';
 import 'package:nura/app/data/repositories/daily_content_repository.dart';
 import 'package:nura/app/data/repositories/daily_settings_store.dart';
 import 'package:nura/app/modules/home/controllers/home_controller.dart';
 import 'package:nura/app/services/daily_refresher.dart';
 
 import '../../../support/fake_daily.dart';
+import '../../../support/fake_prayer.dart';
+import '../../../support/prayer_harness.dart' show jakarta, api;
 
 void main() {
   late FakeDailyContentRepository repo;
@@ -141,6 +144,101 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1));
       await tester.pump(const Duration(milliseconds: 1));
       expect(renders, 2);
+    });
+  });
+
+  group('prayer hero', () {
+    late FakePrayerRepository prayer;
+
+    setUp(() {
+      // Jakarta is WIB (+7): 10:33Z is 17:33 local.
+      clock = DateTime.utc(2026, 11, 19, 10, 33).toLocal();
+      prayer = FakePrayerRepository(
+        region: jakarta,
+        days: {
+          '2026-11-19': api('2026-11-19'),
+          '2026-11-20': api('2026-11-20'),
+        },
+      );
+      Get.put<PrayerRepository>(prayer);
+    });
+
+    tc('shows real times and the countdown', (tester) async {
+      final c = make();
+      await tester.pump();
+      final h = c.hero.value;
+      expect(h.locationLabel, 'Kota Jakarta');
+      expect(h.times, hasLength(6));
+      expect(h.countdownText, 'Maghrib dalam 27 menit');
+      expect(h.clock, '17:33');
+    });
+
+    tc('makes no sync call, only day reads', (tester) async {
+      make();
+      await tester.pump();
+      expect(prayer.calls, ['day:2026-11-19']);
+    });
+
+    tc('the hero and clock update when the minute ticks', (tester) async {
+      final c = make();
+      await tester.pump();
+      clock = DateTime.utc(2026, 11, 19, 10, 34).toLocal();
+      await tester.pump(const Duration(seconds: 60));
+      expect(c.hero.value.clock, '17:34');
+      expect(c.hero.value.countdownText, 'Maghrib dalam 26 menit');
+    });
+
+    tc('after Isya tomorrow is read for the Subuh countdown', (tester) async {
+      clock = DateTime.utc(2026, 11, 19, 14).toLocal(); // 21:00 local
+      final c = make();
+      await tester.pump();
+      expect(prayer.calls, ['day:2026-11-19', 'day:2026-11-20']);
+      expect(c.hero.value.countdownText, 'Subuh dalam 7 jam 30 menit');
+    });
+
+    tc('the next day reloads at midnight', (tester) async {
+      clock = DateTime.utc(
+        2026,
+        11,
+        19,
+        16,
+        59,
+        30,
+      ).toLocal(); // 23:59:30 local
+      final c = make();
+      await tester.pump();
+      prayer.calls.clear();
+      clock = DateTime.utc(2026, 11, 19, 17).toLocal(); // 00:00 local, 20 Nov
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pump();
+      expect(prayer.calls, contains('day:2026-11-20'));
+      expect(c.hero.value.nextIndex, 0);
+    });
+
+    tc('resume reloads', (tester) async {
+      make();
+      await tester.pump();
+      prayer.calls.clear();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(prayer.calls, ['day:2026-11-19']);
+    });
+
+    tc('closing cancels the timer', (tester) async {
+      make();
+      await tester.pump();
+      Get.delete<HomeController>(force: true);
+      prayer.calls.clear();
+      await tester.pump(const Duration(minutes: 5));
+      expect(prayer.calls, isEmpty);
+    });
+
+    tc('a failing repository leaves the honest empty hero', (tester) async {
+      prayer.failWith = StateError('boom');
+      final c = make();
+      await tester.pump();
+      expect(c.hero.value.times, isEmpty);
+      expect(c.hero.value.emptyText, 'Jadwal belum tersedia');
     });
   });
 }
