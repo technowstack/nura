@@ -41,9 +41,11 @@ List<Map<String, Object>> parseSurahInfo(
   if (byNumber.length != 114) {
     throw FormatException('expected 114 surahs, got ${byNumber.length}');
   }
+  // Keys are unique and within 1..114, and there are 114 of them.
   return [
-    for (var n = 1; n <= 114; n++)
-      {'number': n, 'revelation': byNumber[n] ?? ''},
+    for (final e
+        in byNumber.entries.toList()..sort((a, b) => a.key.compareTo(b.key)))
+      {'number': e.key, 'revelation': e.value},
   ];
 }
 

@@ -16,6 +16,11 @@ import 'package:nura/app/routes/app_routes.dart';
 
 import '../../../support/fake_repositories.dart';
 
+/// Null when assets/db/content.db exists (see tool/prepare_content.sh).
+final String? _noDb = File('assets/db/content.db').existsSync()
+    ? null
+    : 'run tool/prepare_content.sh first';
+
 void main() {
   test('revelationLabel maps known values and hides the rest', () {
     expect(revelationLabel('makkiyah'), 'Makkiyah');
@@ -33,7 +38,7 @@ void main() {
     expect(hits, isEmpty);
   });
 
-  group('juz tab with real content.db', () {
+  group('juz tab with real content.db', skip: _noDb, () {
     Object? routeArgs;
 
     setUp(() {

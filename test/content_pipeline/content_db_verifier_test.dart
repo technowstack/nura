@@ -130,6 +130,13 @@ void main() {
       expect(overlap.errors, contains(contains('juz 2 starts 1:1')));
       expect(overlap.errors, contains(contains('gap or overlap')));
     });
+
+    test('an end beyond the surah length or surah 115 is an error', () {
+      final tooLong = withJuz(['(1, 1, 1, 112, 5)']);
+      expect(tooLong.errors, contains(contains('not a real ayah')));
+      final beyond = withJuz(['(1, 1, 1, 115, 1)']);
+      expect(beyond.errors, contains(contains('not a real ayah')));
+    });
   });
 
   test('expected totals mismatch is an error', () {
