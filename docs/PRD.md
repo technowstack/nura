@@ -164,7 +164,9 @@ Pakai `sqlite3` dan `sqlite3_flutter_libs` (bukan `sqflite`). Library SQLite dib
 | Hadis 9 kitab | github.com/gadingnst/hadith-api (MIT), data asal tafsirq.com | Lisensi MIT mencakup repo. Status lisensi teks terjemahan dari sumber asal perlu dikonfirmasi |
 | Audio murottal | equran.id v2 (`/api/v2/surat/{id}`; sumber audio: Verse By Verse Quran) | Diputuskan 2026-11-16. Syarat layanan dibaca (2026-11-16); konfirmasi tertulis dianjurkan sebelum rilis. Atribusi di Sumber & Atribusi |
 | Jadwal sholat (API) | equran.id v2 (`https://equran.id/api/v2/shalat`, dokumentasi `https://equran.id/apidev/shalat`); diputuskan | Syarat layanan belum dibaca: wajib dibaca sebelum rilis |
-| Info surah, juz, kota | Belum dipilih | Perlu sumber dengan lisensi jelas |
+| Info surah (tempat turun) | equran.id v2 (`/api/v2/surat`, data Kemenag RI via equran.id), snapshot `data-source/meta/surah_info.json` | Diputuskan 2026-11-22. Atribusi "Tempat turun surah: EQuran.id (sumber Kemenag)" di Sumber & Atribusi. Syarat layanan equran.id: lihat Q3 |
+| Pemetaan juz | Tanzil.info (metadata Tanzil `quran-data.xml`), snapshot `data-source/meta/juz.json` | Diputuskan 2026-11-22. Creative Commons Attribution 3.0: wajib kredit ke Tanzil.info, tautan lisensi https://creativecommons.org/licenses/by/3.0/, dan pernyataan data diformat ulang, di Sumber & Atribusi |
+| Kota (wilayah jadwal sholat) | equran.id v2 (`/api/v2/shalat`, snapshot `data-source/meta/prayer_regions.json`) | Koordinat per kab/kota untuk cadangan offline belum ada: Q4 hanya terbuka untuk ini |
 | Daftar kurasi ayat harian | Disusun pemilik proyek | Menunggu daftar (Q9) |
 | Font Arab LPMQ Isep Misbah (cadangan KFGQPC Uthmanic Script Hafs) | LPMQ Kemenag (lajnah.kemenag.go.id/unduhan) | Lisensi kedua font wajib dicek sebelum rilis (Q6). Catat tanggal unduh di catatan rilis |
 | Font Latin Plus Jakarta Sans | Plus Jakarta Sans | OFL |
