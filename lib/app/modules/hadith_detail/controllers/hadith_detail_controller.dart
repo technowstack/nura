@@ -64,6 +64,7 @@ class HadithDetailController extends GetxController {
       final h = await _hadith.getHadith(ref);
       if (gen != _gen || isClosed) return;
       final (prev, next) = await _neighbors(ref);
+      final count = await _bookCount(ref.slug);
       if (gen != _gen || isClosed) return;
       if (readPrefs) _readPrefs();
       _ref = ref;
@@ -72,7 +73,7 @@ class HadithDetailController extends GetxController {
       hasPrevious.value = prev != null;
       hasNext.value = next != null;
       bookmarked.value = _readBookmark(ref);
-      state.value = UiData(_content(h, await _bookCount(ref.slug)));
+      state.value = UiData(_content(h, count));
     } on Object catch (e) {
       if (gen != _gen || isClosed) return;
       debugPrint('HadithDetailController: load failed: $e');
