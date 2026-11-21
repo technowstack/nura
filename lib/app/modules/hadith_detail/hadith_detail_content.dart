@@ -10,6 +10,8 @@ class HadithDetailContent {
     required this.translation,
     required this.showTruncationNote,
     required this.referenceLabel,
+    this.hadithCount = 0,
+    this.nameArab,
   });
 
   final HadithRef ref;
@@ -21,4 +23,8 @@ class HadithDetailContent {
 
   /// `HR. <book> No. <n>`, appended when copying.
   final String referenceLabel;
+
+  /// Hadith count of the book (0 when unknown) and its Arabic name, if any.
+  final int hadithCount;
+  final String? nameArab;
 }
