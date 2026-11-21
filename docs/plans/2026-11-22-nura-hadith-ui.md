@@ -30,7 +30,7 @@
 
 ---
 
-### Task H1: Nama Arab kitab dan daftar kitab
+### Task 1 (H1): Nama Arab kitab dan daftar kitab
 
 **Files:** Modify tempat `hadithBookNames` berada (grep), `lib/app/modules/hadith_books/widgets/hadith_book_tile.dart`, `views/hadith_books_view.dart`; Test `test/app/modules/hadith_books/`.
 
@@ -39,7 +39,7 @@
 - [ ] **Step 1: Write failing tests**: kesembilan nama Arab sama persis dengan daftar pemilik (bandingkan literal pada tes); slug tak dikenal → null dan tile tanpa teks Arab tanpa error; tile memuat nama Latin, jumlah, nama Arab (font dari tema), chevron; ketuk membuka daftar kitab itu; token Light dan Dark; 130% tanpa overflow pada 360×640.
 - [ ] **Step 2–4: Run fail, implement, run pass. Step 5: Commit** `feat: add arabic book names and restyle hadith books`.
 
-### Task H2: Daftar hadis varian A dan aturan pratinjau
+### Task 2 (H2): Daftar hadis varian A dan aturan pratinjau
 
 **Files:** Modify `lib/app/modules/hadith_list/controllers/hadith_list_controller.dart` (pratinjau di `HadithListItem`), `widgets/hadith_list_tile.dart`, `views/hadith_list_view.dart`; Create `lib/app/modules/hadith_list/hadith_preview.dart`; Test `test/app/modules/hadith_list/`.
 
@@ -48,7 +48,7 @@
 - [ ] **Step 1: Write failing tests** (fungsi murni): "…bersabda: \"Tidaklah beriman…\"" mulai dari isi kutipan; kutip `“…”`; tanpa "bersabda:" → dari awal; "bersabda:" tanpa kutip → dari awal; kutipan kosong; kemunculan ganda memakai yang pertama; "Bersabda:" huruf besar; spasi/baris baru setelah titik dua; teks terpotong tepat di "bersabda:" atau di dalam kutipan; panjang maksimum dan elipsis; **19 hadis terpotong**: ambil daftarnya dari STATUS Q12 (dan berkas yang dirujuknya), muat teks dari `data-source/hadith/*.json`, pastikan `hadithPreview` tidak melempar, tidak kosong, dan substring dari terjemahan (kecuali elipsis); widget: kartu memuat badge, nama kitab, pratinjau, bookmark terisi; 130% tanpa overflow; detail tetap menerima teks lengkap (controller detail tidak memakai fungsi ini).
 - [ ] **Step 2–4: Run fail, implement, run pass. Step 5: Commit** `feat: restyle hadith list as cards with matan preview`.
 
-### Task H3: Detail hadis varian A
+### Task 3 (H3): Detail hadis varian A
 
 **Files:** Modify `lib/app/modules/hadith_detail/views/hadith_detail_view.dart`, `widgets/hadith_text_card.dart`, controller bila perlu; Create bila perlu `widgets/hadith_hero_card.dart`; Test `test/app/modules/hadith_detail/`.
 
@@ -57,7 +57,7 @@
 - [ ] **Step 1: Write failing tests**: hero memuat kitab/nomor/jumlah dan nama Arab; slug tak dikenal tanpa Arab; salin menyalin teks asli + "HR. Kitab No. n" persis seperti sebelum perubahan; bookmark toggle dan keadaan terisi; prev/next dan nonaktif di ujung; catatan terpotong hanya bila terpotong; teks panjang (Bukhari No. 3) menggulir tanpa overflow pada 360×640 dan 130%; token Light dan Dark; loading/kosong/error tidak berubah. Tes yang ada tidak dilemahkan.
 - [ ] **Step 2–4: Run fail, implement, run pass. Step 5: Commit** `feat: restyle hadith detail as cards`.
 
-### Task H4: Kartu hadis harian dan tes audio flaky
+### Task 4 (H4): Kartu hadis harian dan tes audio flaky
 
 **Files:** Modify `lib/app/modules/home/widgets/daily_card.dart` (hanya kartu Hadis), tes audio ("no files are written", cari dengan grep); Test terkait.
 
@@ -65,7 +65,7 @@
 - [ ] **Step 2 (audio flaky):** buktikan penyebab (tes memindai direktori temp sistem yang dipakai bersama tes lain secara paralel), lalu perbaiki dengan isolasi (mis. `IOOverrides.runZoned` dengan `getSystemTempDirectory` ke direktori privat tes) agar tulisan tes lain tidak terhitung; jangan menambah jeda atau retry; uji negatif: tes harus gagal bila layanan benar-benar menulis berkas ke temp yang diisolasi.
 - [ ] **Step 3: Commit** `feat: put daily hadith reference and read-more on one line` (bila dikerjakan) dan `test: isolate temp directory in audio player service test`.
 
-### Task H5: Penyelesaian
+### Task 5 (H5): Penyelesaian
 
 **Files:** `docs/STATUS.md`, `docs/review/hadith-variants/README.md` (catatan: varian A dipilih).
 
