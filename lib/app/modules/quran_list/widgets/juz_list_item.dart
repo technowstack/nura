@@ -7,9 +7,17 @@ import '../../../core/widgets/ornament_badge.dart';
 import '../../../data/models/juz.dart';
 
 class JuzListItem extends StatelessWidget {
-  const JuzListItem({required this.juz, required this.onTap, super.key});
+  const JuzListItem({
+    required this.juz,
+    required this.range,
+    required this.onTap,
+    super.key,
+  });
 
   final Juz juz;
+
+  /// Display text such as 'Al-Fatihah 1 – Al-Baqarah 141'.
+  final String range;
   final VoidCallback onTap;
 
   @override
@@ -31,10 +39,7 @@ class JuzListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Juz ${juz.number}', style: text.titleMedium),
-                  Text(
-                    '${juz.startSurah}:${juz.startAyah} – ${juz.endSurah}:${juz.endAyah}',
-                    style: text.bodyMedium,
-                  ),
+                  Text(range, style: text.bodyMedium),
                 ],
               ),
             ),

@@ -193,7 +193,7 @@ void main() {
 
   testWidgets('bookmark tap toggles and icon/semantics change', (tester) async {
     final handle = tester.ensureSemantics();
-    await pumpPage(tester, 2);
+    await pumpPage(tester, 2, height: 800);
     expect(find.bySemanticsLabel('Tambah bookmark'), findsWidgets);
     await tester.tap(find.bySemanticsLabel('Tambah bookmark').first);
     await tester.pumpAndSettle();
@@ -206,7 +206,7 @@ void main() {
 
   testWidgets('bookmark twice returns to unbookmarked', (tester) async {
     final handle = tester.ensureSemantics();
-    await pumpPage(tester, 2);
+    await pumpPage(tester, 2, height: 800);
     await tester.tap(find.bySemanticsLabel('Tambah bookmark').first);
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Hapus bookmark'));

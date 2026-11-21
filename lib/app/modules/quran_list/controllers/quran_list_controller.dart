@@ -36,6 +36,21 @@ class QuranListController extends GetxController {
     });
   }
 
+  /// Latin names by surah number; empty until the surah list has loaded.
+  Map<int, String> get surahNames {
+    final state = surahs.value;
+    return state is UiData<List<Surah>>
+        ? {for (final s in state.value) s.number: s.nameLatin}
+        : const {};
+  }
+
+  /// 'Al-Fatihah 1 – Al-Baqarah 141'; falls back to the surah number when a
+  /// name is unavailable.
+  static String juzRange(Juz j, Map<int, String> names) {
+    String at(int surah, int ayah) => '${names[surah] ?? 'Surah $surah'} $ayah';
+    return '${at(j.startSurah, j.startAyah)} – ${at(j.endSurah, j.endAyah)}';
+  }
+
   /// Re-reads bookmark and last-read markers (e.g. after leaving the surah page).
   void refreshMarkers() {
     try {

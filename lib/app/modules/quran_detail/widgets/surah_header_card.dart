@@ -1,6 +1,7 @@
 import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/revelation_label.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../data/models/surah.dart';
@@ -65,7 +66,8 @@ class SurahHeaderCard extends StatelessWidget {
                     row('Nama', surah.nameLatin),
                     if (surah.nameId.isNotEmpty) row('Arti', surah.nameId),
                     row('Jumlah ayat', '${surah.ayahCount}'),
-                    row('Tempat turun', '[Q4]'),
+                    if (revelationLabel(surah.revelation).isNotEmpty)
+                      row('Tempat turun', revelationLabel(surah.revelation)),
                   ],
                 ),
               ),

@@ -73,8 +73,9 @@ class QuranListView extends GetView<QuranListController> {
                     ),
                   );
                 }),
-                Obx(
-                  () => _body(
+                Obx(() {
+                  final names = c.surahNames; // read here to rebuild on change
+                  return _body(
                     c.juz.value,
                     c.load,
                     'Daftar juz belum tersedia',
@@ -82,14 +83,15 @@ class QuranListView extends GetView<QuranListController> {
                       itemCount: list.length,
                       itemBuilder: (_, i) => JuzListItem(
                         juz: list[i],
+                        range: QuranListController.juzRange(list[i], names),
                         onTap: () => _open(
                           c,
                           SurahArgs(list[i].startSurah, list[i].startAyah),
                         ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                }),
                 BookmarksTab(onReturn: c.refreshMarkers),
               ],
             ),

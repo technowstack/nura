@@ -3,6 +3,7 @@ import 'package:nura/app/core/widgets/nura_card.dart';
 import 'package:nura/app/core/widgets/ornament_badge.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/revelation_label.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../data/models/surah.dart';
@@ -20,12 +21,6 @@ class SurahListItem extends StatelessWidget {
   final Surah surah;
   final SurahItemState state;
   final VoidCallback onTap;
-
-  static String revelationLabel(String revelation) => switch (revelation) {
-    'makkiyah' => 'Makkiyah',
-    'madaniyah' => 'Madaniyah',
-    _ => '',
-  };
 
   /// A separator dot kept with the item after it: it never starts a wrapped
   /// line and screen readers skip it.

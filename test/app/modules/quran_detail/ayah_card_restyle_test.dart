@@ -133,7 +133,11 @@ void main() {
       );
       final colors = t.element(find.byType(SurahHeaderCard)).nuraColors;
       expect((deco.decoration! as BoxDecoration).color, colors.hero);
-      expect(find.textContaining('[Q4]', findRichText: true), findsOneWidget);
+      expect(
+        find.textContaining('Madaniyah', findRichText: true),
+        findsOneWidget,
+      );
+      expect(find.textContaining('[Q4]', findRichText: true), findsNothing);
     });
   }
 

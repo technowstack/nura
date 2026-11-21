@@ -162,7 +162,7 @@ void main() {
     await tester.tap(find.text('Juz'));
     await tester.pumpAndSettle();
     expect(find.text('Juz 1'), findsOneWidget);
-    expect(find.text('1:1 – 1:7'), findsOneWidget);
+    expect(find.text('Latin1 1 – Latin1 7'), findsOneWidget);
   });
 
   testWidgets('tapping surah opens route with SurahArgs', (tester) async {
