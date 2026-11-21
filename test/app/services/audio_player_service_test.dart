@@ -298,13 +298,30 @@ void main() {
   test(
     'no files are written during play, queue and failure',
     () => isolated((priv) async {
+      // Guards against future temp writes by the audio layer (the service has
+      // no temp-dir access today). Fresh service and fakes are built inside
+      // the zone so any temp lookup they make hits the private dir.
+      final eng = FakeAudioEngine();
+      final lc = StreamController<AppLifecycleState>.broadcast(sync: true);
+      addTearDown(lc.close);
+      final s = AudioPlayerService(
+        online,
+        AudioApiClient(
+          (uri, {jsonBody}) async =>
+              (status: 200, body: _body(int.parse(uri.pathSegments.last), 8)),
+        ),
+        settings,
+        eng,
+        lifecycle: lc.stream,
+        connectivity: conn.stream,
+      );
       final before = [files(tmp), files(priv)];
-      await svc.playFrom(94, 1, 8);
-      engine.emit(const IndexChanged(2));
-      engine.emit(const Failed('x'));
+      await s.playFrom(94, 1, 8);
+      eng.emit(const IndexChanged(2));
+      eng.emit(const Failed('x'));
       await tick();
-      await svc.playAyah(94, 2, 8);
-      await svc.stop();
+      await s.playAyah(94, 2, 8);
+      await s.stop();
       expect([files(tmp), files(priv)], before);
     }),
   );
