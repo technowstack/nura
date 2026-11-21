@@ -49,3 +49,7 @@ Membaca dulu, tenang. Daftar: baris datar di atas surface, pemisah hairline, nom
 4. Hadis panjang (mis. Bukhari No. 3, 3.329 karakter Arab): tampilkan penuh (sekarang) atau potong + "Baca selengkapnya"?
 5. Nama kitab di daftar: "Shahih Bukhari" (nama app) vs referensi singkat "Bukhari". Mockup memakai nama app di daftar dan singkat di referensi.
 6. Teks terjemahan dimulai dengan rantai perawi ("Telah menceritakan kepada kami [..]") sehingga pratinjau daftar semuanya mirip; pertimbangkan pratinjau dari matan (offset seperti hadis harian).
+
+## Keputusan (2026-11-22)
+
+Pemilik memilih **varian A** untuk daftar dan detail hadis. Implementasi: `docs/plans/2026-11-22-nura-hadith-ui.md`. Varian B tidak dikerjakan.
