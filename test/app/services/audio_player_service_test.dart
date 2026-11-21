@@ -295,25 +295,28 @@ void main() {
   List<String> files(Directory d) =>
       d.listSync(recursive: true).map((e) => e.path).toList()..sort();
 
-  test('no files are written during play, queue and failure', () => isolated((
-    priv,
-  ) async {
-    final before = [files(tmp), files(priv)];
-    await svc.playFrom(94, 1, 8);
-    engine.emit(const IndexChanged(2));
-    engine.emit(const Failed('x'));
-    await tick();
-    await svc.playAyah(94, 2, 8);
-    await svc.stop();
-    expect([files(tmp), files(priv)], before);
-  }));
+  test(
+    'no files are written during play, queue and failure',
+    () => isolated((priv) async {
+      final before = [files(tmp), files(priv)];
+      await svc.playFrom(94, 1, 8);
+      engine.emit(const IndexChanged(2));
+      engine.emit(const Failed('x'));
+      await tick();
+      await svc.playAyah(94, 2, 8);
+      await svc.stop();
+      expect([files(tmp), files(priv)], before);
+    }),
+  );
 
-  test('negative control: a write to the isolated temp dir is detected', () =>
-      isolated((priv) async {
-        final before = files(priv);
-        File('${Directory.systemTemp.path}/leak.mp3').writeAsStringSync('x');
-        expect(files(priv), isNot(before));
-      }));
+  test(
+    'negative control: a write to the isolated temp dir is detected',
+    () => isolated((priv) async {
+      final before = files(priv);
+      File('${Directory.systemTemp.path}/leak.mp3').writeAsStringSync('x');
+      expect(files(priv), isNot(before));
+    }),
+  );
 
   test('dispose cancels subscriptions', () async {
     await svc.playFrom(94, 1, 8);

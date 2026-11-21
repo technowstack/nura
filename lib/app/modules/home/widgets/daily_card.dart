@@ -60,17 +60,39 @@ class _Body extends StatelessWidget {
           style: context.nuraText.translation.copyWith(color: scheme.onSurface),
         ),
         const SizedBox(height: NuraSpace.s8),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            TextButton(
-              onPressed: reference,
-              style: TextButton.styleFrom(minimumSize: _minTarget),
-              child: Text(content.reference),
+        if (trailing == null)
+          TextButton(
+            onPressed: reference,
+            style: TextButton.styleFrom(minimumSize: _minTarget),
+            child: Text(content.reference),
+          )
+        else
+          // Reference shrinks with an ellipsis; the link stays on the right.
+          LayoutBuilder(
+            builder: (context, box) => Row(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton(
+                      onPressed: reference,
+                      style: TextButton.styleFrom(minimumSize: _minTarget),
+                      child: Text(
+                        content.reference,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ),
+                // Cap the link so a huge text scale shrinks it, never overflows.
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: box.maxWidth * 0.65),
+                  child: trailing,
+                ),
+              ],
             ),
-            ?trailing,
-          ],
-        ),
+          ),
       ],
     );
   }
@@ -136,7 +158,11 @@ class DailyHadithCard extends StatelessWidget {
       trailing: TextButton(
         onPressed: onOpen,
         style: TextButton.styleFrom(minimumSize: _minTarget),
-        child: const Text('Baca selengkapnya'),
+        child: const Text(
+          'Baca selengkapnya',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     ),
   );
