@@ -16,6 +16,19 @@ void main() {
     expect(hadithPreview('Beliau bersabda: “Isi matan”'), 'Isi matan”');
   });
 
+  test('closing curly quote is not an opener', () {
+    expect(hadithPreview('Beliau bersabda: ”x”'), 'Beliau bersabda: ”x”');
+  });
+
+  // Owner rule lists only " and “; single quotes (796 hadith) stay as-is.
+  test('single quote opener falls back to the start of the text', () {
+    expect(hadithPreview("Beliau bersabda: 'Isi'"), "Beliau bersabda: 'Isi'");
+  });
+
+  test('no quote at all falls back to the start of the text', () {
+    expect(hadithPreview('Beliau bersabda'), 'Beliau bersabda');
+  });
+
   test('no bersabda: starts from the beginning', () {
     expect(hadithPreview('Telah menceritakan kami'), 'Telah menceritakan kami');
   });

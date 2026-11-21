@@ -13,4 +13,4 @@ String hadithPreview(String translation, {int maxChars = 200}) {
   return '${String.fromCharCodes(runes.take(maxChars))}…';
 }
 
-final _matanStart = RegExp('bersabda:\\s*["“”]', caseSensitive: false);
+final _matanStart = RegExp('bersabda:\\s*["“]', caseSensitive: false);
