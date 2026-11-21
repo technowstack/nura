@@ -6,6 +6,7 @@ import '../../../support/icon_finders.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/widgets/ornament_badge.dart';
+import 'package:nura/app/modules/hadith_list/widgets/hadith_list_tile.dart';
 import 'package:nura/app/core/ui_state.dart';
 import 'package:nura/app/core/widgets/empty_state.dart';
 import 'package:nura/app/core/widgets/error_state.dart';
@@ -346,6 +347,26 @@ void main() {
     repo.summaries = {_slug: _rows(65, preview: (i) => 'kata panjang ' * 40)};
     await pump(tester, scale: 1.3);
     await toEnd(tester);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('list card tile is at least 48 dp tall', (tester) async {
+    repo.summaries = {_slug: _rows(3, preview: (i) => 'x')};
+    await pump(tester);
+    final tiles = find.byType(HadithListTile);
+    expect(tiles, findsWidgets);
+    for (final e in tiles.evaluate()) {
+      expect(
+        tester.getSize(find.byElementPredicate((x) => x == e)).height,
+        greaterThanOrEqualTo(48),
+      );
+    }
+  });
+
+  testWidgets('list card tile at 130% does not overflow', (tester) async {
+    repo.summaries = {_slug: _rows(3, preview: (i) => 'kata panjang ' * 40)};
+    await pump(tester, scale: 1.3);
+    expect(find.byType(HadithListTile), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 }
