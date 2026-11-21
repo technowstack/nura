@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
 import 'package:nura/app/data/models/daily_content.dart';
@@ -58,17 +59,40 @@ void main() {
     expect(n, 2);
   });
 
-  testWidgets('long reference ellipsizes without overflow', (t) async {
-    await _pump(t, 'HR. ${'Sunan Ibnu Majah ' * 6}No. 4360', () {});
+  testWidgets('long reference is actually truncated, link stays', (t) async {
+    final long = 'HR. ${'Sunan Ibnu Majah ' * 6}No. 4360';
+    await _pump(t, long, () {});
     expect(t.takeException(), isNull);
-    final txt = t.widget<Text>(
-      find.descendant(
-        of: find.byType(TextButton).first,
-        matching: find.byType(Text),
-      ),
+    expect(
+      t.renderObject<RenderParagraph>(find.text(long)).didExceedMaxLines,
+      isTrue,
     );
-    expect(txt.overflow, TextOverflow.ellipsis);
+    expect(link, findsOneWidget);
     expect(t.getCenter(find.byType(TextButton).first).dy, t.getCenter(link).dy);
+  });
+
+  testWidgets('long reference at 2.0x scale keeps the link', (t) async {
+    await _pump(t, 'HR. ${'Sunan Ibnu Majah ' * 6}No. 4360', () {}, scale: 2);
+    expect(t.takeException(), isNull);
+    expect(link, findsOneWidget);
+  });
+
+  testWidgets('both buttons are 48 dp tall and trigger onOpen', (t) async {
+    var n = 0;
+    await _pump(t, ref, () => n++);
+    final r = find.widgetWithText(TextButton, ref);
+    expect(t.getSize(r).height, greaterThanOrEqualTo(48));
+    expect(t.getSize(link).height, greaterThanOrEqualTo(48));
+    await t.tap(r);
+    await t.tap(link);
+    expect(n, 2);
+  });
+
+  testWidgets('link keeps its full semantics label', (t) async {
+    final h = t.ensureSemantics();
+    await _pump(t, ref, () {});
+    expect(t.getSemantics(link).label, 'Baca selengkapnya');
+    h.dispose();
   });
 
   testWidgets('130% text scale at 360x640 does not overflow', (t) async {
