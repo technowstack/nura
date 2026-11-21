@@ -6,17 +6,20 @@ import '../../../data/models/hadith.dart';
 import '../../../data/repositories/hadith_repository.dart';
 import '../../../data/repositories/user_repository.dart';
 import '../hadith_list_args.dart';
+import '../hadith_preview.dart';
 
 /// Display model for one row: the view only renders these values.
 class HadithListItem {
   const HadithListItem({
     required this.ref,
+    required this.bookName,
     required this.numberLabel,
     required this.preview,
     required this.bookmarked,
   });
 
   final HadithRef ref;
+  final String bookName;
   final String numberLabel;
   final String preview;
   final bool bookmarked;
@@ -150,8 +153,9 @@ class HadithListController extends GetxController {
             for (final h in _loaded)
               HadithListItem(
                 ref: h.ref,
+                bookName: args.bookName,
                 numberLabel: 'No. ${h.ref.number}',
-                preview: h.preview,
+                preview: hadithPreview(h.preview),
                 bookmarked: _marked.contains(h.ref.number),
               ),
           ]);

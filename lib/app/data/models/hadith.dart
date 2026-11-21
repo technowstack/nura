@@ -21,7 +21,7 @@ class HadithSummary {
 
   final HadithRef ref;
 
-  /// First 200 code points of the translation, for display only.
+  /// First 1000 code points of the translation (preview source), display only.
   final String preview;
 
   /// Full translation length in UTF-16 code units (`translation_length`).
