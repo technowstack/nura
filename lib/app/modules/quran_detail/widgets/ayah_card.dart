@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/tokens.dart';
-import '../../../core/ayah_marker.dart';
+import '../../../core/widgets/ayah_end_marker.dart';
 import '../../../core/widgets/nura_card.dart';
 import '../../../data/models/ayah.dart';
 import '../../../data/models/reading_prefs.dart';
@@ -69,6 +69,10 @@ class AyahCard extends StatelessWidget {
     final colors = context.nuraColors;
     final scheme = Theme.of(context).colorScheme;
     final menu = _menu();
+    final arabic = context.nuraText.arabicReading.copyWith(
+      fontSize: prefs.arabicFontSize,
+      color: colors.arabicText,
+    );
     final card = NuraCard(
       color: playing
           ? scheme.primaryContainer
@@ -112,14 +116,17 @@ class AyahCard extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            ayahDisplayText(ayah.arab, ayah.ayahNumber),
+          Text.rich(
+            TextSpan(
+              children: ayahTextSpans(
+                ayah.arab,
+                ayah.ayahNumber,
+                style: arabic,
+              ),
+            ),
             textAlign: TextAlign.right,
             textDirection: TextDirection.rtl,
-            style: context.nuraText.arabicReading.copyWith(
-              fontSize: prefs.arabicFontSize,
-              color: colors.arabicText,
-            ),
+            style: arabic,
           ),
           if (prefs.showTranslation) ...[
             const SizedBox(height: NuraSpace.s12),

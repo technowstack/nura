@@ -1,4 +1,4 @@
-import 'package:nura/app/core/ayah_marker.dart';
+import '../../../support/ayah_text.dart';
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:io';
@@ -165,7 +165,10 @@ void main() {
       .firstOrNull;
 
   Finder play(int ayah) => find.descendant(
-    of: find.widgetWithText(AyahCard, ayahDisplayText('arab94:$ayah', ayah)),
+    of: find.ancestor(
+      of: ayahFinder('arab94:$ayah', ayah),
+      matching: find.byType(AyahCard),
+    ),
     matching: find.byTooltip('Putar ayat'),
   );
 
@@ -249,13 +252,16 @@ void main() {
     await settle(t);
     expect(engine.queues.last, [for (var i = 1; i <= 30; i++) _u('05', 94, i)]);
     await t.scrollUntilVisible(
-      find.text(ayahDisplayText('arab94:3', 3)),
+      ayahFinder('arab94:3', 3),
       100,
       scrollable: find.byType(Scrollable).first,
     );
     await t.tap(
       find.descendant(
-        of: find.widgetWithText(AyahCard, ayahDisplayText('arab94:3', 3)),
+        of: find.ancestor(
+          of: ayahFinder('arab94:3', 3),
+          matching: find.byType(AyahCard),
+        ),
         matching: find.byTooltip('Menu ayat'),
       ),
     );
@@ -272,16 +278,16 @@ void main() {
     await t.tap(find.text('Putar surah'));
     await settle(t);
     expect(playingCard(t), 1);
-    expect(find.text(ayahDisplayText('arab94:26', 26)), findsNothing);
+    expect(ayahFinder('arab94:26', 26), findsNothing);
     engine.emit(const IndexChanged(25));
     await settle(t);
     expect(playingCard(t), 26);
-    expect(find.text(ayahDisplayText('arab94:26', 26)), findsOneWidget);
+    expect(ayahFinder('arab94:26', 26), findsOneWidget);
     expect(Get.find<QuranDetailController>().playingAyah.value, 26);
     engine.emit(const IndexChanged(1));
     await settle(t);
     expect(playingCard(t), 2);
-    expect(find.text(ayahDisplayText('arab94:2', 2)), findsOneWidget);
+    expect(ayahFinder('arab94:2', 2), findsOneWidget);
   });
 
   testWidgets('failure shows one snackbar, not an error screen', (t) async {

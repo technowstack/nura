@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nura/app/core/ayah_marker.dart';
+import '../../../support/ayah_text.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
 import 'package:nura/app/core/theme/nura_colors.dart';
+import 'package:nura/app/core/widgets/ayah_end_marker.dart';
 import 'package:nura/app/core/widgets/nura_card.dart';
 import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/models/reading_prefs.dart';
@@ -47,11 +48,15 @@ AyahCard _card({
 );
 
 void main() {
-  testWidgets('arabic is ayahDisplayText with exactly one marker', (t) async {
+  setUpAll(loadArabicFont);
+
+  testWidgets('arabic is the data text plus exactly one marker widget', (
+    t,
+  ) async {
     await t.pumpWidget(_host(_card()));
-    final shown = ayahDisplayText(_arab, 7);
-    expect(find.text(shown), findsOneWidget);
-    expect('۝'.allMatches(shown), hasLength(1));
+    expect(ayahFinder(_arab, 7), findsOneWidget);
+    expect(find.byType(AyahEndMarker), findsOneWidget);
+    expect(find.text('۝'), findsOneWidget);
     expect(find.text('7'), findsOneWidget); // small number, no frame
   });
 

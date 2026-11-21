@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nura/app/core/ayah_marker.dart';
+import '../../../support/ayah_text.dart';
 import 'package:nura/app/core/search_snippet.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
+import 'package:nura/app/core/widgets/ayah_end_marker.dart';
 import 'package:nura/app/core/widgets/nura_card.dart';
 import 'package:nura/app/data/models/search_hit.dart';
 import 'package:nura/app/modules/bookmarks/controllers/bookmark_item.dart';
@@ -130,7 +131,10 @@ void main() {
     await t.pumpWidget(
       _host(AppTheme.light, SearchResultTile(item: _item(s), onTap: () {})),
     );
-    expect(plain(t), ayahDisplayText(s.text, 45));
+    expect(plain(t), ayahSearchPlain(s.text, 45));
+    final last = (rich(t).textSpan! as TextSpan).children!.last;
+    expect(last, isA<WidgetSpan>());
+    expect(((last as WidgetSpan).child as AyahEndMarker).number, 45);
   });
 
   testWidgets('whole-ayah snippet with a trailing space: one marker space', (
@@ -145,7 +149,7 @@ void main() {
     await t.pumpWidget(
       _host(AppTheme.light, SearchResultTile(item: _item(s), onTap: () {})),
     );
-    expect(plain(t), ayahDisplayText(ar, 45));
+    expect(plain(t), ayahSearchPlain(ar, 45));
     expect(plain(t), isNot(contains('  ')));
     expect(marked(t), isNotEmpty);
   });
@@ -186,7 +190,7 @@ void main() {
     expect(hl.length, 2);
     expect(hl.last, ar.substring(ar.lastIndexOf('بِ')));
     expect(hl.any((h) => h.contains('۝')), isFalse);
-    expect(plain(t), ayahDisplayText(ar, 45));
+    expect(plain(t), ayahSearchPlain(ar, 45));
   });
 
   testWidgets('hadith hit with Arabic text never gets the marker', (t) async {

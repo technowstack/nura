@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:nura/app/core/ayah_marker.dart';
+import '../../../support/ayah_text.dart';
 import 'package:nura/app/core/theme/arabic_font.dart';
 import 'package:nura/app/core/search_snippet.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
@@ -492,7 +492,7 @@ void main() {
       expect(text.textDirection, TextDirection.rtl);
       expect(text.textSpan?.style?.fontFamily, nuraArabicFont);
       // Whole ayah shown: end marker appended (display only).
-      expect(text.textSpan?.toPlainText(), ayahDisplayText(_basmalah, 1));
+      expect(text.textSpan?.toPlainText(), ayahSearchPlain(_basmalah, 1));
     });
 
     testWidgets('Latin results stay LTR', (tester) async {

@@ -1,4 +1,4 @@
-import 'package:nura/app/core/ayah_marker.dart';
+import '../../../support/ayah_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -88,7 +88,7 @@ void main() {
   }
 
   double arabSize(WidgetTester t) =>
-      t.widget<Text>(find.text(ayahDisplayText('arab2', 2))).style!.fontSize!;
+      t.widget<Text>(ayahFinder('arab2', 2)).style!.fontSize!;
 
   testWidgets('slider changes AyahCard font size and persists', (t) async {
     await pump(t);

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/ayah_marker.dart';
 import '../../../core/search_snippet.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/widgets/ayah_end_marker.dart';
 import '../../../core/widgets/nura_card.dart';
 import '../../../data/models/search_hit.dart';
 import '../controllers/search_results_controller.dart';
@@ -14,13 +14,13 @@ InlineSpan snippetSpan(
   Snippet s,
   TextStyle base,
   Color highlight, {
-  String suffix = '',
+  List<InlineSpan>? suffix,
 }) {
   final mark = TextStyle(backgroundColor: highlight);
   final children = <InlineSpan>[if (s.cutStart) const TextSpan(text: '…')];
   // The marker follows the text directly, so trailing ASCII spaces go.
   var end = s.text.length;
-  if (suffix.isNotEmpty) {
+  if (suffix != null) {
     while (end > 0 && s.text.codeUnitAt(end - 1) == 0x20) {
       end--;
     }
@@ -37,7 +37,7 @@ InlineSpan snippetSpan(
   }
   if (at < end) children.add(TextSpan(text: s.text.substring(at, end)));
   if (s.cutEnd) children.add(const TextSpan(text: '…'));
-  if (suffix.isNotEmpty) children.add(TextSpan(text: suffix));
+  if (suffix != null) children.addAll(suffix);
   return TextSpan(style: base, children: children);
 }
 
@@ -75,8 +75,8 @@ class SearchResultTile extends StatelessWidget {
     // snippet or the snippet data itself is never altered.
     final marker =
         arabic && hit is AyahSearchHit && !snippet.cutStart && !snippet.cutEnd
-        ? ayahDisplayText('', hit.ayahNumber)
-        : '';
+        ? ayahTextSpans('', hit.ayahNumber, style: base)
+        : null;
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: NuraSpace.s16,

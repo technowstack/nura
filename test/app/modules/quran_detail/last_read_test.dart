@@ -1,4 +1,4 @@
-import 'package:nura/app/core/ayah_marker.dart';
+import '../../../support/ayah_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -165,12 +165,9 @@ void main() {
 
   testWidgets('SurahArgs ayah 30 is jumped to', (t) async {
     await pump(t, const SurahArgs(1, 30));
-    expect(find.text(ayahDisplayText('arab1:30', 30)), findsOneWidget);
-    expect(find.text(ayahDisplayText('arab1:2', 2)), findsNothing);
-    expect(
-      t.getTopLeft(find.text(ayahDisplayText('arab1:30', 30))).dy,
-      lessThan(300),
-    );
+    expect(ayahFinder('arab1:30', 30), findsOneWidget);
+    expect(ayahFinder('arab1:2', 2), findsNothing);
+    expect(t.getTopLeft(ayahFinder('arab1:30', 30)).dy, lessThan(300));
   });
 
   testWidgets('opening a surah does not overwrite last read', (t) async {
