@@ -70,12 +70,12 @@ Layar (Figma): halaman `03 Screens · Fase 1` (9 layar Light+Dark; F1/05 Beranda
 
 ### Putaran 1.5 (penyegaran visual)
 
-- **Penanda akhir ayat tidak boleh putus baris sendirian.** Teks tampilan Arab = teks data ayat (spasi ASCII di ujung dibuang bila ada) + `U+00A0` (spasi tak terputus) + `U+06DD` + angka Arab-Indik nomor ayat (`U+0660`-`U+0669`). Sambungan `U+00A0` hanya ada di lapisan tampilan; teks dari `data-source` tetap utuh dan disimpan/dicari/disalin tanpa penanda dan sambungan (pencarian dan bookmark memakai teks data apa adanya). Verifikasi desain: Arab setelah menghapus ujung `\u00a0\u06dd<angka>` identik dengan data (toleransi spasi akhir data).
+- **Penanda akhir ayat tidak boleh putus baris sendirian.** Penanda digambar aplikasi sebagai widget sebaris (`AyahEndMarker`: cincin `U+06DD` dengan nomor Arab-Indik di tengahnya), bukan teks, karena mesin teks Flutter tidak menerapkan ligatur GSUB font yang melingkupi angka. Kata terakhir (dengan tanda waqaf) dan penanda ditaruh dalam satu widget karena mesin mengabaikan U+00A0/U+2060 di sebelah widget sebaris. Teks data tidak berubah selain pembuangan spasi ASCII di ujung; disimpan/dicari/disalin tanpa penanda.
 - **Menu kartu ayat** memakai ikon `more_horiz` (⋯ horizontal) Material Symbols Rounded 300; area sentuh 48.
 - **AyahActionBar:** kelima sel sama lebar dan sama tinggi 48 pada semua varian (audio mati = empat sel); sel audio berisi ikon di atas teks status pendek ("Stream", "Offline", "Memutar").
 - **JuzListItem** mengikuti SurahListItem (OrnamentBadge, kartu `surfaceContainerLowest`, border `outlineVariant`); nomor juz dan rentang ayat tetap "[Q4]".
 - **ListTile onboarding:** ikon Material Symbols Rounded 300 (`location_on` di depan, `chevron_right` di belakang).
-- **Penanda akhir ayat:** teks Arab AyahCard diakhiri simbol ۝ (U+06DD) + angka Arab-Indik. LPMQ Isep Misbah mendukung glyph U+06DD; ambil dari data/render, jangan digambar. Pada hasil pencarian penanda kadang jatuh ke baris sendiri (catatan terbuka).
+- **Penanda akhir ayat:** teks Arab AyahCard diakhiri simbol ۝ (U+06DD) + angka Arab-Indik. Cincin U+06DD diambil dari font (`nuraArabicFont`), nomornya digambar aplikasi di dalam cincin. Pada hasil pencarian penanda kadang jatuh ke baris sendiri (catatan terbuka).
 - **Beranda:** hero full-bleed `ext/hero` (±360 termasuk status bar) dan siluet datar `heroShape` jadi kerangka layar, bukan hiasan opsional; lembar konten `surface` menumpuk 24 px di atasnya (radius `xl`). Tanpa gradasi. Waktu sholat berikutnya = warna `onHeroAccent` + titik (jangan hanya warna; underline tidak dipakai).
 - **Ikon:** Material Symbols Rounded weight 300 (google/material-design-icons, Apache 2.0): `iconAccent` di kartu terang, `onHero` di hero. Chevron navigasi ayat buatan sendiri. Ikon Subuh/Isya memakai glyph bulan sabit fungsional (nightlight/bedtime).
 - Kartu konten: `surfaceContainerLowest` + border `outlineVariant` 1 px + radius `lg`.
@@ -108,7 +108,7 @@ Scrim `ColorScheme.scrim` alpha 32%; sheet rata bawah, tinggi maksimum 90% tingg
 - Tinggi baris daftar tetap di Figma (64/65/68/108/130) hanya mengikuti isi: di Flutter pakai tinggi mengikuti isi dengan minHeight.
 - Teks keterangan SurahListItem wrap (tidak dipotong). Ukuran komponen/platform tetap lain (bintang 18, ilustrasi 96, status bar placeholder, dst.) tercatat di brief bagian 3.3 dan tidak diekspor.
 - Uji Latin 130%: tata letak harus utuh saat teks Latin 130% dan Arab 36 (mode `UJI130` di koleksi type; resep di `CLAUDE.md` bagian "Uji Latin 130%").
-- Uji Baca Surah: ayat panjang di ukuran Arab 36: penanda ۝ tidak boleh jatuh sendiri ke baris baru (sambungkan dengan U+00A0 di lapisan tampilan; lihat aturan penanda akhir ayat di atas).
+- Uji Baca Surah: ayat panjang di ukuran Arab 36: penanda ۝ tidak boleh jatuh sendiri ke baris baru (kata terakhir dan penanda satu widget; lihat aturan penanda akhir ayat di atas).
 - Target sentuh minimal 48 × 48; status tidak boleh hanya warna (lastRead = label + ikon + latar; bookmark = ikon terisi; offline = teks + centang; chip/tab punya penanda tambahan).
 - Ikon fungsi (history, bookmark, salin, bagikan, putar, tafsir, more, ikon hero) = Material Symbols Rounded weight 300 (Apache 2.0); komponen `Icon/<nama>` 24x24 di Figma.
 
@@ -130,7 +130,7 @@ Scrim `ColorScheme.scrim` alpha 32%; sheet rata bawah, tinggi maksimum 90% tingg
 | **Gulir sheet** | Gulir di dalam sheet tidak bisa disimulasikan di Figma; implementasi Flutter perlu memastikan isi bergulir dengan tinggi maksimum 90%. |
 | **Target ayat terlihat** | Layar Baca Surah 07a menampilkan ±2,09 ayat Al-Baqarah di frame 800 (target 2,5 dilepas oleh keputusan produk; info saja). |
 | **Varian sisa** | Mode `UJI130` di Figma dipertahankan untuk uji ulang (tidak ada di tokens.json); salinan `UJI130b` dibuang 2026-11-18, 99 Playground hanya berisi 4 Beranda uji. |
-| **Terbuka putaran 1.5** | (a) ukuran widget Ayat 168/256 tetap perkiraan (ukuran sebenarnya dari launcher); (b) kontras `onHeroAccent` di atas `heroShape` Light 4,61:1 diterima (batas tipis; cek ulang jika `heroShape` atau `onHeroAccent` diubah); (c) penanda ۝ masih bisa jatuh ke baris sendiri pada hasil pencarian bila baris Arab pas penuh (U+00A0 sudah dipakai). |
+| **Terbuka putaran 1.5** | (a) ukuran widget Ayat 168/256 tetap perkiraan (ukuran sebenarnya dari launcher); (b) kontras `onHeroAccent` di atas `heroShape` Light 4,61:1 diterima (batas tipis; cek ulang jika `heroShape` atau `onHeroAccent` diubah); (c) penanda ۝ masih bisa jatuh ke baris sendiri pada hasil pencarian bila baris Arab pas penuh (diatasi: kata terakhir + penanda satu widget; pada hasil pencarian penanda berdiri sendiri sebagai widget). |
 
 ## 6. Verifikasi yang sudah dilakukan (pengawas, 2026-11-10/11)
 - Audit seluruh halaman 02, 03, 04 (+99): 0 nilai tanpa binding variable, semua teks bertext style; teks Arab (ayat, nama surah, matan hadis) cocok persis dengan `data-source/`; terjemahan, tafsir, hadis, dan cuplikan pencarian substring persis; kontras (teks ≥ 4.5:1, ikon ≥ 3:1, elemen disabled dikecualikan) dan target sentuh ≥ 48 lolos di Light dan Dark.
