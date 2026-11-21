@@ -18,6 +18,22 @@ const Map<String, String> hadithBookNames = {
   'darimi': 'Sunan Darimi',
 };
 
+/// Slug to Arabic book name (owner-supplied), display only: not in content.db
+/// and not used by the pipeline.
+const Map<String, String> hadithBookNamesArab = {
+  'bukhari': 'صحيح البخاري',
+  'muslim': 'صحيح مسلم',
+  'abu-daud': 'سنن أبي داود',
+  'tirmidzi': 'سنن الترمذي',
+  'nasai': 'سنن النسائي',
+  'ibnu-majah': 'سنن ابن ماجه',
+  'ahmad': 'مسند أحمد',
+  'malik': 'موطأ مالك',
+  'darimi': 'سنن الدارمي',
+};
+
+String? hadithBookNameArab(String slug) => hadithBookNamesArab[slug];
+
 const List<String> contentSchemaDdl = [
   '''
 CREATE TABLE meta (
