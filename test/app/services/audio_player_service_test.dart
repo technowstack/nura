@@ -277,22 +277,43 @@ void main() {
     expect(engine.queues.last, [_u('01', 94, 1)]);
   });
 
-  test('no files are written during play, queue and failure', () async {
-    List<String> list(Directory d) =>
-        d.listSync(recursive: true).map((e) => e.path).toList()..sort();
-    // Other tests share the system temp dir in parallel: only look for audio.
-    List<String> audioFiles() => list(Directory.systemTemp)
-        .where((p) => RegExp(r'\.(mp3|m4a|aac|ogg|wav|part)$').hasMatch(p))
-        .toList();
-    final before = [list(tmp), audioFiles()];
+  // Other test processes write into the shared system temp dir in parallel,
+  // so the scan runs on a private dir that Directory.systemTemp is redirected
+  // to for the duration of [body].
+  Future<void> isolated(Future<void> Function(Directory priv) body) async {
+    final priv = Directory.systemTemp.createTempSync('nura_iso_');
+    try {
+      await IOOverrides.runZoned(
+        () => body(priv),
+        getSystemTempDirectory: () => priv,
+      );
+    } finally {
+      priv.deleteSync(recursive: true);
+    }
+  }
+
+  List<String> files(Directory d) =>
+      d.listSync(recursive: true).map((e) => e.path).toList()..sort();
+
+  test('no files are written during play, queue and failure', () => isolated((
+    priv,
+  ) async {
+    final before = [files(tmp), files(priv)];
     await svc.playFrom(94, 1, 8);
     engine.emit(const IndexChanged(2));
     engine.emit(const Failed('x'));
     await tick();
     await svc.playAyah(94, 2, 8);
     await svc.stop();
-    expect([list(tmp), audioFiles()], before);
-  });
+    expect([files(tmp), files(priv)], before);
+  }));
+
+  test('negative control: a write to the isolated temp dir is detected', () =>
+      isolated((priv) async {
+        final before = files(priv);
+        File('${Directory.systemTemp.path}/leak.mp3').writeAsStringSync('x');
+        expect(files(priv), isNot(before));
+      }));
 
   test('dispose cancels subscriptions', () async {
     await svc.playFrom(94, 1, 8);
