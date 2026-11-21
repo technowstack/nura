@@ -5,6 +5,6 @@ import '../controllers/prayer_controller.dart';
 class PrayerBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<PrayerController>(PrayerController.new);
+    Get.lazyPut<PrayerController>(PrayerController.new, fenix: true);
   }
 }
