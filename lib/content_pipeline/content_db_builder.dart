@@ -17,11 +17,18 @@ import 'text_normalizer.dart';
 
 export 'build_result.dart';
 
-List<Map<String, dynamic>>? _optionalList(Directory root, String name) {
+/// Entries of `meta/[name]`: a plain json list, or an object (with `source`
+/// and `fetched_at`) holding the list under [key].
+List<Map<String, dynamic>>? _optionalList(
+  Directory root,
+  String name,
+  String key,
+) {
   final f = File('${root.path}/meta/$name');
   if (!f.existsSync()) return null;
   try {
-    return (jsonDecode(f.readAsStringSync()) as List<dynamic>)
+    final json = jsonDecode(f.readAsStringSync());
+    return ((json is Map<String, dynamic> ? json[key] : json) as List<dynamic>)
         .cast<Map<String, dynamic>>();
   } on Object catch (e) {
     throw SourceFormatException('meta/$name', 'invalid json: $e');
@@ -80,7 +87,8 @@ BuildResult buildContentDb({
   books.sort((a, b) => order.indexOf(a.slug).compareTo(order.indexOf(b.slug)));
 
   final info = <int, String>{
-    for (final e in _optionalList(sourceRoot, 'surah_info.json') ?? const [])
+    for (final e
+        in _optionalList(sourceRoot, 'surah_info.json', 'surahs') ?? const [])
       e['number'] as int: e['revelation'] as String,
   };
   final manifestFile = File('${sourceRoot.path}/CHECKSUMS.sha256');
@@ -218,7 +226,7 @@ BuildResult buildContentDb({
     insHadithFts.dispose();
 
     final insJuz = db.prepare('INSERT INTO juz VALUES (?, ?, ?, ?, ?)');
-    for (final j in _optionalList(sourceRoot, 'juz.json') ?? const []) {
+    for (final j in _optionalList(sourceRoot, 'juz.json', 'juz') ?? const []) {
       insJuz.execute([
         j['number'],
         j['start_surah'],

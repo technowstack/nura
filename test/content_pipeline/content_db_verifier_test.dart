@@ -97,6 +97,41 @@ void main() {
     expect(r.warnings, contains(contains('112')));
   });
 
+  test('unknown revelation is an error', () {
+    final r = verifyTampered(
+      "UPDATE surah SET revelation = 'mekah' WHERE number = 1",
+    );
+    expect(r.errors, contains(contains('unknown revelation')));
+  });
+
+  test('empty revelation is an error in full mode', () {
+    final r = verifyContentDb(
+      sourceRoot: fixtureDir(''),
+      database: built,
+      expected: fullDatasetTotals,
+    );
+    expect(r.errors, contains(contains('surah 112: empty revelation')));
+  });
+
+  group('juz', () {
+    VerificationReport withJuz(List<String> rows) {
+      final src = sourceCopy();
+      File('${src.path}/meta/juz.json').writeAsStringSync('[]');
+      return verifyTampered(
+        'INSERT INTO juz VALUES ${rows.join(',')}',
+        source: src,
+      );
+    }
+
+    test('gap, wrong reference start and uneven coverage are errors', () {
+      final gap = withJuz(['(1, 1, 1, 1, 7)']);
+      expect(gap.errors, contains(contains('juz cover 7 of 22 ayat')));
+      final overlap = withJuz(['(1, 1, 1, 100, 11)', '(2, 1, 1, 112, 4)']);
+      expect(overlap.errors, contains(contains('juz 2 starts 1:1')));
+      expect(overlap.errors, contains(contains('gap or overlap')));
+    });
+  });
+
   test('expected totals mismatch is an error', () {
     final r = verifyContentDb(
       sourceRoot: fixtureDir(''),

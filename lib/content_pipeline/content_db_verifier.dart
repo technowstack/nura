@@ -8,6 +8,7 @@ import 'content_schema.dart';
 import 'content_version.dart';
 import 'expected_totals.dart';
 import 'hadith_source_parser.dart';
+import 'juz_rules.dart';
 import 'matan_extractor.dart';
 import 'meta_lists.dart';
 import 'quran_source_parser.dart';
@@ -184,6 +185,21 @@ VerificationReport verifyContentDb({
     if (juzFile.existsSync()) {
       final juz = _count(db, 'SELECT COUNT(*) FROM juz');
       total('juz', juz, expected == null ? juz : 30);
+      errors.addAll(
+        validateJuz(
+          [
+            for (final r in db.select('SELECT * FROM juz ORDER BY number'))
+              JuzRange(
+                r['number'] as int,
+                r['start_surah'] as int,
+                r['start_ayah'] as int,
+                r['end_surah'] as int,
+                r['end_ayah'] as int,
+              ),
+          ],
+          {for (final s in surahs) s.number: s.ayahCount},
+        ),
+      );
     }
     if (expected != null) {
       total('expected surah', surahs.length, expected.surahs);
@@ -225,7 +241,12 @@ VerificationReport verifyContentDb({
         }
         final rev = sr['revelation'] as String;
         if (rev.isEmpty) {
-          report.warnings.add('surah ${s.number}: empty revelation');
+          // Fixtures hold a few surahs only; the full dataset must be complete.
+          (expected != null ? errors : report.warnings).add(
+            'surah ${s.number}: empty revelation',
+          );
+        } else if (rev != 'makkiyah' && rev != 'madaniyah') {
+          errors.add('surah ${s.number}: unknown revelation "$rev"');
         }
       }
       for (final a in s.ayahs) {
