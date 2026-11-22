@@ -174,3 +174,13 @@ Keputusan pemilik 2026-11-19 untuk D1, D4, D8, dan D9 sudah tercatat di bawah (a
 | Persiapan Play Store: build bertanda tangan, izin, Data Safety, kebijakan privasi | 5, 7 (D5, D8, D9) |
 | Syarat rilis terbuka (Q2, Q3, Q6, Q7, Q8, Q9, Q12, sampel matan) | checklist, 7 |
 | Tindak lanjut kecil dari STATUS | 6 |
+
+---
+
+## Tambahan keputusan pemilik (2026-11-22): Task 1 dan Task 3 dikerjakan sekarang
+
+Hanya **Task 1 (Pengaturan terpusat)** dan **Task 3 (Sumber & Atribusi)** dikerjakan sekarang; task Fase 8 lainnya menunggu. Keputusan D1, D4, D8, D9 sudah tercatat di atas.
+
+**Pengaturan terpusat (menggantikan butir D2 bila berbeda):** semua setelan pindah ke satu layar Pengaturan: tema; ukuran huruf Arab **dan terjemahan** (setelan baru: ukuran terjemahan dapat diatur; PRD 5.1 dan spec 5.6 yang menyatakan ukuran terjemahan tetap diperbarui); sakelar tampilkan terjemahan; Fitur Online dan qari; unduh jadwal sholat (sinkron); wilayah; pengingat per waktu sholat; notifikasi harian dan jamnya; sumber hadis harian (dengan keterangan derajat untuk 9 kitab); penyesuaian tanggal Hijriah (`hijri_adjust`, -1/0/+1). Sheet sementara di layar baca (pengaturan baca) dan sheet harian dihapus atau diarahkan ke Pengaturan. **Letak:** desain Putaran 1.5 tidak menentukan; spec 5.3 mendaftar "Pengaturan" sebagai layar sendiri dan navigasi bawah tetap 4 item, jadi dibuka dari ikon di header (hero) Beranda yang menggantikan ikon `tune`; dilaporkan ke pemilik.
+
+**Sumber & Atribusi (di dalam Pengaturan, bagian Tentang):** Kementerian Agama RI (teks, terjemahan, tafsir Al-Qur'an); gadingnst/hadith-api (MIT) dengan data asal tafsirq.com; EQuran.id (jadwal sholat dari Bimas Islam Kemenag, audio dari Verse By Verse Quran, tempat turun surah); Tanzil.info (batas juz, Creative Commons Attribution 3.0 dengan tautan lisensi); font Plus Jakarta Sans dan Scheherazade New (OFL); Material Symbols (Apache 2.0); halaman lisensi paket Flutter (`showLicensePage`). Daftar teks UI baru ditampilkan untuk persetujuan pemilik.
