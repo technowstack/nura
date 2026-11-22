@@ -50,7 +50,7 @@ void main() {
     repo.withAyah = false;
     final c = make();
     expect(cards(c).ayah, isNull);
-    expect(cards(c).hadith?.reference, 'HR. Shahih Bukhari No. 15');
+    expect(cards(c).hadith?.reference, 'HR. Bukhari No. 15');
   });
 
   tc('both present: ayah and hadith of today', (tester) async {

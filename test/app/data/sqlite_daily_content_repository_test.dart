@@ -88,7 +88,7 @@ void main() {
       expect(c.kind, DailyKind.hadith);
       expect(c.arab, _matan);
       expect(c.translation, _trMatan);
-      expect(c.reference, 'HR. Shahih Bukhari No. 34');
+      expect(c.reference, 'HR. Bukhari No. 34');
       expect(c.deepLink, 'nura://hadith/bukhari/34');
       expect(c.hadithRef, const HadithRef('bukhari', 34));
       expect(c.surahNameArab, isNull);

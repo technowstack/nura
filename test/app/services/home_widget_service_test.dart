@@ -84,7 +84,7 @@ void main() {
             as Map<String, dynamic>;
     expect(
       (h['description'] as String).startsWith(
-        'Hadis hari ini. HR. Shahih Bukhari No. 15. Hadis hari 15',
+        'Hadis hari ini. HR. Bukhari No. 15. Hadis hari 15',
       ),
       isTrue,
     );

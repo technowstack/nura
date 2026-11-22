@@ -1,4 +1,4 @@
-import '../../../content_pipeline/content_schema.dart';
+import '../../core/hadith_reference.dart';
 import '../../core/daily_index.dart';
 import '../models/ayah.dart';
 import '../models/daily_content.dart';
@@ -72,7 +72,7 @@ class SqliteDailyContentRepository implements DailyContentRepository {
       kind: DailyKind.hadith,
       arab: arab,
       translation: tr,
-      reference: 'HR. ${hadithBookNames[slug] ?? slug} No. $number',
+      reference: hadithReference(slug, number),
       deepLink: 'nura://hadith/$slug/$number',
       hadithRef: HadithRef(slug, number),
     );

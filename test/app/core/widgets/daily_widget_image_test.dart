@@ -48,7 +48,7 @@ void main() {
       kind: DailyKind.hadith,
       arab: List.filled(80, 'إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ').join(' '),
       translation: List.filled(80, 'Sesungguhnya amal itu').join(' '),
-      reference: 'HR. Shahih Bukhari No. 1',
+      reference: 'HR. Bukhari No. 1',
       deepLink: 'nura://hadith/bukhari/1',
     );
     for (final size in [_s42, _s43]) {
@@ -62,7 +62,7 @@ void main() {
         ),
       );
       expect(tester.takeException(), isNull);
-      expect(find.text('HR. Shahih Bukhari No. 1'), findsOneWidget);
+      expect(find.text('HR. Bukhari No. 1'), findsOneWidget);
       final arab = tester.widget<Text>(find.text(long.arab));
       expect(arab.maxLines, size == _s42 ? 1 : 2);
       expect(arab.style?.fontFamily, nuraArabicFont);

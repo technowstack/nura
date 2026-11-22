@@ -87,7 +87,7 @@ void main() {
       expect(s.body, contains('\n'));
       expect(
         s.body,
-        contains(ayah ? 'QS. Asy-Syarh: $d' : 'HR. Shahih Bukhari No. $d'),
+        contains(ayah ? 'QS. Asy-Syarh: $d' : 'HR. Bukhari No. $d'),
       );
       expect(s.body.runes.any((r) => r >= 0x600 && r <= 0x6FF), isFalse);
       expect(s.title.runes.any((r) => r >= 0x600 && r <= 0x6FF), isFalse);

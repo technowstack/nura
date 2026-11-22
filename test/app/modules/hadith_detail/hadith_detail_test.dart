@@ -285,7 +285,7 @@ void main() {
     await pump(t, 1);
     await ctl().copy();
     await t.pump();
-    expect(copied, 'A \n\n T\n\nHR. Shahih Bukhari No. 1');
+    expect(copied, 'A \n\n T\n\nHR. Bukhari No. 1');
     expect(find.text('Hadis disalin'), findsOneWidget);
     await t.pumpAndSettle(const Duration(seconds: 5));
   });

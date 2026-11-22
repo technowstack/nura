@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../core/hadith_reference.dart';
 import 'package:get/get.dart';
 
 import '../../../core/ui_state.dart';
@@ -81,7 +82,7 @@ class BookmarksController extends GetxController {
         result.add(
           HadithBookmarkItem(
             ref: b.ref,
-            title: 'HR. ${h.bookName} No. ${b.ref.number}',
+            title: hadithReference(b.ref.slug, b.ref.number),
             body: h.translation,
             createdAt: b.createdAt,
           ),

@@ -87,7 +87,7 @@ void main() {
       lessThan(tester.getTopLeft(find.text('Hadis hari ini')).dy),
     );
     expect(find.text('QS. Asy-Syarh: 15'), findsOneWidget);
-    expect(find.text('HR. Shahih Bukhari No. 15'), findsOneWidget);
+    expect(find.text('HR. Bukhari No. 15'), findsOneWidget);
     expect(find.text('Baca selengkapnya'), findsOneWidget);
     expect(find.textContaining('data_version v1'), findsOneWidget);
   });
@@ -127,7 +127,7 @@ void main() {
 
   tw('hadith reference and Baca selengkapnya open the detail', (tester) async {
     await pump(tester);
-    for (final label in ['HR. Shahih Bukhari No. 15', 'Baca selengkapnya']) {
+    for (final label in ['HR. Bukhari No. 15', 'Baca selengkapnya']) {
       await tester.ensureVisible(find.text(label));
       await tester.pumpAndSettle();
       await tester.tap(find.text(label));
@@ -170,7 +170,7 @@ void main() {
   tw('tap targets are at least 48dp', (tester) async {
     await pump(tester);
     for (final f in [
-      find.widgetWithText(TextButton, 'HR. Shahih Bukhari No. 15'),
+      find.widgetWithText(TextButton, 'HR. Bukhari No. 15'),
       find.widgetWithText(TextButton, 'Baca selengkapnya'),
     ]) {
       expect(tester.getSize(f.first).height, greaterThanOrEqualTo(48));
