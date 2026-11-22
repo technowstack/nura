@@ -43,7 +43,8 @@ const List<Attribution> kAttributions = [
       'Audio: EQuran.id (sumber: Verse By Verse Quran)',
       'Tempat turun surah: EQuran.id (sumber Kemenag)',
     ],
-    licenseNote: 'Pemakaian mengikuti ketentuan layanan EQuran.id.',
+    licenseNote:
+        'Layanan API EQuran.id; syarat layanan: https://equran.id/terms.',
     links: ['https://equran.id'],
   ),
   Attribution(

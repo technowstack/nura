@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/attributions.dart';
@@ -75,6 +76,21 @@ void main() {
     ]) {
       expect(docs.toLowerCase(), contains(k.toLowerCase()), reason: k);
     }
+    final readme = File('data-source/README.md').readAsStringSync();
+    expect(readme, contains('creativecommons.org/licenses/by/3.0'));
+    expect(readme, contains('diformat ulang'));
+    // Backed by README/PRD text.
+    expect(docs, contains('Kementerian Agama'));
+    expect(docs, contains('Kemenag'));
+    // 'Bimas Islam Kemenag' is only in the owner brief / phase plan (D3),
+    // not in the README or PRD.
+    for (final f in ['attributions.dart', 'font_licenses.dart']) {
+      expect(
+        File('lib/app/core/$f').readAsStringSync(),
+        isNot(contains('fontFamily')),
+        reason: f,
+      );
+    }
     final all = kAttributions
         .expand((a) => [a.title, ...a.credits, a.licenseNote])
         .join(' ');
@@ -97,6 +113,8 @@ void main() {
     await pump(t);
     final b = find.text('Lisensi perangkat lunak');
     await reveal(t, b);
+    await t.ensureVisible(b);
+    await t.pump();
     await t.tap(b);
     await t.pumpAndSettle();
     expect(find.byType(LicensePage), findsOneWidget);
@@ -130,16 +148,56 @@ void main() {
     });
   }
 
+  Future<Map<String, int>> collect() async {
+    final c = <String, int>{};
+    await LicenseRegistry.licenses.forEach((e) {
+      for (final p in e.packages) {
+        c[p] = (c[p] ?? 0) + 1;
+      }
+    });
+    return c;
+  }
+
+  Future<Map<String, int>> counts(WidgetTester t) async {
+    return (await t.runAsync(collect))!;
+  }
+
+  testWidgets('registering twice adds no duplicates', (t) async {
+    LicenseRegistry.reset();
+    resetFontLicensesForTest();
+    registerFontLicenses();
+    registerFontLicenses();
+    final c = await counts(t);
+    expect(c['Plus Jakarta Sans'], 1);
+    expect(c['Scheherazade New'], 1);
+  });
+
+  testWidgets('a missing asset is skipped, not thrown', (t) async {
+    LicenseRegistry.reset();
+    resetFontLicensesForTest();
+    registerFontLicenses(bundle: _EmptyBundle());
+    expect(await counts(t), isEmpty);
+    LicenseRegistry.reset();
+    resetFontLicensesForTest();
+  });
+
   testWidgets('font OFL texts are in the license registry', (t) async {
     registerFontLicenses();
     final byPackage = <String, String>{};
-    await LicenseRegistry.licenses.forEach((e) {
-      for (final p in e.packages) {
-        byPackage[p] = e.paragraphs.map((x) => x.text).join(' ');
-      }
-    });
+    await t.runAsync(
+      () => LicenseRegistry.licenses.forEach((e) {
+        for (final p in e.packages) {
+          byPackage[p] = e.paragraphs.map((x) => x.text).join(' ');
+        }
+      }),
+    );
     for (final n in ['Plus Jakarta Sans', 'Scheherazade New']) {
       expect(byPackage[n], contains('SIL OPEN FONT LICENSE'), reason: n);
     }
   });
+}
+
+class _EmptyBundle extends CachingAssetBundle {
+  @override
+  Future<ByteData> load(String key) => throw FlutterError('missing $key');
 }
