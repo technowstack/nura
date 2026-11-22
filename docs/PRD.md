@@ -37,7 +37,7 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 ### 5.1 Al-Qur'an (offline)
 - Daftar 114 surah: nomor, nama Latin, nama Arab, arti, jumlah ayat, tempat turun.
 - Detail surah: teks Arab dan terjemahan Indonesia per ayat. Tafsir Kemenag bisa dibuka atau ditutup per ayat.
-- Tab Juz: 30 juz dengan awal dan akhir masing-masing.
+- Tab Juz: 30 juz dengan awal dan akhir masing-masing. Mengetuk juz membuka pembaca per juz: seluruh ayat juz itu dari ayat awal sampai akhir, menyeberang antar surah, dengan header surah (dan Basmalah sesuai aturan surah) setiap masuk surah baru; memakai komponen layar baca surah (kartu ayat, bookmark, tafsir, last read menyimpan surah dan ayat yang sebenarnya); audio "Putar juz" memutar sampai akhir juz.
 - Bookmark ayat dan Last Read.
 - Pencarian di terjemahan dan teks Arab. Hasil dikelompokkan per surah. Terjemahan tampil sebagai cuplikan (maksimal 3 baris) yang berpusat pada kata cocok, dan semua kata cocok disorot (aturan lengkap di spec bagian 5.5).
 - Pengaturan baca: ukuran font Arab (20–40, default 28), sakelar tampil/sembunyi terjemahan, dan pilihan tema. Ukuran font terjemahan tetap, tidak diatur pengguna.
