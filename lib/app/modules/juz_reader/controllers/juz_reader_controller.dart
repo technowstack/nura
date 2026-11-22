@@ -203,6 +203,7 @@ class JuzReaderController extends GetxController
   }
 
   void _loadLastRead(List<JuzItem> items) {
+    lastRead.value = null; // a reload must not keep a stale highlight
     try {
       final ref = _user.getLastRead()?.ref;
       if (ref == null) return;

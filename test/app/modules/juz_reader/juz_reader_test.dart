@@ -303,6 +303,82 @@ void main() {
       );
     });
 
+    testWidgets('reload without a stored last read clears the highlight', (
+      t,
+    ) async {
+      user.lastRead = LastRead(
+        ref: const AyahRef(3, 20),
+        updatedAt: DateTime(2000),
+      );
+      await pump(t);
+      final c = Get.find<JuzReaderController>();
+      expect(c.lastRead.value, const AyahRef(3, 20));
+      user.lastRead = null;
+      await c.load();
+      await t.pumpAndSettle();
+      expect(c.lastRead.value, isNull);
+      expect(find.text('Terakhir dibaca'), findsNothing);
+    });
+
+    testWidgets('closing the controller flushes a pending last read', (
+      t,
+    ) async {
+      await pump(t, debounce: const Duration(seconds: 3));
+      await dragUp(t);
+      expect(user.lastReadWrites, isEmpty);
+      Get.delete<JuzReaderController>();
+      expect(user.lastReadWrites, hasLength(1));
+      await t.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('popping the route disposes the controller and saves', (
+      t,
+    ) async {
+      Get.reset();
+      Get.put<QuranRepository>(
+        FakeQuranRepository(
+          surahs: [_s(1), _s(2), _s(3)],
+          ayahs: _all,
+          juz: const [
+            Juz(
+              number: 1,
+              startSurah: 1,
+              startAyah: 2,
+              endSurah: 3,
+              endAyah: 40,
+            ),
+          ],
+        ),
+      );
+      Get.put<QuranRangeRepository>(FakeQuranRangeRepository(_all));
+      Get.put<UserRepository>(user);
+      Get.put(ThemeController());
+      t.view.physicalSize = const Size(360, 640);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(
+        GetMaterialApp(
+          home: const Scaffold(body: Text('home')),
+          getPages: [
+            GetPage(
+              name: Routes.juz,
+              page: JuzReaderView.new,
+              binding: JuzReaderBinding(),
+            ),
+          ],
+        ),
+      );
+      unawaited(Get.toNamed<void>(Routes.juz, arguments: const JuzArgs(1)));
+      await t.pumpAndSettle();
+      expect(Get.isRegistered<JuzReaderController>(), isTrue);
+      await dragUp(t);
+      expect(user.lastReadWrites, isEmpty);
+      Get.back<void>();
+      await t.pumpAndSettle();
+      expect(Get.isRegistered<JuzReaderController>(), isFalse);
+      expect(user.lastReadWrites, hasLength(1));
+    });
+
     testWidgets('same ayah number in another surah is not marked', (t) async {
       user.lastRead = LastRead(
         ref: const AyahRef(9, 2),
