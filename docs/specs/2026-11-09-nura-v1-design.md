@@ -337,12 +337,12 @@ android/app/src/main/kotlin/com/technowstack/nura/
 
 ### 5.3 Navigasi
 
-- Bottom navigation dengan 4 tab: **Beranda**, **Al-Qur'an**, **Hadis**, **Sholat**.
-- **Beranda** (urutan sesuai desain putaran 1): header salam dengan tanggal Hijriah dan Masehi serta ikon cari, kartu waktu sholat berikutnya beserta hitung mundur, kartu Last Read (satu baris, tombol Lanjutkan), kartu Ayat Hari Ini (menonjol), dan kartu Hadis Hari Ini (lebih sederhana). Menu cepat yang menduplikasi navigasi bawah dihapus dari desain. Pintu masuk ke Pengaturan belum didesain (putaran 2).
+- Bottom navigation dengan 5 tab: **Beranda**, **Al-Qur'an**, **Hadis**, **Sholat**, **Setelan** (keputusan pemilik 2026-11-23; menyimpang dari desain Putaran 1.5 yang 4 tab, jadi perlu dibawa ke desain putaran 2). Label tab "Setelan", bukan "Pengaturan": pada 360x640 dengan teks 130% sel `NavigationBar` selebar 72 dp memecah "Pengaturan" di tengah kata menjadi dua baris (diukur dengan font tema); judul halamannya tetap "Pengaturan".
+- **Beranda** (urutan sesuai desain putaran 1): header salam dengan tanggal Hijriah dan Masehi serta ikon cari, kartu waktu sholat berikutnya beserta hitung mundur, kartu Last Read (satu baris, tombol Lanjutkan), kartu Ayat Hari Ini (menonjol), dan kartu Hadis Hari Ini (lebih sederhana). Menu cepat yang menduplikasi navigasi bawah dihapus dari desain. Ikon Pengaturan di hero dihapus karena Pengaturan kini tab kelima; ikon gir di layar baca tetap membuka `/settings`.
 - **Al-Qur'an**: tab Surah, Juz, dan Bookmark beserta kolom cari, lalu Detail Surah. Tafsir dan pengaturan tampilan baca berupa bottom sheet.
 - **Hadis**: daftar kitab, lalu daftar hadis (paging 30 per halaman), lalu Detail Hadis.
 - **Sholat**: jadwal hari ini, pilihan lokasi, pengaturan notifikasi, label "perkiraan" jika sumbernya `calc`.
-- **Pengaturan**: tema, ukuran font, Fitur Online, qari, sinkron jadwal, sumber hadis harian (default Bukhari dan Muslim, bisa diperluas ke 9 kitab), Sumber & Atribusi.
+- **Setelan** (halaman berjudul Pengaturan; tanpa AppBar dan tanpa tombol kembali saat menjadi tab, dengan tombol kembali saat dibuka dari layar baca lewat `/settings`; satu `SettingsController` dipakai keduanya): tema, ukuran font, Fitur Online, qari, sinkron jadwal, sumber hadis harian (default Bukhari dan Muslim, bisa diperluas ke 9 kitab), Sumber & Atribusi.
 - Route awal: Onboarding jika `onboarding_done` belum `true`, selain itu Beranda.
 
 ### 5.4 Inisialisasi aplikasi

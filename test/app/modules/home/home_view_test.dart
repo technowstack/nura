@@ -170,7 +170,6 @@ void main() {
   tw('tap targets are at least 48dp', (tester) async {
     await pump(tester);
     for (final f in [
-      find.byTooltip('Pengaturan'),
       find.widgetWithText(TextButton, 'HR. Shahih Bukhari No. 15'),
       find.widgetWithText(TextButton, 'Baca selengkapnya'),
     ]) {

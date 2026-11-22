@@ -13,7 +13,7 @@ import '../modules/search/bindings/search_binding.dart';
 import '../modules/search/views/search_view.dart';
 import '../modules/settings/bindings/settings_binding.dart';
 import '../modules/settings/views/attribution_view.dart';
-import '../modules/settings/views/settings_view.dart';
+import '../modules/settings/views/settings_route_page.dart';
 import '../modules/shell/views/shell_view.dart';
 import '../modules/onboarding/onboarding_view.dart';
 import 'app_routes.dart';
@@ -46,7 +46,7 @@ List<GetPage<dynamic>> appPages(BootstrapSuccess ready) => [
   GetPage(name: Routes.search, page: SearchView.new, binding: SearchBinding()),
   GetPage(
     name: Routes.settings,
-    page: SettingsView.new,
+    page: SettingsRoutePage.new,
     binding: SettingsBinding(),
   ),
   GetPage(name: Routes.attribution, page: AttributionView.new),

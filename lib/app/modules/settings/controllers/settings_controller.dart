@@ -234,11 +234,23 @@ class SettingsController extends GetxController with ReadingPrefsMixin {
 
   @override
   void onClose() {
-    // Beranda may be under a reader: it re-reads what Settings changed.
+    refreshHome();
+    super.onClose();
+  }
+
+  /// Beranda may be under a reader or another tab: it re-reads what Settings
+  /// changed.
+  void refreshHome() {
     if (_alive<HomeController>()) {
       Get.find<HomeController>().refreshAfterSettings();
     }
-    super.onClose();
+  }
+
+  /// The controller is long-lived: re-read the stores on every visit (tab
+  /// selected or route opened) to show changes made elsewhere. The first load
+  /// is already running from [onInit].
+  void onVisit() {
+    if (state.value is UiData) load();
   }
 
   // Harian

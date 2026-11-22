@@ -18,13 +18,17 @@ import '../controllers/settings_controller.dart';
 import '../widgets/settings_section.dart';
 
 /// Temporary UI (Phase 8 D2): the general-settings design is not made yet.
+///
+/// [asTab] is the fifth bottom tab: no AppBar (no back arrow), a plain title
+/// row like the other tabs. Otherwise it is the `/settings` route.
 class SettingsView extends GetView<SettingsController> {
-  const SettingsView({super.key});
+  const SettingsView({this.asTab = false, super.key});
+
+  final bool asTab;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Pengaturan')),
-    body: Obx(
+  Widget build(BuildContext context) {
+    final content = Obx(
       () => switch (controller.state.value) {
         UiLoading() => const Center(child: CircularProgressIndicator()),
         UiEmpty() => const SizedBox.shrink(),
@@ -35,8 +39,34 @@ class SettingsView extends GetView<SettingsController> {
         ),
         UiData() => _body(context),
       },
-    ),
-  );
+    );
+    if (!asTab) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Pengaturan')),
+        body: content,
+      );
+    }
+    return Scaffold(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              NuraSpace.s16,
+              NuraSpace.s12,
+              NuraSpace.s16,
+              0,
+            ),
+            child: Text(
+              'Pengaturan',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+          Expanded(child: content),
+        ],
+      ),
+    );
+  }
 
   Widget _body(BuildContext context) {
     const gap = SizedBox(height: NuraSpace.s24);

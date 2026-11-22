@@ -142,7 +142,7 @@ void main() {
   );
 
   Widget hero(HomeHeroData d) => Scaffold(
-    body: HomeHero(data: d, onSettings: () {}),
+    body: HomeHero(data: d),
   );
 
   for (final (dark, colors) in [
@@ -329,14 +329,12 @@ void main() {
     expect(hijri.format(DateTime(2026, 11, 15)), isNot(expected));
   });
 
-  tw('settings icon opens Settings; search icon opens search', (tester) async {
+  tw('hero has no settings icon (it is a bottom tab); search opens search', (
+    tester,
+  ) async {
     await pumpApp(tester);
+    expect(find.byTooltip('Pengaturan'), findsNothing);
     expect(find.byTooltip('Pengaturan harian'), findsNothing);
-    await tester.tap(find.byTooltip('Pengaturan'));
-    await tester.pumpAndSettle();
-    expect(routeName, Routes.settings);
-    Get.back<void>();
-    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Cari'));
     await tester.pumpAndSettle();
     expect(routeName, Routes.search);

@@ -33,10 +33,7 @@ class HomeView extends GetView<HomeController> {
           slivers: [
             SliverToBoxAdapter(
               child: Obx(
-                () => HomeHero(
-                  data: controller.hero.value,
-                  onSettings: _openSettings,
-                ),
+                () => HomeHero(data: controller.hero.value),
               ),
             ),
             SliverToBoxAdapter(
@@ -69,11 +66,6 @@ class HomeView extends GetView<HomeController> {
         ),
       ),
     );
-  }
-
-  Future<void> _openSettings() async {
-    // SettingsController refreshes Beranda when it closes.
-    await Get.toNamed<void>(Routes.settings);
   }
 
   Future<void> _continue() async {
