@@ -32,7 +32,12 @@ class HadithTextCard extends StatelessWidget {
       if (prefs.showTranslation) ...[
         const SizedBox(height: NuraSpace.s12),
         NuraCard(
-          child: Text(content.translation, style: context.nuraText.translation),
+          child: Text(
+            content.translation,
+            style: context.nuraText.translation.copyWith(
+              fontSize: prefs.translationFontSize,
+            ),
+          ),
         ),
       ],
       if (content.showTruncationNote) ...[

@@ -213,7 +213,7 @@ CREATE TABLE setting (
   value TEXT NOT NULL
 );
 -- theme_mode, online_enabled, prayer_sync_enabled, onboarding_done,
--- arabic_font_scale, translation_font_scale, qari_id,
+-- arabic_font_size, translation_font_size, show_translation, qari_id, hijri_adjust,
 -- notify_fajr … notify_isha, prayer_adjust_fajr … prayer_adjust_isha,
 -- notifikasi harian ayat/hadis: sakelar dan jam (default 06:00), dan sumber hadis harian
 -- (default Bukhari dan Muslim, bisa diperluas ke 9 kitab); nama kunci ditetapkan di Fase 6
@@ -370,7 +370,7 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 
 - Material 3. Nilai token (warna Light dan Dark, tipografi, jarak, radius) bersumber dari `docs/design/tokens.json`. Pemetaan ke Flutter dan aturan komponen ada di `docs/design/HANDOFF-flutter.md`.
 - Lokasi kode di `lib/app/core/theme/`: `ColorScheme` untuk peran Material, `NuraColors` (ThemeExtension) untuk warna tambahan (teks Arab, sorotan terakhir dibaca, sorotan pencarian, ornamen, lencana offline), `TextTheme` untuk teks Latin, `NuraTextStyles` (ThemeExtension) untuk gaya Arab dan terjemahan, serta konstanta jarak dan radius di `tokens.dart`.
-- Font Latin: Plus Jakarta Sans (OFL). Font Arab: LPMQ Isep Misbah, cadangan KFGQPC Uthmanic Script Hafs. Lisensi font Arab dicek sebelum rilis (Q6). Ukuran teks Arab diatur pengguna 20–40, default 28.
+- Font Latin: Plus Jakarta Sans (OFL). Font Arab: LPMQ Isep Misbah, cadangan KFGQPC Uthmanic Script Hafs. Lisensi font Arab dicek sebelum rilis (Q6). Ukuran teks Arab diatur pengguna 20–40, default 28. Ukuran terjemahan diatur pengguna 14–22, default 15 (token `type/translation`), langkah 1, tinggi baris mengikuti rasio token 24/15; berlaku untuk kartu ayat dan kartu terjemahan detail hadis, bukan untuk pratinjau daftar atau hasil pencarian (keputusan 2026-11-22, menggantikan ukuran tetap).
 - Penyegaran visual putaran 1.5 (`docs/design/2026-11-17-nura-penyegaran-visual.md`): token baru (`hero`, `heroShape`, `onHero`, `onHeroAccent`, `iconAccent`, `surfaceContainerLowest`, `space/36`, `arabicHero`), `OrnamentBadge` menggantikan `AyahNumberBadge`, Beranda berpusat pada hero waktu sholat. Aturan penanda akhir ayat: tampilan = teks data ayat (spasi ASCII di ujung dibuang) + widget sebaris `AyahEndMarker` (cincin U+06DD dengan nomor Arab-Indik di dalamnya, digambar aplikasi karena mesin teks tidak menerapkan ligatur GSUB font); kata terakhir dan penanda satu widget agar penanda tidak sendirian di baris; hanya di lapisan tampilan, teks asli tidak diubah.
 - Aksesibilitas: kontras teks minimal 4.5:1 dan ikon minimal 3:1 di kedua mode, target sentuh minimal 48 × 48, status tidak hanya dibedakan dengan warna, dan tata letak tetap utuh pada teks Arab 36 dan Latin 130%.
 

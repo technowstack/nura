@@ -21,6 +21,7 @@ abstract interface class UserRepository {
   void setLastRead(AyahRef ref);
   ReadingPrefs getReadingPrefs();
   void setArabicFontSize(double size);
+  void setTranslationFontSize(double size);
   void setShowTranslation(bool value);
   ThemeMode getThemeMode();
   void setThemeMode(ThemeMode mode);

@@ -175,6 +175,12 @@ class SqliteUserRepository implements UserRepository {
                   _defaultFontSize)
               .clamp(_minFontSize, _maxFontSize),
       showTranslation: _db.getSetting(SettingKeys.showTranslation) != 'false',
+      translationFontSize:
+          (double.tryParse(
+                    _db.getSetting(SettingKeys.translationFontSize) ?? '',
+                  ) ??
+                  kTranslationFontDefault)
+              .clamp(kTranslationFontMin, kTranslationFontMax),
     ),
   );
 
@@ -186,6 +192,17 @@ class SqliteUserRepository implements UserRepository {
       () => _db.setSetting(
         SettingKeys.arabicFontSize,
         size.clamp(_minFontSize, _maxFontSize).toString(),
+      ),
+    );
+  }
+
+  @override
+  void setTranslationFontSize(double size) {
+    if (!size.isFinite) return;
+    _guard(
+      () => _db.setSetting(
+        SettingKeys.translationFontSize,
+        size.clamp(kTranslationFontMin, kTranslationFontMax).toString(),
       ),
     );
   }

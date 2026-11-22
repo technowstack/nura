@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 abstract final class NuraIcons {
   static const IconData refresh = Symbols.refresh_rounded;
   static const IconData brightnessLow = Symbols.brightness_low_rounded;
+  static const IconData settings = Symbols.settings_rounded;
   static const IconData tune = Symbols.tune_rounded;
   static const IconData check = Symbols.check_rounded;
   static const IconData arrowBack = Symbols.arrow_back_rounded;

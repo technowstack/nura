@@ -4,10 +4,9 @@ abstract final class SettingKeys {
   static const onlineEnabled = 'online_enabled';
   static const prayerSyncEnabled = 'prayer_sync_enabled';
   static const onboardingDone = 'onboarding_done';
-  static const arabicFontScale = 'arabic_font_scale';
   static const arabicFontSize = 'arabic_font_size';
   static const showTranslation = 'show_translation';
-  static const translationFontScale = 'translation_font_scale';
+  static const translationFontSize = 'translation_font_size';
   static const qariId = 'qari_id';
   static const notifyFajr = 'notify_fajr';
   static const prayerAdjustFajr = 'prayer_adjust_fajr';

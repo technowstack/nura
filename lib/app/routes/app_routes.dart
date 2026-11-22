@@ -6,4 +6,5 @@ abstract class Routes {
   static const hadithList = '/hadith/list';
   static const hadithDetail = '/hadith/detail';
   static const search = '/search';
+  static const settings = '/settings';
 }

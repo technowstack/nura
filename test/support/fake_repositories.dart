@@ -207,19 +207,19 @@ class FakeUserRepository implements UserRepository {
   @override
   void setArabicFontSize(double size) {
     _check();
-    prefs = ReadingPrefs(
-      arabicFontSize: size,
-      showTranslation: prefs.showTranslation,
-    );
+    prefs = prefs.copyWith(arabicFontSize: size);
+  }
+
+  @override
+  void setTranslationFontSize(double size) {
+    _check();
+    prefs = prefs.copyWith(translationFontSize: size);
   }
 
   @override
   void setShowTranslation(bool value) {
     _check();
-    prefs = ReadingPrefs(
-      arabicFontSize: prefs.arabicFontSize,
-      showTranslation: value,
-    );
+    prefs = prefs.copyWith(showTranslation: value);
   }
 
   @override

@@ -130,7 +130,14 @@ class AyahCard extends StatelessWidget {
           ),
           if (prefs.showTranslation) ...[
             const SizedBox(height: NuraSpace.s12),
-            Text(ayah.translation, style: context.nuraText.translation),
+            Text(
+              ayah.translation,
+              // Only the size follows the setting; the token line-height
+              // ratio (24/15) is kept.
+              style: context.nuraText.translation.copyWith(
+                fontSize: prefs.translationFontSize,
+              ),
+            ),
           ],
           const SizedBox(height: NuraSpace.s12),
           Divider(height: 1, color: scheme.outlineVariant),
