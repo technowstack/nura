@@ -42,12 +42,12 @@ void main() {
 
   const shell = MaterialApp(home: ShellView(dataVersion: 'v1'));
 
-  testWidgets('has four labelled destinations and Hadis shows the book list', (
+  testWidgets('has five labelled destinations and Hadis shows the book list', (
     tester,
   ) async {
     await tester.pumpWidget(shell);
-    expect(find.byType(NavigationDestination), findsNWidgets(4));
-    for (final l in ['Beranda', "Al-Qur'an", 'Hadis', 'Sholat']) {
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
+    for (final l in ['Beranda', "Al-Qur'an", 'Hadis', 'Sholat', 'Setelan']) {
       expect(
         find.descendant(of: find.byType(NavigationBar), matching: find.text(l)),
         findsOneWidget,

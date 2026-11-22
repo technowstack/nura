@@ -5,7 +5,6 @@ import 'package:nura/app/core/theme/arabic_font.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
 import 'package:nura/app/core/widgets/nura_card.dart';
-import 'package:nura/app/data/models/daily_content.dart';
 import 'package:nura/app/data/repositories/daily_content_repository.dart';
 import 'package:nura/app/data/repositories/daily_settings_store.dart';
 import 'package:nura/app/modules/hadith_detail/hadith_detail_args.dart';
@@ -18,9 +17,6 @@ import '../../../support/fake_daily.dart';
 import '../../../support/fake_prayer.dart';
 import '../../../support/prayer_harness.dart' show jakarta, api;
 import 'package:nura/app/data/repositories/prayer_repository.dart';
-
-const _notice =
-    'Kitab selain Bukhari dan Muslim memuat hadis dengan derajat yang beragam.';
 
 void main() {
   late FakeDailyContentRepository repo;
@@ -91,7 +87,7 @@ void main() {
       lessThan(tester.getTopLeft(find.text('Hadis hari ini')).dy),
     );
     expect(find.text('QS. Asy-Syarh: 15'), findsOneWidget);
-    expect(find.text('HR. Shahih Bukhari No. 15'), findsOneWidget);
+    expect(find.text('HR. Bukhari No. 15'), findsOneWidget);
     expect(find.text('Baca selengkapnya'), findsOneWidget);
     expect(find.textContaining('data_version v1'), findsOneWidget);
   });
@@ -131,7 +127,7 @@ void main() {
 
   tw('hadith reference and Baca selengkapnya open the detail', (tester) async {
     await pump(tester);
-    for (final label in ['HR. Shahih Bukhari No. 15', 'Baca selengkapnya']) {
+    for (final label in ['HR. Bukhari No. 15', 'Baca selengkapnya']) {
       await tester.ensureVisible(find.text(label));
       await tester.pumpAndSettle();
       await tester.tap(find.text(label));
@@ -173,36 +169,13 @@ void main() {
 
   tw('tap targets are at least 48dp', (tester) async {
     await pump(tester);
-    await tester.tap(find.byTooltip('Pengaturan harian'));
-    await tester.pumpAndSettle();
     for (final f in [
-      find.byTooltip('Pengaturan harian'),
-      find.widgetWithText(TextButton, 'HR. Shahih Bukhari No. 15'),
+      find.widgetWithText(TextButton, 'HR. Bukhari No. 15'),
       find.widgetWithText(TextButton, 'Baca selengkapnya'),
-      find.widgetWithText(ListTile, 'Sembilan kitab'),
     ]) {
       expect(tester.getSize(f.first).height, greaterThanOrEqualTo(48));
       expect(tester.getSize(f.first).width, greaterThanOrEqualTo(48));
     }
-  });
-
-  tw('settings sheet toggles the notice and persists the source', (
-    tester,
-  ) async {
-    await pump(tester);
-    await tester.tap(find.byTooltip('Pengaturan harian'));
-    await tester.pumpAndSettle();
-    expect(find.text('Pengaturan harian'), findsOneWidget);
-    expect(find.text(_notice), findsNothing);
-    await tester.tap(find.text('Sembilan kitab'));
-    await tester.pumpAndSettle();
-    expect(find.text(_notice), findsOneWidget);
-    expect(store.hadithSource, HadithSource.allBooks);
-    expect(find.text('Hadis hari 15 (all)'), findsOneWidget);
-    await tester.tap(find.text('Bukhari dan Muslim'));
-    await tester.pumpAndSettle();
-    expect(find.text(_notice), findsNothing);
-    expect(store.hadithSource, HadithSource.defaultBm);
   });
 
   for (final dark in [false, true]) {
@@ -212,12 +185,6 @@ void main() {
         scale: 1.3,
         theme: dark ? AppTheme.dark : AppTheme.light,
       );
-      expect(tester.takeException(), isNull);
-      await tester.tap(find.byTooltip('Pengaturan harian'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Sembilan kitab'));
-      await tester.pumpAndSettle();
-      expect(find.text(_notice), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

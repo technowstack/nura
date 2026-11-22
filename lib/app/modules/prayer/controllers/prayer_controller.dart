@@ -162,6 +162,12 @@ class PrayerController extends GetxController with WidgetsBindingObserver {
     exactDenied.value = any && !st.notificationDenied && st.exactDenied;
   }
 
+  /// Re-reads the reminder switches and notes (Settings changed them).
+  Future<void> refreshReminders() async {
+    final n = _notifier;
+    if (n != null) await _safeRefresh(n);
+  }
+
   Future<void> setNotify(PrayerName p, bool v) async {
     final n = _notifier;
     if (n == null) return;

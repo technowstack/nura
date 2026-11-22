@@ -66,7 +66,14 @@ void main() {
         .listSync(recursive: true)
         .whereType<File>()
         .where((f) => f.path.endsWith('.dart'))
-        .where((f) => !f.path.endsWith('arabic_font.dart'))
+        // Credit text (attributions) and OFL registration name the font.
+        .where(
+          (f) => !{
+            'arabic_font.dart',
+            'attributions.dart',
+            'font_licenses.dart',
+          }.any(f.path.endsWith),
+        )
         .where(
           (f) => RegExp(
             r'Scheherazade|LPMQ|Isep|Amiri',

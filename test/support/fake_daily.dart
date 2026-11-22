@@ -18,7 +18,7 @@ DailyContent fakeHadith(int day, HadithSource source) => DailyContent(
   kind: DailyKind.hadith,
   arab: 'إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ',
   translation: 'Hadis hari $day (${source.value})',
-  reference: 'HR. Shahih Bukhari No. $day',
+  reference: 'HR. Bukhari No. $day',
   deepLink: 'nura://hadith/bukhari/$day',
   hadithRef: HadithRef('bukhari', day),
 );

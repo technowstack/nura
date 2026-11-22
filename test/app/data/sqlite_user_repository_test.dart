@@ -95,6 +95,18 @@ void main() {
     expect(repo.getReadingPrefs().arabicFontSize, 20.0);
   });
 
+  test('translation size defaults to 15, clamps to 14..22, persists', () {
+    expect(repo.getReadingPrefs().translationFontSize, 15.0);
+    repo.setTranslationFontSize(100);
+    expect(repo.getReadingPrefs().translationFontSize, 22.0);
+    repo.setTranslationFontSize(1);
+    expect(repo.getReadingPrefs().translationFontSize, 14.0);
+    repo.setTranslationFontSize(18);
+    repo.setTranslationFontSize(double.nan);
+    expect(repo.getReadingPrefs().translationFontSize, 18.0);
+    expect(db.getSetting('translation_font_size'), '18.0');
+  });
+
   test('non-finite font size is ignored', () {
     repo.setArabicFontSize(32);
     repo.setArabicFontSize(double.nan);
@@ -143,6 +155,7 @@ void main() {
         'setLastRead': () => r.setLastRead(const AyahRef(1, 1)),
         'getReadingPrefs': r.getReadingPrefs,
         'setArabicFontSize': () => r.setArabicFontSize(30),
+        'setTranslationFontSize': () => r.setTranslationFontSize(18),
         'setShowTranslation': () => r.setShowTranslation(false),
         'getThemeMode': r.getThemeMode,
         'setThemeMode': () => r.setThemeMode(ThemeMode.dark),

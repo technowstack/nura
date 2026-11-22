@@ -4,7 +4,9 @@ import 'package:get/get.dart';
 import '../../data/models/reading_prefs.dart';
 import '../../data/repositories/user_repository.dart';
 
-/// Reading preferences (Arabic size, translation) shared by both readers.
+/// Reading preferences (Arabic and translation size, translation) shared by
+/// both readers and the Settings screen. The stored values are the single
+/// source of truth; readers re-read them with [refreshPrefs] after Settings.
 mixin ReadingPrefsMixin on GetxController {
   UserRepository get userRepository;
 
@@ -13,21 +15,29 @@ mixin ReadingPrefsMixin on GetxController {
     const ReadingPrefs(arabicFontSize: 28, showTranslation: true),
   );
 
-  void setArabicFontSize(double size) {
-    final p = prefs.value;
-    _savePrefs(
-      () => userRepository.setArabicFontSize(size),
-      ReadingPrefs(arabicFontSize: size, showTranslation: p.showTranslation),
-    );
+  /// Re-reads the stored prefs; keeps the current ones when storage fails.
+  void refreshPrefs() {
+    try {
+      prefs.value = userRepository.getReadingPrefs();
+    } on Object catch (e) {
+      debugPrint('ReadingPrefsMixin: read prefs failed: $e');
+    }
   }
 
-  void setShowTranslation(bool show) {
-    final p = prefs.value;
-    _savePrefs(
-      () => userRepository.setShowTranslation(show),
-      ReadingPrefs(arabicFontSize: p.arabicFontSize, showTranslation: show),
-    );
-  }
+  void setArabicFontSize(double size) => _savePrefs(
+    () => userRepository.setArabicFontSize(size),
+    prefs.value.copyWith(arabicFontSize: size),
+  );
+
+  void setTranslationFontSize(double size) => _savePrefs(
+    () => userRepository.setTranslationFontSize(size),
+    prefs.value.copyWith(translationFontSize: size),
+  );
+
+  void setShowTranslation(bool show) => _savePrefs(
+    () => userRepository.setShowTranslation(show),
+    prefs.value.copyWith(showTranslation: show),
+  );
 
   /// Persists first; the UI only changes when storage succeeded.
   void _savePrefs(void Function() save, ReadingPrefs next) {

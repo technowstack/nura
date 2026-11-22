@@ -160,6 +160,23 @@ void main() {
     });
   }
 
+  testWidgets('translation size defaults to the 15 token', (t) async {
+    await pump(t, 1);
+    expect(t.widget<Text>(find.text('trans1')).style!.fontSize, 15);
+  });
+
+  testWidgets('translation size follows the prefs', (t) async {
+    user.prefs = const ReadingPrefs(
+      arabicFontSize: 28,
+      showTranslation: true,
+      translationFontSize: 20,
+    );
+    await pump(t, 1);
+    final style = t.widget<Text>(find.text('trans1')).style!;
+    expect(style.fontSize, 20);
+    expect(style.height, closeTo(24 / 15, 0.001)); // token ratio kept
+  });
+
   testWidgets('showTranslation false hides translation', (t) async {
     user.prefs = const ReadingPrefs(arabicFontSize: 28, showTranslation: false);
     await pump(t, 1);
@@ -268,7 +285,7 @@ void main() {
     await pump(t, 1);
     await ctl().copy();
     await t.pump();
-    expect(copied, 'A \n\n T\n\nHR. Shahih Bukhari No. 1');
+    expect(copied, 'A \n\n T\n\nHR. Bukhari No. 1');
     expect(find.text('Hadis disalin'), findsOneWidget);
     await t.pumpAndSettle(const Duration(seconds: 5));
   });

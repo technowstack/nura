@@ -8,7 +8,6 @@ import 'package:super_sliver_list/super_sliver_list.dart';
 import '../../../core/errors.dart';
 import '../../../core/ui_state.dart';
 import '../../../data/models/ayah.dart';
-import '../../../data/repositories/audio_settings_store.dart';
 import '../../../data/repositories/quran_range_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/user_repository.dart';
@@ -18,7 +17,6 @@ import '../../quran_detail/controllers/quran_detail_controller.dart'
     show AyahAudioState;
 import '../../quran_detail/last_read_tracker.dart';
 import '../../quran_detail/reading_prefs_mixin.dart';
-import '../../quran_detail/reading_settings_host.dart';
 import '../../quran_list/controllers/quran_list_controller.dart';
 import '../juz_args.dart';
 import '../juz_item.dart';
@@ -27,8 +25,7 @@ import '../juz_item.dart';
 typedef TafsirTarget = ({List<Ayah> ayahs, int index, String surahName});
 
 class JuzReaderController extends GetxController
-    with WidgetsBindingObserver, ReadingPrefsMixin
-    implements ReadingSettingsHost {
+    with WidgetsBindingObserver, ReadingPrefsMixin {
   JuzReaderController(
     this.args, {
     Duration lastReadDebounce = const Duration(seconds: 3),
@@ -49,10 +46,6 @@ class JuzReaderController extends GetxController
       : null;
   final AudioPlayerService? _player = Get.isRegistered<AudioPlayerService>()
       ? Get.find<AudioPlayerService>()
-      : null;
-  final AudioSettingsStore? _audioSettings =
-      Get.isRegistered<AudioSettingsStore>()
-      ? Get.find<AudioSettingsStore>()
       : null;
   late final LastReadTracker _tracker;
   final _subs = <StreamSubscription<Object?>>[];
@@ -80,10 +73,7 @@ class JuzReaderController extends GetxController
   /// Player state, read by the view so audio changes rebuild it.
   PlaybackState? get playerState => _player?.state.value;
 
-  @override
   final audioVisible = false.obs;
-  @override
-  final qariId = ''.obs;
 
   final ListController listController = ListController();
   final ScrollController scrollController = ScrollController();
@@ -98,15 +88,13 @@ class JuzReaderController extends GetxController
   @override
   UserRepository get userRepository => _user;
 
-  @override
-  String? get previewText => _basmalah.isEmpty ? null : _basmalah;
+  String? get basmalah => _basmalah.isEmpty ? null : _basmalah;
 
   @override
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
     listController.addListener(_onVisibleRange);
-    qariId.value = _audioSettings?.qariId ?? '';
     _initAudio();
     load();
   }
@@ -331,7 +319,6 @@ class JuzReaderController extends GetxController
   void _initAudio() {
     final online = _online;
     final player = _player;
-    qariId.value = _audioSettings?.qariId ?? '';
     if (online == null || player == null) return;
     audioVisible.value = online.audioEnabled;
     if (audioVisible.value) unawaited(_refreshOffline());
@@ -446,23 +433,5 @@ class JuzReaderController extends GetxController
     if (isClosed) return;
     // Not marked offline: the connectivity stream owns that flag.
     if (result == PlayResult.needsInternet) notify('Butuh internet');
-  }
-
-  @override
-  void setAudioEnabled(bool on) => _online?.setAudioEnabled(on);
-
-  @override
-  void setQari(String id) {
-    final store = _audioSettings;
-    if (store == null) return;
-    try {
-      store.setQariId(id);
-    } on Object catch (e) {
-      debugPrint('JuzReaderController: save qari failed: $e');
-      notify('Gagal menyimpan pengaturan');
-      return;
-    }
-    qariId.value = id;
-    _player?.onQariChanged();
   }
 }

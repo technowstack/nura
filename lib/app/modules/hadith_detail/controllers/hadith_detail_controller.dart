@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import '../../../core/hadith_reference.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
@@ -134,7 +135,7 @@ class HadithDetailController extends GetxController {
     arab: h.arab,
     translation: h.translation,
     showTruncationNote: h.arabTruncated || h.translationTruncated,
-    referenceLabel: 'HR. ${h.bookName} No. ${h.ref.number}',
+    referenceLabel: hadithReference(h.ref.slug, h.ref.number),
     hadithCount: count,
     nameArab: hadithBookNameArab(h.ref.slug),
   );

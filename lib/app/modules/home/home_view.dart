@@ -11,7 +11,6 @@ import '../hadith_detail/hadith_detail_args.dart';
 import '../quran_detail/surah_args.dart';
 import 'controllers/home_controller.dart';
 import 'widgets/daily_card.dart';
-import 'widgets/daily_settings_sheet.dart';
 import 'widgets/home_hero.dart';
 import 'widgets/last_read_card.dart';
 
@@ -34,10 +33,7 @@ class HomeView extends GetView<HomeController> {
           slivers: [
             SliverToBoxAdapter(
               child: Obx(
-                () => HomeHero(
-                  data: controller.hero.value,
-                  onTune: () => showDailySettingsSheet(context),
-                ),
+                () => HomeHero(data: controller.hero.value),
               ),
             ),
             SliverToBoxAdapter(

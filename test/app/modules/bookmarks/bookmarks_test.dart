@@ -238,9 +238,9 @@ void main() {
     user.hadithBookmarks.addAll([_hb(34, at(4)), _hb(35, at(2))]);
     await pump(tester);
     final order = [
-      'HR. Shahih Bukhari No. 34',
+      'HR. Bukhari No. 34',
       'Latin2 · ayat 5',
-      'HR. Shahih Bukhari No. 35',
+      'HR. Bukhari No. 35',
       'Latin1 · ayat 1',
     ];
     for (var i = 0; i < order.length - 1; i++) {
@@ -254,7 +254,7 @@ void main() {
     await pump(tester);
     expect(
       top(tester, 'Latin1 · ayat 1'),
-      lessThan(top(tester, 'HR. Shahih Bukhari No. 34')),
+      lessThan(top(tester, 'HR. Bukhari No. 34')),
     );
   });
 
@@ -265,7 +265,7 @@ void main() {
     hadith.hadith = [_h(34, tr: long)];
     user.hadithBookmarks.add(_hb(34, at(1)));
     await pump(tester);
-    expect(find.text('HR. Shahih Bukhari No. 34'), findsOneWidget);
+    expect(find.text('HR. Bukhari No. 34'), findsOneWidget);
     final w = tester.widget<Text>(find.text(long));
     expect(w.maxLines, 2);
     expect(w.overflow, TextOverflow.ellipsis);
@@ -274,7 +274,7 @@ void main() {
   testWidgets('tap hadith opens detail with HadithDetailArgs', (tester) async {
     user.hadithBookmarks.add(_hb(34, at(1)));
     await pump(tester);
-    await tester.tap(find.text('HR. Shahih Bukhari No. 34'));
+    await tester.tap(find.text('HR. Bukhari No. 34'));
     await tester.pumpAndSettle();
     final args = routeArgs as HadithDetailArgs;
     expect(args.slug, 'bukhari');
@@ -284,7 +284,7 @@ void main() {
   testWidgets('missing hadith is skipped, others stay', (tester) async {
     user.hadithBookmarks.addAll([_hb(34, at(1)), _hb(99, at(2))]);
     await pump(tester);
-    expect(find.text('HR. Shahih Bukhari No. 34'), findsOneWidget);
+    expect(find.text('HR. Bukhari No. 34'), findsOneWidget);
     expect(find.textContaining('No. 99'), findsNothing);
   });
 
@@ -300,13 +300,13 @@ void main() {
   ) async {
     user.hadithBookmarks.addAll([_hb(34, at(1)), _hb(35, at(2))]);
     await pump(tester);
-    await tester.tap(find.text('HR. Shahih Bukhari No. 34'));
+    await tester.tap(find.text('HR. Bukhari No. 34'));
     await tester.pumpAndSettle();
     user.toggleHadithBookmark(const HadithRef('bukhari', 34));
     Get.back<void>();
     await tester.pumpAndSettle();
-    expect(find.text('HR. Shahih Bukhari No. 34'), findsNothing);
-    expect(find.text('HR. Shahih Bukhari No. 35'), findsOneWidget);
+    expect(find.text('HR. Bukhari No. 34'), findsNothing);
+    expect(find.text('HR. Bukhari No. 35'), findsOneWidget);
   });
 
   testWidgets('hadith list failure shows ErrorState and retry works', (
@@ -321,7 +321,7 @@ void main() {
     await tester.tap(find.text('Coba lagi'));
     await tester.pumpAndSettle();
     expect(find.text('Latin1 · ayat 1'), findsOneWidget);
-    expect(find.text('HR. Shahih Bukhari No. 34'), findsOneWidget);
+    expect(find.text('HR. Bukhari No. 34'), findsOneWidget);
   });
 
   testWidgets('stale slow read does not overwrite a newer read', (
@@ -341,11 +341,11 @@ void main() {
     hadith.hadithGates.clear();
     c.load();
     await tester.pumpAndSettle();
-    expect(find.text('HR. Shahih Bukhari No. 35'), findsOneWidget);
+    expect(find.text('HR. Bukhari No. 35'), findsOneWidget);
     gate.complete();
     await tester.pumpAndSettle();
-    expect(find.text('HR. Shahih Bukhari No. 35'), findsOneWidget);
-    expect(find.text('HR. Shahih Bukhari No. 34'), findsNothing);
+    expect(find.text('HR. Bukhari No. 35'), findsOneWidget);
+    expect(find.text('HR. Bukhari No. 34'), findsNothing);
   });
 
   testWidgets('16K-char hadith translation at 130% does not break', (
@@ -356,7 +356,7 @@ void main() {
     user.hadithBookmarks.add(_hb(34, at(1)));
     await pump(tester, scale: 1.3);
     expect(tester.takeException(), isNull);
-    expect(find.text('HR. Shahih Bukhari No. 34'), findsOneWidget);
+    expect(find.text('HR. Bukhari No. 34'), findsOneWidget);
     final w = tester.widget<Text>(find.text(big));
     expect(w.maxLines, 2);
     expect(w.overflow, TextOverflow.ellipsis);
@@ -400,7 +400,7 @@ void main() {
     expect(list, hasLength(80));
     expect(list.map((e) => e.title).toList(), [
       for (var n = 1; n <= 40; n++) 'Latin1 · ayat $n',
-      for (var n = 1; n <= 40; n++) 'HR. Shahih Bukhari No. $n',
+      for (var n = 1; n <= 40; n++) 'HR. Bukhari No. $n',
     ]);
   });
 

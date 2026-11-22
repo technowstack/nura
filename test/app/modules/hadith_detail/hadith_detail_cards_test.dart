@@ -109,10 +109,10 @@ void main() {
       },
     );
     await pump(t, 'bukhari', 1);
-    expect(find.text('HR. Shahih Bukhari No. 1'), findsOneWidget);
+    expect(find.text('HR. Bukhari No. 1'), findsOneWidget);
     await t.tap(find.bySemanticsLabel('Salin hadis'));
     await t.pump();
-    expect(copied, 'arab1\n\ntrans1\n\nHR. Shahih Bukhari No. 1');
+    expect(copied, 'arab1\n\ntrans1\n\nHR. Bukhari No. 1');
     await t.pumpAndSettle(const Duration(seconds: 5));
   });
 

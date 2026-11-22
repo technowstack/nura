@@ -10,6 +10,8 @@ import '../../prayer/bindings/prayer_binding.dart';
 import '../../prayer/views/prayer_view.dart';
 import '../../quran_list/bindings/quran_list_binding.dart';
 import '../../quran_list/views/quran_list_view.dart';
+import '../../settings/bindings/settings_binding.dart';
+import '../../settings/views/settings_view.dart';
 import '../controllers/shell_controller.dart';
 
 class ShellView extends StatelessWidget {
@@ -25,6 +27,7 @@ class ShellView extends StatelessWidget {
       HadithBooksBinding().dependencies();
       PrayerBinding().dependencies();
       HomeBinding().dependencies();
+      SettingsBinding().dependencies();
     },
     builder: (c) => Scaffold(
       // Tabs have no AppBar, so keep their top row out of the status bar.
@@ -37,6 +40,10 @@ class ShellView extends StatelessWidget {
             const QuranListView(),
             const HadithBooksView(),
             const PrayerView(),
+            if (c.settingsVisited)
+              const SettingsView(asTab: true)
+            else
+              const SizedBox.shrink(),
           ],
         ),
       ),
@@ -63,6 +70,12 @@ class ShellView extends StatelessWidget {
             icon: NuraIcon(NuraIcons.schedule),
             selectedIcon: NuraIcon(NuraIcons.schedule, filled: true),
             label: 'Sholat',
+          ),
+          NavigationDestination(
+            icon: NuraIcon(NuraIcons.settings),
+            selectedIcon: NuraIcon(NuraIcons.settings, filled: true),
+            // 'Pengaturan' wraps mid-word in the 72 dp cell at 130% text.
+            label: 'Setelan',
           ),
         ],
       ),

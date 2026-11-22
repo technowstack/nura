@@ -14,10 +14,9 @@ const double heroSheetOverlap = NuraSpace.s24;
 
 /// Full-bleed hero behind the status bar (about 360 tall).
 class HomeHero extends StatelessWidget {
-  const HomeHero({required this.data, required this.onTune, super.key});
+  const HomeHero({required this.data, super.key});
 
   final HomeHeroData data;
-  final VoidCallback onTune;
 
   @override
   Widget build(BuildContext context) {
@@ -72,12 +71,6 @@ class HomeHero extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: text.titleMedium?.merge(onHero),
                         ),
-                      ),
-                      _action(
-                        'Pengaturan harian',
-                        NuraIcons.tune,
-                        c.onHero,
-                        onTune,
                       ),
                       _action(
                         'Cari',

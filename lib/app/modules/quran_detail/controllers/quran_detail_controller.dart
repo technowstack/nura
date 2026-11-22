@@ -8,14 +8,12 @@ import 'package:super_sliver_list/super_sliver_list.dart';
 import '../../../core/ui_state.dart';
 import '../../../data/models/ayah.dart';
 import '../../../data/models/surah.dart';
-import '../../../data/repositories/audio_settings_store.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/user_repository.dart';
 import '../../../services/audio_player_service.dart';
 import '../../../services/online_service.dart';
 import '../last_read_tracker.dart';
 import '../reading_prefs_mixin.dart';
-import '../reading_settings_host.dart';
 import '../surah_args.dart';
 
 class SurahContent {
@@ -34,8 +32,7 @@ class SurahContent {
 enum AyahAudioState { hidden, ready, needsInternet, loading, playing, paused }
 
 class QuranDetailController extends GetxController
-    with WidgetsBindingObserver, ReadingPrefsMixin
-    implements ReadingSettingsHost {
+    with WidgetsBindingObserver, ReadingPrefsMixin {
   QuranDetailController(
     this.args, {
     Duration lastReadDebounce = const Duration(seconds: 3),
@@ -58,13 +55,8 @@ class QuranDetailController extends GetxController
   final AudioPlayerService? _player = Get.isRegistered<AudioPlayerService>()
       ? Get.find<AudioPlayerService>()
       : null;
-  final AudioSettingsStore? _audioSettings =
-      Get.isRegistered<AudioSettingsStore>()
-      ? Get.find<AudioSettingsStore>()
-      : null;
 
   /// Online audio switch; all audio controls are hidden while false.
-  @override
   final audioVisible = false.obs;
 
   /// True when the device looks offline (only matters while [audioVisible]).
@@ -72,10 +64,6 @@ class QuranDetailController extends GetxController
 
   /// Ayah of this surah that is playing or paused; 0 means none.
   final playingAyah = 0.obs;
-
-  /// Selected qari id (empty when no settings store is available).
-  @override
-  final qariId = ''.obs;
 
   // Ayah whose play request is in flight (shows the loading state).
   final _pendingAyah = 0.obs;
@@ -103,7 +91,6 @@ class QuranDetailController extends GetxController
   void _initAudio() {
     final online = _online;
     final player = _player;
-    qariId.value = _audioSettings?.qariId ?? '';
     if (online == null || player == null) return;
     audioVisible.value = online.audioEnabled;
     if (audioVisible.value) unawaited(_refreshOffline());
@@ -215,24 +202,6 @@ class QuranDetailController extends GetxController
     // Not marked offline: the connectivity stream owns that flag, and a
     // server-side failure must not disable the controls for good.
     if (result == PlayResult.needsInternet) notify('Butuh internet');
-  }
-
-  @override
-  void setAudioEnabled(bool on) => _online?.setAudioEnabled(on);
-
-  @override
-  void setQari(String id) {
-    final store = _audioSettings;
-    if (store == null) return;
-    try {
-      store.setQariId(id);
-    } on Object catch (e) {
-      debugPrint('QuranDetailController: save qari failed: $e');
-      notify('Gagal menyimpan pengaturan');
-      return;
-    }
-    qariId.value = id;
-    _player?.onQariChanged();
   }
 
   @override
@@ -365,10 +334,4 @@ class QuranDetailController extends GetxController
 
   @override
   UserRepository get userRepository => _user;
-
-  @override
-  String? get previewText {
-    final s = state.value;
-    return s is UiData<SurahContent> ? s.value.basmalah : null;
-  }
 }

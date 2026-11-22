@@ -21,7 +21,7 @@ class HadithDetailContent {
   final String translation;
   final bool showTruncationNote;
 
-  /// `HR. <book> No. <n>`, appended when copying.
+  /// `HR. <short book name> No. <n>`, appended when copying.
   final String referenceLabel;
 
   /// Hadith count of the book (0 when unknown) and its Arabic name, if any.

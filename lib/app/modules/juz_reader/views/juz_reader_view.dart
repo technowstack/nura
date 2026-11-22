@@ -3,15 +3,14 @@ import 'package:get/get.dart';
 import 'package:nura/app/core/nura_icons.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
 
-import '../../../core/theme/theme_controller.dart';
 import '../../../core/ui_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../data/models/ayah.dart';
 import '../../quran_detail/widgets/ayah_card.dart';
-import '../../quran_detail/widgets/reading_settings_sheet.dart';
 import '../../quran_detail/widgets/surah_header_card.dart';
 import '../../quran_detail/widgets/tafsir_sheet.dart';
+import '../../../routes/app_routes.dart';
 import '../controllers/juz_reader_controller.dart';
 import '../juz_item.dart';
 
@@ -64,14 +63,14 @@ class JuzReaderView extends GetView<JuzReaderController> {
               );
             }),
             IconButton(
-              tooltip: 'Pengaturan tampilan',
+              tooltip: 'Pengaturan',
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              icon: const NuraIcon(NuraIcons.tune),
-              onPressed: () => showReadingSettingsSheet(
-                context,
-                controller: c,
-                theme: Get.find<ThemeController>(),
-              ),
+              icon: const NuraIcon(NuraIcons.settings),
+              onPressed: () async {
+                await Get.toNamed<void>(Routes.settings);
+                // Settings may have changed the reading prefs.
+                c.refreshPrefs();
+              },
             ),
           ],
         ),
@@ -102,7 +101,7 @@ class JuzReaderView extends GetView<JuzReaderController> {
                   padding: const EdgeInsets.all(20),
                   child: SurahHeaderCard(
                     surah: surah,
-                    basmalah: c.previewText ?? '',
+                    basmalah: c.basmalah ?? '',
                     showBismillah: withBasmalah,
                   ),
                 ),
