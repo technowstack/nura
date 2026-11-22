@@ -65,6 +65,7 @@ class SettingsHarness {
   late final HijriDateService hijri;
   late final ThemeController theme;
   int renders = 0;
+  final requests = <Uri>[];
 
   static const regions = {
     'DKI Jakarta': ['Kota Jakarta'],
@@ -89,6 +90,7 @@ class SettingsHarness {
     h.player = AudioPlayerService(
       h.online,
       AudioApiClient((uri, {jsonBody}) async {
+        h.requests.add(uri);
         final s = int.parse(uri.pathSegments.last);
         return (status: 200, body: _audioBody(s, 5));
       }),
@@ -172,13 +174,16 @@ class SettingsHarness {
       Get.put(SettingsController(now: () => DateTime(2026, 11, 15, 5)));
 
   static Future<void> settle() async {
-    await Future<void>.delayed(const Duration(milliseconds: 20));
+    for (var i = 0; i < 25; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
   }
 }
 
 Future<void> pumpSettled(WidgetTester t) async {
-  await t.runAsync(SettingsHarness.settle);
-  for (var i = 0; i < 3; i++) {
+  // Zero-length real delays let the notifier future chains advance; no sleeps.
+  for (var i = 0; i < 25; i++) {
+    await t.runAsync(() => Future<void>.delayed(Duration.zero));
     await t.pump();
   }
   // Lets zero-delay timers (DailyRefresher) fire before teardown.

@@ -81,4 +81,50 @@ void main() {
     closeAll();
     expect(tab.isClosed, isTrue);
   });
+
+  testWidgets('with the tab alive, sync and reschedule run once per change', (
+    t,
+  ) async {
+    final c = h.controller();
+    Get.put(PrayerController());
+    await settle(t);
+    h.prayer.calls.clear();
+    h.scheduler.log.clear();
+    unawaited(c.setSyncEnabled(true));
+    await settle(t);
+    expect(h.prayer.calls.where((e) => e == 'sync'), hasLength(1));
+    expect(h.scheduler.log.where((e) => e == 'cancel'), hasLength(1));
+    h.prayer.calls.clear();
+    h.scheduler.log.clear();
+    unawaited(c.selectRegion(jakarta));
+    await settle(t);
+    expect(h.prayer.calls.where((e) => e == 'sync'), hasLength(1));
+    expect(h.scheduler.log.where((e) => e == 'cancel'), hasLength(1));
+    closeAll();
+  });
+
+  testWidgets('without the tab, Settings syncs and reschedules itself', (
+    t,
+  ) async {
+    final c = h.controller();
+    await settle(t);
+    unawaited(c.selectRegion(jakarta));
+    await settle(t);
+    expect(h.prayer.calls.where((e) => e == 'sync'), hasLength(1));
+    expect(h.scheduler.log.where((e) => e == 'cancel'), hasLength(1));
+    closeAll();
+  });
+
+  testWidgets('a registered but not created tab controller stays untouched', (
+    t,
+  ) async {
+    Get.lazyPut<PrayerController>(PrayerController.new);
+    final c = h.controller();
+    await settle(t);
+    unawaited(c.selectRegion(jakarta));
+    await settle(t);
+    expect(Get.isPrepared<PrayerController>(), isTrue);
+    expect(h.prayer.calls.where((e) => e == 'sync'), hasLength(1));
+    closeAll();
+  });
 }

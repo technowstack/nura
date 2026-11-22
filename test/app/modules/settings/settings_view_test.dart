@@ -371,7 +371,7 @@ void main() {
         expect(t.getSize(find.text('0')).height, greaterThan(0));
         expect(
           t.getSize(find.widgetWithText(SegmentedButton<int>, '0')).height,
-          greaterThanOrEqualTo(40),
+          greaterThanOrEqualTo(48),
         );
         expect(t.takeException(), isNull);
       },

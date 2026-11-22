@@ -21,6 +21,7 @@ import '../../../services/daily_refresher.dart';
 import '../../../services/hijri_date_service.dart';
 import '../../../services/online_service.dart';
 import '../../../services/prayer_notifier.dart';
+import '../../home/controllers/home_controller.dart';
 import '../../prayer/controllers/prayer_controller.dart';
 import '../../quran_detail/reading_prefs_mixin.dart';
 
@@ -180,12 +181,21 @@ class SettingsController extends GetxController with ReadingPrefsMixin {
     } on Object catch (e) {
       debugPrint('SettingsController: reminder switch failed: $e');
     }
-    _reloadPrayerTab();
+    if (_alive<PrayerController>()) {
+      await Get.find<PrayerController>().refreshReminders();
+    }
   }
 
   /// Like the Sholat tab after a region or sync change: sync the month if the
-  /// switch allows it, reschedule the reminders, refresh the notes.
+  /// switch allows it, reschedule the reminders, refresh the notes. When the
+  /// tab controller exists its reload() does the sync and reschedule, so it
+  /// runs only once.
   Future<void> _afterPrayerChange() async {
+    if (_alive<PrayerController>()) {
+      unawaited(Get.find<PrayerController>().reload());
+      await _refreshPrayerNote();
+      return;
+    }
     try {
       await _prayer.syncIfNeeded();
     } on Object catch (e) {
@@ -201,7 +211,6 @@ class SettingsController extends GetxController with ReadingPrefsMixin {
       debugPrint('SettingsController: reschedule failed: $e');
     }
     await _refreshPrayerNote();
-    _reloadPrayerTab();
   }
 
   Future<void> _refreshPrayerNote() async {
@@ -218,11 +227,18 @@ class SettingsController extends GetxController with ReadingPrefsMixin {
     }
   }
 
-  /// The Sholat tab, when registered, shows the same state right away.
-  void _reloadPrayerTab() {
-    if (Get.isRegistered<PrayerController>()) {
-      unawaited(Get.find<PrayerController>().reload());
+  /// A tab controller that exists. A registered but not yet created lazy one
+  /// must stay untouched: finding it here would tie it to /settings and
+  /// delete it on pop.
+  bool _alive<T>() => Get.isRegistered<T>() && !Get.isPrepared<T>();
+
+  @override
+  void onClose() {
+    // Beranda may be under a reader: it re-reads what Settings changed.
+    if (_alive<HomeController>()) {
+      Get.find<HomeController>().refreshAfterSettings();
     }
+    super.onClose();
   }
 
   // Harian

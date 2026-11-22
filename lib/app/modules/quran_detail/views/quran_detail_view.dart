@@ -47,9 +47,9 @@ class QuranDetailView extends GetView<QuranDetailController> {
           }),
           actions: [
             IconButton(
-              tooltip: 'Pengaturan tampilan',
+              tooltip: 'Pengaturan',
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              icon: const NuraIcon(NuraIcons.tune),
+              icon: const NuraIcon(NuraIcons.settings),
               onPressed: () async {
                 await Get.toNamed<void>(Routes.settings);
                 // Settings may have changed the reading prefs.

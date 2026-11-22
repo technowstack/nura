@@ -88,7 +88,7 @@ class JuzReaderController extends GetxController
   @override
   UserRepository get userRepository => _user;
 
-  String? get previewText => _basmalah.isEmpty ? null : _basmalah;
+  String? get basmalah => _basmalah.isEmpty ? null : _basmalah;
 
   @override
   void onInit() {

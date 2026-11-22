@@ -87,7 +87,7 @@ void main() {
       t.widget<Text>(find.text(text)).style!.fontSize!;
 
   Future<void> openSettings(WidgetTester t) async {
-    final b = find.byTooltip('Pengaturan tampilan');
+    final b = find.byTooltip('Pengaturan');
     expect(t.getSize(b).width, greaterThanOrEqualTo(48));
     expect(t.getSize(b).height, greaterThanOrEqualTo(48));
     await t.tap(b);

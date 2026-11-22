@@ -72,9 +72,8 @@ class HomeView extends GetView<HomeController> {
   }
 
   Future<void> _openSettings() async {
+    // SettingsController refreshes Beranda when it closes.
     await Get.toNamed<void>(Routes.settings);
-    // Source, region, Hijri adjustment or reminders may have changed.
-    controller.refreshAfterSettings();
   }
 
   Future<void> _continue() async {

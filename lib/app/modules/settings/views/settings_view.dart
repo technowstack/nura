@@ -55,6 +55,11 @@ class SettingsView extends GetView<SettingsController> {
     );
   }
 
+  // 48 dp tap target (the default segment is 40).
+  static const _segmentStyle = ButtonStyle(
+    minimumSize: WidgetStatePropertyAll(Size(0, 48)),
+  );
+
   Widget _label(BuildContext context, String text) => Padding(
     padding: const EdgeInsets.only(top: NuraSpace.s8),
     child: Text(text, style: Theme.of(context).textTheme.labelLarge),
@@ -70,6 +75,7 @@ class SettingsView extends GetView<SettingsController> {
     const SizedBox(height: NuraSpace.s8),
     Obx(
       () => SegmentedButton<ThemeMode>(
+        style: _segmentStyle,
         showSelectedIcon: true,
         selected: {controller.theme.mode.value},
         onSelectionChanged: (v) => controller.theme.setMode(v.first),
@@ -324,6 +330,7 @@ class SettingsView extends GetView<SettingsController> {
     const SizedBox(height: NuraSpace.s8),
     Obx(
       () => SegmentedButton<int>(
+        style: _segmentStyle,
         showSelectedIcon: false,
         selected: {controller.hijriAdjust.value},
         onSelectionChanged: (v) => controller.setHijriAdjust(v.first),
