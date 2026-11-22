@@ -46,13 +46,21 @@ class JuzReaderView extends GetView<JuzReaderController> {
           ),
           actions: [
             Obx(() {
-              if (!c.audioVisible.value) return const SizedBox.shrink();
+              if (!c.audioVisible.value || c.state.value is! UiData) {
+                return const SizedBox.shrink();
+              }
               final off = c.offline.value;
-              return IconButton(
-                tooltip: off ? 'Butuh internet' : 'Putar juz',
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                icon: const NuraIcon(NuraIcons.playArrow),
-                onPressed: off ? null : c.playJuz,
+              return Semantics(
+                label: off ? 'Putar juz, butuh internet' : null,
+                child: IconButton(
+                  tooltip: off ? 'Butuh internet' : 'Putar juz',
+                  constraints: const BoxConstraints(
+                    minWidth: 48,
+                    minHeight: 48,
+                  ),
+                  icon: const NuraIcon(NuraIcons.playArrow),
+                  onPressed: off ? null : c.playJuz,
+                ),
               );
             }),
             IconButton(

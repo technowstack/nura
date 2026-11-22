@@ -336,6 +336,20 @@ void main() {
     expect(player.state.value, isA<PlaybackIdle>());
   });
 
+  testWidgets('double tap: older call does not clear the loading ref', (
+    t,
+  ) async {
+    await pumpPage(t);
+    final c = ctl();
+    final a = c.playFromAyah(const AyahRef(1, 3));
+    final b = c.playFromAyah(const AyahRef(2, 1));
+    await settle(t);
+    await a;
+    await b;
+    expect(engine.queues.last.first, _u(2, 1));
+    expect(playingCards(t), [(2, 1)]);
+  });
+
   testWidgets('130% text at 360x640 with controls: no overflow', (t) async {
     await pumpPage(t, scale: 1.3);
     expect(t.takeException(), isNull);

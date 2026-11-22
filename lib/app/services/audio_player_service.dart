@@ -136,7 +136,11 @@ class AudioPlayerService {
       playRange([AyahRef(surah, ayah)], {surah: ayahTotal});
 
   Future<PlayResult> playFrom(int surah, int ayah, int ayahTotal) => playRange(
-    [for (var a = ayah; a <= ayahTotal; a++) AyahRef(surah, a)],
+    [
+      // Out of range: one invalid ref so the call fails like before.
+      if (ayah > ayahTotal) AyahRef(surah, ayah),
+      for (var a = ayah; a <= ayahTotal; a++) AyahRef(surah, a),
+    ],
     {surah: ayahTotal},
   );
 
@@ -221,7 +225,17 @@ class AudioPlayerService {
     _busy = true; // backgrounding now stops instead of pausing
     final next = _segIdx + 1;
     try {
-      final urls = await (_nextUrls ?? _segUrls(_segs[next]));
+      final pre = _nextUrls;
+      List<Uri> urls;
+      try {
+        urls = await (pre ?? _segUrls(_segs[next]));
+      } catch (_) {
+        if (gen != _gen) return;
+        if (pre == null) rethrow;
+        // The prefetch failed (and was evicted from the cache): one retry.
+        _nextUrls = null;
+        urls = await _segUrls(_segs[next]);
+      }
       if (gen != _gen) return;
       if (state.value is! PlaybackPlaying) return await stop();
       _segIdx = next;
@@ -244,6 +258,7 @@ class AudioPlayerService {
   Future<void> _failAdvance(int gen, String message) async {
     if (gen != _gen) return;
     _gen++;
+    _busy = false;
     _accepting = false;
     state.value = const PlaybackIdle();
     lastError.value = message;

@@ -75,6 +75,7 @@ class JuzReaderController extends GetxController
   /// Ayah playing or paused within this juz; null means none.
   final playingRef = Rxn<AyahRef>();
   final _pendingRef = Rxn<AyahRef>();
+  int _startToken = 0;
 
   /// Player state, read by the view so audio changes rebuild it.
   PlaybackState? get playerState => _player?.state.value;
@@ -438,9 +439,10 @@ class JuzReaderController extends GetxController
   }
 
   Future<void> _start(AyahRef ref, Future<PlayResult> Function() play) async {
+    final token = ++_startToken;
     _pendingRef.value = ref;
     final result = await play();
-    _pendingRef.value = null;
+    if (token == _startToken) _pendingRef.value = null;
     if (isClosed) return;
     // Not marked offline: the connectivity stream owns that flag.
     if (result == PlayResult.needsInternet) notify('Butuh internet');

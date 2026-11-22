@@ -533,7 +533,7 @@ void main() {
       expect(svc.state.value, isA<PlaybackIdle>());
       expect(svc.lastError.value, 'Audio tidak dapat diputar.');
       expect(engine.queues, hasLength(1));
-      expect(requests, hasLength(2));
+      expect(requests, hasLength(3)); // one retry
     });
 
     test(
@@ -562,6 +562,112 @@ void main() {
       await flush();
       expect(requests, hasLength(1));
       expect(engine.queues, hasLength(1));
+    });
+
+    Future<void> toBoundary() async {
+      await svc.playRange(refs, totals);
+      engine.emit(const IndexChanged(1));
+      await flush();
+    }
+
+    test('after a later-surah failure nothing leaks into idle state', () async {
+      await svc.playRange(refs, totals);
+      status = 404;
+      engine.emit(const IndexChanged(1));
+      await flush();
+      engine.emit(const Completed());
+      await flush();
+      expect(svc.lastError.value, 'Audio tidak dapat diputar.');
+      svc.lastError.value = null;
+      final calls = engine.calls.length;
+      conn.add(false);
+      life.add(AppLifecycleState.paused);
+      await flush();
+      expect(svc.lastError.value, isNull);
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(engine.calls.length, calls);
+    });
+
+    test('failed prefetch is retried once; success continues', () async {
+      await svc.playRange(refs, totals);
+      status = 500;
+      engine.emit(const IndexChanged(1));
+      await flush();
+      status = 200;
+      engine.emit(const Completed());
+      await flush();
+      expect(requests.map((u) => u.pathSegments.last), ['1', '2', '2']);
+      expect(engine.queues.last, [_u('05', 2, 1), _u('05', 2, 2)]);
+      expect(svc.state.value, const PlaybackPlaying(2, 1));
+    });
+
+    test('failed prefetch and failed retry stop with the error', () async {
+      await svc.playRange(refs, totals);
+      status = 404;
+      engine.emit(const IndexChanged(1));
+      await flush();
+      engine.emit(const Completed());
+      await flush();
+      expect(requests.map((u) => u.pathSegments.last), ['1', '2', '2']);
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(svc.lastError.value, 'Audio tidak dapat diputar.');
+      expect(engine.queues, hasLength(1));
+    });
+
+    for (final (name, act) in <(String, void Function())>[
+      ('switch off', () => online.setAudioEnabled(false)),
+      ('connectivity lost', () => conn.add(false)),
+      ('backgrounded', () => life.add(AppLifecycleState.paused)),
+    ]) {
+      test('prefetch in flight, $name: nothing starts afterwards', () async {
+        await svc.playRange(refs, totals);
+        httpGate = Completer<void>();
+        engine.emit(const IndexChanged(1));
+        engine.emit(const Completed());
+        await flush();
+        act();
+        await flush();
+        httpGate?.complete();
+        await flush();
+        expect(svc.state.value, isA<PlaybackIdle>());
+        expect(engine.queues, hasLength(1));
+        expect(requests, hasLength(2));
+        final e = svc.lastError.value;
+        expect(e == null || e.startsWith('Koneksi'), isTrue);
+      });
+    }
+
+    test('pause and resume across a segment boundary', () async {
+      await toBoundary();
+      engine.emit(const Completed());
+      await flush();
+      expect(svc.state.value, const PlaybackPlaying(2, 1));
+      await svc.pause();
+      expect(svc.state.value, const PlaybackPaused(2, 1));
+      await svc.resume();
+      expect(svc.state.value, const PlaybackPlaying(2, 1));
+      engine.emit(const IndexChanged(1));
+      expect(svc.state.value, const PlaybackPlaying(2, 2));
+    });
+
+    test('double playRange: the older call is superseded', () async {
+      httpGate = Completer<void>();
+      final a = svc.playRange(refs, totals);
+      final b = svc.playRange(refs.sublist(1), totals);
+      await flush();
+      httpGate?.complete();
+      expect(await a, PlayResult.ok);
+      expect(await b, PlayResult.ok);
+      expect(engine.queues, hasLength(1));
+      expect(engine.queues.single.first, _u('05', 1, 7));
+      expect(requests, hasLength(1));
+    });
+
+    test('playFrom beyond the last ayah fails like before', () async {
+      expect(await svc.playFrom(94, 9, 8), PlayResult.failed);
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(svc.lastError.value, 'Audio tidak dapat diputar.');
+      expect(engine.queues, isEmpty);
     });
 
     test('switch off or offline: no requests', () async {
