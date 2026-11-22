@@ -1,3 +1,5 @@
+import 'ayah.dart';
+
 class Juz {
   const Juz({
     required this.number,
@@ -12,4 +14,7 @@ class Juz {
   final int startAyah;
   final int endSurah;
   final int endAyah;
+
+  AyahRef get start => AyahRef(startSurah, startAyah);
+  AyahRef get end => AyahRef(endSurah, endAyah);
 }

@@ -22,6 +22,8 @@ import 'package:nura/app/services/hijri_date_service.dart';
 import 'package:nura/app/services/online_service.dart';
 import 'package:nura/app/data/repositories/isolate_hadith_repository.dart';
 import 'package:nura/app/data/repositories/isolate_search_repository.dart';
+import 'package:nura/app/data/repositories/isolate_quran_range_repository.dart';
+import 'package:nura/app/data/repositories/quran_range_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/search_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
@@ -72,6 +74,9 @@ void main() {
     addTearDown(s.user.close);
     final hadith = Get.find<HadithRepository>() as IsolateHadithRepository;
     addTearDown(hadith.close);
+    final range =
+        Get.find<QuranRangeRepository>() as IsolateQuranRangeRepository;
+    addTearDown(range.close);
     final search = Get.find<SearchRepository>() as IsolateSearchRepository;
     addTearDown(search.close);
     if (swapHadithForFake) {
@@ -225,6 +230,42 @@ void main() {
     expect(Get.isRegistered<HadithRepository>(), isFalse);
     expect(Get.isRegistered<SearchRepository>(), isFalse);
   });
+
+  test(
+    'failed bootstrap closes the range worker and registers nothing',
+    () async {
+      Directory('${tmp.path}/user.db').createSync();
+      IsolateQuranRangeRepository? range;
+      final r = await bootstrap(
+        installer: installer(),
+        dataDir: tmp,
+        startRange: (f) async =>
+            range = await IsolateQuranRangeRepository.start(f),
+      );
+      expect(r, isA<BootstrapFailure>());
+      expect(range, isNotNull);
+      await range?.exited.timeout(const Duration(seconds: 5));
+      expect(Get.isRegistered<QuranRangeRepository>(), isFalse);
+    },
+  );
+
+  test(
+    'failed range start closes earlier workers, registers nothing',
+    () async {
+      IsolateSearchRepository? search;
+      final r = await bootstrap(
+        installer: installer(),
+        dataDir: tmp,
+        startSearch: (f) async =>
+            search = await IsolateSearchRepository.start(f),
+        startRange: (_) async => throw const ContentUnavailable('boom'),
+      );
+      expect(r, isA<BootstrapFailure>());
+      await search?.exited.timeout(const Duration(seconds: 5));
+      expect(Get.isRegistered<QuranRangeRepository>(), isFalse);
+      expect(Get.isRegistered<SearchRepository>(), isFalse);
+    },
+  );
 
   test('bootstrap returns failure when installer throws', () async {
     final r = await bootstrap(

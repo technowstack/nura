@@ -203,7 +203,9 @@ void main() {
     addTearDown(o.dispose);
     expect(o.select('SELECT end_ayah FROM juz').single['end_ayah'], 7);
     expect(
-      o.select('SELECT revelation FROM surah WHERE number=112').single['revelation'],
+      o
+          .select('SELECT revelation FROM surah WHERE number=112')
+          .single['revelation'],
       'makkiyah',
     );
     File(
