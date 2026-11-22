@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:nura/app/core/attributions.dart';
 import 'package:nura/app/core/font_licenses.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
+import 'package:nura/app/core/url_opener.dart';
 import 'package:nura/app/modules/settings/views/attribution_view.dart';
 
 const _tanzil =
@@ -20,6 +21,7 @@ void main() {
     WidgetTester t, {
     double scale = 1,
     ThemeData? theme,
+    UrlOpener? opener,
   }) async {
     t.view.physicalSize = const Size(360, 640);
     t.view.devicePixelRatio = 1;
@@ -33,7 +35,7 @@ void main() {
           ).copyWith(textScaler: TextScaler.linear(scale)),
           child: child ?? const SizedBox.shrink(),
         ),
-        home: const AttributionView(),
+        home: AttributionView(opener: opener ?? _FakeOpener()),
       ),
     );
     await t.pump();
@@ -130,6 +132,74 @@ void main() {
     expect(link, findsOneWidget);
   });
 
+  final allLinks = [for (final a in kAttributions) ...a.links];
+
+  testWidgets('nothing launches on build; each link opens once on tap', (
+    t,
+  ) async {
+    final o = _FakeOpener();
+    await pump(t, opener: o);
+    expect(o.calls, isEmpty);
+    for (final l in allLinks) {
+      final f = find.widgetWithText(SelectableText, l);
+      await reveal(t, f);
+      expect(
+        t
+            .getSize(
+              find.ancestor(of: f, matching: find.byType(ConstrainedBox)).first,
+            )
+            .height,
+        greaterThanOrEqualTo(48),
+      );
+      await t.tap(f);
+      await t.pump();
+      expect(o.calls.last, l);
+    }
+    expect(o.calls, allLinks);
+    expect(find.text('Tautan tidak dapat dibuka.'), findsNothing);
+  });
+
+  for (final mode in ['false', 'throw']) {
+    testWidgets('failure ($mode) shows copyable URL', (t) async {
+      final o = _FakeOpener(result: false, throws: mode == 'throw');
+      await pump(t, opener: o);
+      const url = 'https://creativecommons.org/licenses/by/3.0/';
+      final f = find.widgetWithText(SelectableText, url);
+      await reveal(t, f);
+      await t.ensureVisible(f);
+      await t.pump();
+      await t.tap(f);
+      await t.pumpAndSettle();
+      expect(find.text('Tautan tidak dapat dibuka.'), findsOneWidget);
+      expect(find.widgetWithText(SelectableText, url), findsNWidgets(2));
+      String? copied;
+      t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (c) async {
+          if (c.method == 'Clipboard.setData') {
+            copied = (c.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await t.tap(find.text('Salin tautan'));
+      await t.pumpAndSettle();
+      expect(copied, url);
+    });
+  }
+
+  test('default opener rejects non-https without launching', () async {
+    for (final u in ['http://a.b', 'javascript:alert(1)', 'file:///x', 'x']) {
+      expect(await const DefaultUrlOpener().open(u), isFalse, reason: u);
+    }
+  });
+
   for (final dark in [false, true]) {
     testWidgets('130% at 360x640 scrolls without overflow (dark=$dark)', (
       t,
@@ -195,6 +265,20 @@ void main() {
       expect(byPackage[n], contains('SIL OPEN FONT LICENSE'), reason: n);
     }
   });
+}
+
+class _FakeOpener implements UrlOpener {
+  _FakeOpener({this.result = true, this.throws = false});
+  final bool result;
+  final bool throws;
+  final calls = <String>[];
+
+  @override
+  Future<bool> open(String url) async {
+    calls.add(url);
+    if (throws) throw StateError('no browser');
+    return result;
+  }
 }
 
 class _EmptyBundle extends CachingAssetBundle {

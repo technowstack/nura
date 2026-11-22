@@ -11,7 +11,7 @@ class Attribution {
   final List<String> credits;
   final String licenseNote;
 
-  /// Shown as copyable text; the app has no url_launcher.
+  /// Shown as selectable text and opened in the browser on tap (https only).
   final List<String> links;
 }
 
@@ -45,7 +45,7 @@ const List<Attribution> kAttributions = [
     ],
     licenseNote:
         'Layanan API EQuran.id; syarat layanan: https://equran.id/terms.',
-    links: ['https://equran.id'],
+    links: ['https://equran.id', 'https://equran.id/terms'],
   ),
   Attribution(
     title: 'Tanzil.info',
