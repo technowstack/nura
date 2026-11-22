@@ -85,10 +85,13 @@ void main() {
     expect(cards(c).ayah?.reference, 'QS. Asy-Syarh: 17');
   });
 
-  tc('changing the source reloads the hadith and persists', (tester) async {
+  tc('refreshAfterSettings picks up a source changed in Settings', (
+    tester,
+  ) async {
     final c = make();
-    c.setHadithSource(HadithSource.allBooks);
-    expect(store.hadithSource, HadithSource.allBooks);
+    expect(cards(c).hadith?.translation, contains('(default)'));
+    store.setHadithSource(HadithSource.allBooks); // what Settings does
+    c.refreshAfterSettings();
     expect(c.hadithSource.value, HadithSource.allBooks);
     expect(cards(c).hadith?.translation, contains('(all)'));
   });
@@ -119,19 +122,6 @@ void main() {
         ),
       );
     }
-
-    tc('changing the source forces a refresh on the same date', (tester) async {
-      await tester.pumpWidget(const SizedBox());
-      putRefresher();
-      final c = make();
-      unawaited(Get.find<DailyRefresher>().refresh());
-      await tester.pump(const Duration(milliseconds: 1));
-      expect(renders, 1);
-      c.setHadithSource(HadithSource.allBooks);
-      await tester.pump(const Duration(milliseconds: 1));
-      await tester.pump(const Duration(milliseconds: 1));
-      expect(renders, 2);
-    });
 
     tc('crossing midnight refreshes once for the new date', (tester) async {
       await tester.pumpWidget(const SizedBox());

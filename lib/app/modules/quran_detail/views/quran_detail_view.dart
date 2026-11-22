@@ -3,13 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
 
-import '../../../core/theme/theme_controller.dart';
 import '../../../core/ui_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
+import '../../../routes/app_routes.dart';
 import '../controllers/quran_detail_controller.dart';
 import '../widgets/ayah_card.dart';
-import '../widgets/reading_settings_sheet.dart';
 import '../widgets/surah_header_card.dart';
 import '../widgets/tafsir_sheet.dart';
 
@@ -51,11 +50,11 @@ class QuranDetailView extends GetView<QuranDetailController> {
               tooltip: 'Pengaturan tampilan',
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               icon: const NuraIcon(NuraIcons.tune),
-              onPressed: () => showReadingSettingsSheet(
-                context,
-                controller: c,
-                theme: Get.find<ThemeController>(),
-              ),
+              onPressed: () async {
+                await Get.toNamed<void>(Routes.settings);
+                // Settings may have changed the reading prefs.
+                c.refreshPrefs();
+              },
             ),
           ],
         ),

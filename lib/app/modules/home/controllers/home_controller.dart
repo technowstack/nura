@@ -7,7 +7,6 @@ import '../../../core/ui_state.dart';
 import '../../../data/models/daily_content.dart';
 import '../../../data/repositories/daily_content_repository.dart';
 import '../../../data/repositories/daily_settings_store.dart';
-import '../../../services/daily_notifier.dart';
 import '../../../services/daily_refresher.dart';
 import '../../../services/hijri_date_service.dart';
 import '../../../data/repositories/prayer_store.dart';
@@ -34,25 +33,12 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   final DailyContentRepository _repo = Get.find();
   final DailySettingsStore _settings = Get.find();
 
-  final DailyNotifier? _notifier = Get.isRegistered<DailyNotifier>()
-      ? Get.find<DailyNotifier>()
-      : null;
-
   final DailyRefresher? _refresher = Get.isRegistered<DailyRefresher>()
       ? Get.find<DailyRefresher>()
       : null;
 
   final cards = Rx<UiState<DailyCards>>(const UiLoading());
   late final hadithSource = Rx<HadithSource>(_settings.hadithSource);
-
-  late final notifyOn = Rx<bool>(_settings.notifyEnabled);
-  late final notifyTime = Rx<String>(_settings.notifyTime);
-
-  /// The notification permission was refused when turning the switch on.
-  final notifyDenied = false.obs;
-
-  /// Every daily notification failed to schedule.
-  final notifyFailed = false.obs;
 
   // Optional so the daily cards work without them.
   final HijriDateService? _hijri = Get.isRegistered<HijriDateService>()
@@ -260,52 +246,12 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  void setHadithSource(HadithSource s) {
-    try {
-      _settings.setHadithSource(s);
-      hadithSource.value = s;
-    } on Object catch (e) {
-      debugPrint('HomeController: cannot save hadith source: $e');
-    }
+  /// Re-reads what Settings can change (daily source, region, Hijri
+  /// adjustment) and rebuilds the cards and the hero.
+  void refreshAfterSettings() {
+    hadithSource.value = _settings.hadithSource;
     refreshForToday();
-    unawaited(_reschedule(() => _notifier?.reschedule()));
-    // Rewrites the widget images for the new source.
-    unawaited(_refresher?.refresh(force: true));
-  }
-
-  Future<void> setNotify(bool on) async {
-    var refused = false;
-    await _reschedule(() async {
-      refused = !(await _notifier?.setEnabled(on) ?? true);
-    });
-    if (refused) notifyDenied.value = true;
-  }
-
-  /// [hhmm] is a valid 24h `HH:mm`.
-  Future<void> setNotifyTime(String hhmm) =>
-      _reschedule(() => _notifier?.setTime(hhmm));
-
-  /// Failures never reach the UI; the switch state is re-read on every path.
-  Future<void> _reschedule(Future<void>? Function() action) async {
-    try {
-      await action();
-      notifyFailed.value = false;
-    } on DailyScheduleException catch (e) {
-      notifyFailed.value = true;
-      debugPrint('HomeController: $e');
-    } on Object catch (e) {
-      debugPrint('HomeController: daily notifications failed: $e');
-    }
-    notifyOn.value = _settings.notifyEnabled;
-    notifyTime.value = _settings.notifyTime;
-    // The note mirrors the real permission, so other changes keep it.
-    try {
-      notifyDenied.value =
-          _settings.notifyEnabled &&
-          (await _notifier?.permissionDenied() ?? false);
-    } on Object catch (e) {
-      debugPrint('HomeController: permission check failed: $e');
-    }
+    unawaited(_loadPrayer());
   }
 
   void refreshForToday() {

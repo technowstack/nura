@@ -113,7 +113,11 @@ void main() {
           child: child ?? const SizedBox.shrink(),
         ),
         home: home ?? const HomeView(dataVersion: 'v1'),
-        getPages: [stub(Routes.surah), stub(Routes.search)],
+        getPages: [
+          stub(Routes.surah),
+          stub(Routes.search),
+          stub(Routes.settings),
+        ],
       ),
     );
     await tester.pump();
@@ -138,7 +142,7 @@ void main() {
   );
 
   Widget hero(HomeHeroData d) => Scaffold(
-    body: HomeHero(data: d, onTune: () {}),
+    body: HomeHero(data: d, onSettings: () {}),
   );
 
   for (final (dark, colors) in [
@@ -325,11 +329,12 @@ void main() {
     expect(hijri.format(DateTime(2026, 11, 15)), isNot(expected));
   });
 
-  tw('search icon opens search; tune stays reachable', (tester) async {
+  tw('settings icon opens Settings; search icon opens search', (tester) async {
     await pumpApp(tester);
-    await tester.tap(find.byTooltip('Pengaturan harian'));
+    expect(find.byTooltip('Pengaturan harian'), findsNothing);
+    await tester.tap(find.byTooltip('Pengaturan'));
     await tester.pumpAndSettle();
-    expect(find.text('Pengaturan harian'), findsOneWidget);
+    expect(routeName, Routes.settings);
     Get.back<void>();
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Cari'));

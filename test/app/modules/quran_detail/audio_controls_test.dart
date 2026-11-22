@@ -335,41 +335,12 @@ void main() {
     await pumpPage(t);
     await t.tap(play(1));
     await settle(t);
-    await t.tap(find.byTooltip('Pengaturan tampilan'));
-    await settle(t);
-    await t.tap(find.text('Fitur Online'));
+    // The Fitur Online switch lives in Settings; it calls this same method.
+    online.setAudioEnabled(false);
     await settle(t);
     expect(player.state.value, isA<PlaybackIdle>());
-    await t.tapAt(const Offset(10, 10));
-    await settle(t);
     expect(find.byTooltip('Putar ayat'), findsNothing);
     expect(find.text('Putar surah'), findsNothing);
-  });
-
-  testWidgets('sheet: qari picker only with switch, change notifies', (
-    t,
-  ) async {
-    online.setAudioEnabled(false);
-    await pumpPage(t);
-    await t.tap(find.byTooltip('Pengaturan tampilan'));
-    await settle(t);
-    expect(find.text('Audio'), findsOneWidget);
-    expect(find.text('Fitur Online'), findsOneWidget);
-    expect(find.text('Qari'), findsNothing);
-    await t.tap(find.text('Fitur Online'));
-    await settle(t);
-    expect(online.audioEnabled, isTrue);
-    expect(find.text('Qari'), findsOneWidget);
-    await player.playAyah(94, 1, 30);
-    expect(requests, hasLength(1));
-    await t.ensureVisible(find.text('Abdurrahman As-Sudais'));
-    await t.tap(find.text('Abdurrahman As-Sudais'));
-    await settle(t);
-    expect(SqliteAudioSettingsStore(db).qariId, '03');
-    expect(player.state.value, isA<PlaybackIdle>());
-    await player.playAyah(94, 1, 30);
-    expect(requests, hasLength(1)); // cache kept: SurahAudio holds all qaris
-    expect(engine.queues.last, [_u('03', 94, 1)]);
   });
 
   testWidgets('audio tap targets are at least 48dp', (t) async {
@@ -383,14 +354,14 @@ void main() {
     expect(h.height, greaterThanOrEqualTo(48));
   });
 
-  testWidgets('130% text: screen and sheet without overflow', (t) async {
+  testWidgets('130% text: screen without overflow, also when audio flips', (
+    t,
+  ) async {
     await pumpPage(t, scale: 1.3);
     expect(t.takeException(), isNull);
-    await t.tap(find.byTooltip('Pengaturan tampilan'));
+    online.setAudioEnabled(false);
     await settle(t);
-    await t.tap(find.text('Fitur Online'));
-    await settle(t);
-    await t.tap(find.text('Fitur Online'));
+    online.setAudioEnabled(true);
     await settle(t);
     expect(t.takeException(), isNull);
   });
