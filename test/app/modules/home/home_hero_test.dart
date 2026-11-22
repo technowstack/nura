@@ -141,9 +141,7 @@ void main() {
     approximate: true,
   );
 
-  Widget hero(HomeHeroData d) => Scaffold(
-    body: HomeHero(data: d),
-  );
+  Widget hero(HomeHeroData d) => Scaffold(body: HomeHero(data: d));
 
   for (final (dark, colors) in [
     (false, NuraColors.light),

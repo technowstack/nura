@@ -1,33 +1,236 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../data/sources/setting_keys.dart';
-import '../../data/sources/user_database.dart';
-import '../../routes/app_routes.dart';
+import '../../core/notification_notes.dart';
+import '../../core/nura_icons.dart';
+import '../../core/theme/tokens.dart';
+import '../../core/ui_state.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/nura_card.dart';
+import '../../data/models/prayer_region.dart';
+import '../prayer/widgets/region_picker_view.dart';
+import 'controllers/onboarding_controller.dart';
 
-/// Placeholder; real onboarding comes in a later phase.
-class OnboardingView extends StatelessWidget {
-  const OnboardingView({required this.user, super.key});
-
-  final UserDatabase user;
+/// Temporary UI (no onboarding mock exists yet): three steps, Round 1.5
+/// language. Scrolls so 130% text on a small screen never overflows.
+class OnboardingView extends GetView<OnboardingController> {
+  const OnboardingView({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('Selamat datang di Nura'),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: () {
-              user.setSetting(SettingKeys.onboardingDone, 'true');
-              Get.offAllNamed<void>(Routes.home);
-            },
-            child: const Text('Mulai'),
-          ),
-        ],
+  Widget build(BuildContext context) => Obx(() {
+    final c = controller;
+    return PopScope(
+      // System Back steps back inside the flow; on step 1 it leaves the app.
+      canPop: c.isFirst,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) c.back();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: switch (c.state.value) {
+            UiLoading() => const Center(child: CircularProgressIndicator()),
+            UiEmpty() => const SizedBox.shrink(),
+            UiError(:final message) => ErrorState(
+              title: 'Gagal memuat',
+              description: message,
+              onRetry: c.load,
+            ),
+            UiData() => _flow(context),
+          },
+        ),
       ),
+    );
+  });
+
+  Widget _flow(BuildContext context) {
+    final c = controller;
+    final text = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            NuraSpace.s16,
+            NuraSpace.s16,
+            NuraSpace.s16,
+            0,
+          ),
+          child: Text(
+            'Langkah ${c.step.value + 1} dari $kOnboardingSteps',
+            style: text.labelLarge,
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(NuraSpace.s16),
+            child: switch (c.step.value) {
+              0 => _welcome(context),
+              1 => _schedule(context),
+              _ => _notifications(context),
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(NuraSpace.s16),
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            spacing: NuraSpace.s8,
+            runSpacing: NuraSpace.s8,
+            children: [
+              if (!c.isFirst)
+                TextButton(onPressed: c.back, child: const Text('Kembali')),
+              if (c.isLast) ...[
+                TextButton(onPressed: c.finish, child: const Text('Lewati')),
+                FilledButton(onPressed: c.finish, child: const Text('Mulai')),
+              ] else
+                FilledButton(onPressed: c.next, child: const Text('Lanjut')),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _title(BuildContext context, String title) => Padding(
+    padding: const EdgeInsets.only(bottom: NuraSpace.s12),
+    child: Semantics(
+      header: true,
+      child: Text(title, style: Theme.of(context).textTheme.headlineSmall),
     ),
+  );
+
+  Widget _note(BuildContext context, String text) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: NuraSpace.s8),
+    child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+  );
+
+  Widget _welcome(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _title(context, 'Selamat datang di Nura'),
+      _note(
+        context,
+        'Al-Qur\'an, hadis, dan jadwal sholat dalam satu aplikasi.',
+      ),
+      _note(context, 'Semua isinya bisa dibaca tanpa internet.'),
+      _note(
+        context,
+        'Audio murottal lewat internet bisa diaktifkan di Pengaturan.',
+      ),
+    ],
+  );
+
+  Future<void> _pickRegion() async {
+    final r = await Get.to<PrayerRegion>(
+      () => RegionPickerView(regions: controller.regions),
+    );
+    if (r != null) await controller.selectRegion(r);
+  }
+
+  Widget _schedule(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _title(context, 'Jadwal sholat'),
+      NuraCard(
+        padding: const EdgeInsets.symmetric(
+          horizontal: NuraSpace.s16,
+          vertical: NuraSpace.s8,
+        ),
+        child: Column(
+          children: [
+            Obx(() {
+              final r = controller.region.value;
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                minTileHeight: 56,
+                leading: const NuraIcon(NuraIcons.locationOn),
+                title: const Text('Pilih wilayah'),
+                subtitle: Text(
+                  r == null ? 'Belum dipilih' : '${r.kabkota}, ${r.provinsi}',
+                ),
+                trailing: const NuraIcon(NuraIcons.chevronRight),
+                onTap: _pickRegion,
+              );
+            }),
+            Obx(
+              () => SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Unduh jadwal sholat'),
+                subtitle: const Text(
+                  'Jadwal diunduh per bulan dan tersimpan di perangkat.',
+                ),
+                value: controller.syncOn.value,
+                onChanged: controller.setSyncEnabled,
+              ),
+            ),
+          ],
+        ),
+      ),
+      _note(
+        context,
+        'Tanpa unduhan, jadwal tetap tampil dari perhitungan di perangkat '
+        'dan diberi label "perkiraan".',
+      ),
+      Obx(
+        () => controller.remindersFailed.value
+            ? _note(context, kRemindersFailedNote)
+            : const SizedBox.shrink(),
+      ),
+    ],
+  );
+
+  Widget _notifications(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _title(context, 'Notifikasi'),
+      _note(
+        context,
+        'Izin notifikasi hanya diminta saat Anda menyalakan salah satu '
+        'pengingat. Langkah ini boleh dilewati.',
+      ),
+      NuraCard(
+        padding: const EdgeInsets.symmetric(
+          horizontal: NuraSpace.s16,
+          vertical: NuraSpace.s8,
+        ),
+        child: Column(
+          children: [
+            Obx(
+              () => SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Pengingat adzan'),
+                subtitle: const Text('Lima waktu sholat.'),
+                value: controller.prayerOn.value,
+                onChanged: controller.setPrayerReminders,
+              ),
+            ),
+            Obx(
+              () => SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Ayat & hadis harian'),
+                subtitle: Text(
+                  'Setiap hari pukul '
+                  '${controller.dailyTime.value.replaceAll(':', '.')}. '
+                  'Jam bisa diubah di Pengaturan.',
+                ),
+                value: controller.dailyOn.value,
+                onChanged: controller.setDailyNotify,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Obx(() {
+        final c = controller;
+        final note = c.denied.value
+            ? kNotificationDeniedNote
+            : c.remindersFailed.value
+            ? kRemindersFailedNote
+            : c.dailyFailed.value
+            ? kDailyFailedNote
+            : null;
+        return note == null ? const SizedBox.shrink() : _note(context, note);
+      }),
+    ],
   );
 }

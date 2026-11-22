@@ -32,9 +32,7 @@ class HomeView extends GetView<HomeController> {
         body: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: Obx(
-                () => HomeHero(data: controller.hero.value),
-              ),
+              child: Obx(() => HomeHero(data: controller.hero.value)),
             ),
             SliverToBoxAdapter(
               child: Container(

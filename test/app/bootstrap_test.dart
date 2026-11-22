@@ -309,6 +309,11 @@ void main() {
     await tester.pumpWidget(NuraApp(result: s, onRetry: () {}));
     await tester.pumpAndSettle();
     expect(find.text('Selamat datang di Nura'), findsOneWidget);
+    for (final next in ['Lanjut', 'Lanjut']) {
+      await tester.tap(find.text(next));
+      await tester.pumpAndSettle();
+    }
+    expect(s.user.getSetting(SettingKeys.onboardingDone), isNull);
     await tester.tap(find.text('Mulai'));
     await tester.pumpAndSettle();
     expect(find.text('Beranda'), findsOneWidget); // nav label

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/notification_notes.dart';
 import '../../../core/nura_icons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/tokens.dart';
@@ -261,10 +262,9 @@ class SettingsView extends GetView<SettingsController> {
       ),
     Obx(() {
       final note = controller.remindersFailed.value
-          ? 'Pengingat gagal dijadwalkan. Coba buka ulang Nura.'
+          ? kRemindersFailedNote
           : controller.notifyDenied.value
-          ? 'Izin notifikasi ditolak, jadi pengingat tidak dikirim. '
-                'Aktifkan izin notifikasi Nura di pengaturan sistem.'
+          ? kNotificationDeniedNote
           : controller.exactDenied.value
           ? 'Pengingat bisa terlambat beberapa menit karena izin alarm '
                 'tepat belum diberikan.'
@@ -332,17 +332,10 @@ class SettingsView extends GetView<SettingsController> {
     ),
     Obx(() {
       if (controller.dailyDenied.value) {
-        return _note(
-          context,
-          'Izin notifikasi ditolak, jadi pengingat tidak dikirim. '
-          'Aktifkan izin notifikasi Nura di pengaturan sistem.',
-        );
+        return _note(context, kNotificationDeniedNote);
       }
       if (controller.dailyFailed.value) {
-        return _note(
-          context,
-          'Notifikasi harian gagal dijadwalkan. Coba buka ulang Nura.',
-        );
+        return _note(context, kDailyFailedNote);
       }
       return const SizedBox.shrink();
     }),
