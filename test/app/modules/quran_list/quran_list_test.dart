@@ -19,6 +19,7 @@ import 'package:nura/app/data/models/surah.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
+import 'package:nura/app/modules/juz_reader/juz_args.dart';
 import 'package:nura/app/modules/quran_detail/surah_args.dart';
 import 'package:nura/app/modules/quran_list/bindings/quran_list_binding.dart';
 import 'package:nura/app/modules/quran_list/controllers/quran_list_controller.dart';
@@ -81,6 +82,13 @@ void main() {
             page: () {
               routeArgs = Get.arguments;
               return const Scaffold(body: Text('stub surah'));
+            },
+          ),
+          GetPage(
+            name: Routes.juz,
+            page: () {
+              routeArgs = Get.arguments;
+              return const Scaffold(body: Text('juz page'));
             },
           ),
           GetPage(
@@ -205,22 +213,28 @@ void main() {
     expect(bookmarkIcon(filled: true), findsOneWidget);
   });
 
-  testWidgets('tapping juz row opens route with start surah and ayah', (
-    tester,
-  ) async {
-    quran.juz = const [
-      Juz(number: 2, startSurah: 2, startAyah: 142, endSurah: 2, endAyah: 252),
-    ];
-    await pump(tester);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Juz'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Juz 2'));
-    await tester.pumpAndSettle();
-    final args = routeArgs as SurahArgs;
-    expect(args.surah, 2);
-    expect(args.ayah, 142);
-  });
+  testWidgets(
+    'tapping juz row opens the juz reader route with the juz number',
+    (tester) async {
+      quran.juz = const [
+        Juz(
+          number: 2,
+          startSurah: 2,
+          startAyah: 142,
+          endSurah: 2,
+          endAyah: 252,
+        ),
+      ];
+      await pump(tester);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Juz'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Juz 2'));
+      await tester.pumpAndSettle();
+      expect((routeArgs as JuzArgs).number, 2);
+      expect(find.text('juz page'), findsOneWidget);
+    },
+  );
 
   for (final tab in ['Surah', 'Juz']) {
     testWidgets('Latin 130% on $tab tab at 360x640', (tester) async {

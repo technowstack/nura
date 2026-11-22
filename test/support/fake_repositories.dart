@@ -13,6 +13,7 @@ import 'package:nura/app/data/models/reading_prefs.dart';
 import 'package:nura/app/data/models/search_hit.dart';
 import 'package:nura/app/data/models/surah.dart';
 import 'package:nura/app/data/repositories/hadith_repository.dart';
+import 'package:nura/app/data/repositories/quran_range_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/search_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
@@ -62,6 +63,32 @@ class FakeQuranRepository implements QuranRepository {
 
   @override
   List<Juz> listJuz() => _guard(() => juz);
+}
+
+/// In-memory range reader over [ayahs] (ordered). [failure] makes it throw.
+class FakeQuranRangeRepository implements QuranRangeRepository {
+  FakeQuranRangeRepository(this.ayahs, {this.failure});
+
+  final List<Ayah> ayahs;
+  Object? failure;
+  int calls = 0;
+
+  @override
+  Future<List<Ayah>> getAyahRange(AyahRef start, AyahRef end) async {
+    calls++;
+    final f = failure;
+    if (f != null) throw f;
+    int key(int s, int a) => s * 1000 + a;
+    return [
+      for (final a in ayahs)
+        if (key(a.surahNumber, a.ayahNumber) >= key(start.surah, start.ayah) &&
+            key(a.surahNumber, a.ayahNumber) <= key(end.surah, end.ayah))
+          a,
+    ];
+  }
+
+  @override
+  Future<void> close() async {}
 }
 
 class FakeUserRepository implements UserRepository {

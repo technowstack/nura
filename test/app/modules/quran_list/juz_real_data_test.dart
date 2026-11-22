@@ -9,7 +9,7 @@ import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/sqlite_quran_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/data/sources/content_database.dart';
-import 'package:nura/app/modules/quran_detail/surah_args.dart';
+import 'package:nura/app/modules/juz_reader/juz_args.dart';
 import 'package:nura/app/modules/quran_list/bindings/quran_list_binding.dart';
 import 'package:nura/app/modules/quran_list/views/quran_list_view.dart';
 import 'package:nura/app/routes/app_routes.dart';
@@ -70,10 +70,10 @@ void main() {
           home: const Scaffold(body: QuranListView()),
           getPages: [
             GetPage(
-              name: Routes.surah,
+              name: Routes.juz,
               page: () {
                 routeArgs = Get.arguments;
-                return const Scaffold(body: Text('surah page'));
+                return const Scaffold(body: Text('juz page'));
               },
             ),
           ],
@@ -107,12 +107,11 @@ void main() {
       expect(t.takeException(), isNull);
     });
 
-    testWidgets('tap opens the start ayah', (t) async {
+    testWidgets('tap opens the juz reader route', (t) async {
       await open(t);
       await t.tap(find.text('Juz 2'));
       await t.pumpAndSettle();
-      final a = routeArgs as SurahArgs;
-      expect((a.surah, a.ayah), (2, 142));
+      expect((routeArgs as JuzArgs).number, 2);
     });
   });
 }

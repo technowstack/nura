@@ -8,6 +8,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../routes/app_routes.dart';
 import '../../bookmarks/controllers/bookmarks_controller.dart';
 import '../../bookmarks/views/bookmarks_tab.dart';
+import '../../juz_reader/juz_args.dart';
 import '../../quran_detail/surah_args.dart';
 import '../../search/search_args.dart';
 import '../controllers/quran_list_controller.dart';
@@ -67,7 +68,8 @@ class QuranListView extends GetView<QuranListController> {
                               : marked.contains(s.number)
                               ? SurahItemState.bookmarked
                               : SurahItemState.normal,
-                          onTap: () => _open(c, SurahArgs(s.number)),
+                          onTap: () =>
+                              _open(c, SurahArgs(s.number), Routes.surah),
                         );
                       },
                     ),
@@ -84,10 +86,8 @@ class QuranListView extends GetView<QuranListController> {
                       itemBuilder: (_, i) => JuzListItem(
                         juz: list[i],
                         range: QuranListController.juzRange(list[i], names),
-                        onTap: () => _open(
-                          c,
-                          SurahArgs(list[i].startSurah, list[i].startAyah),
-                        ),
+                        onTap: () =>
+                            _open(c, JuzArgs(list[i].number), Routes.juz),
                       ),
                     ),
                   );
@@ -101,8 +101,8 @@ class QuranListView extends GetView<QuranListController> {
     );
   }
 
-  Future<void> _open(QuranListController c, SurahArgs args) async {
-    await Get.toNamed(Routes.surah, arguments: args);
+  Future<void> _open(QuranListController c, Object args, String route) async {
+    await Get.toNamed(route, arguments: args);
     c.refreshMarkers();
     Get.find<BookmarksController>().load();
   }
