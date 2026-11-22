@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TEMPORARY PLACEHOLDER (D4): eight-point star; replace with final owner asset. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/nura_icon_star"
+        android:pathData="M54.00,30.00 L58.21,43.84 L70.97,37.03 L64.16,49.79 L78.00,54.00 L64.16,58.21 L70.97,70.97 L58.21,64.16 L54.00,78.00 L49.79,64.16 L37.03,70.97 L43.84,58.21 L30.00,54.00 L43.84,49.79 L37.03,37.03 L49.79,43.84 Z" />
+</vector>

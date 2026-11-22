@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Values copied from docs/design/tokens.json (TEMPORARY PLACEHOLDER, D4). -->
+<resources>
+    <color name="nura_icon_background">#FF0F3F34</color>
+    <color name="nura_icon_star">#FFEBCB8B</color>
+    <color name="nura_splash_background">#FF0F1513</color>
+    <color name="nura_splash_star">#FFD9BE92</color>
+</resources>
