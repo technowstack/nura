@@ -12,6 +12,7 @@ import '../../../data/repositories/prayer_repository.dart';
 import '../../../data/sources/setting_keys.dart';
 import '../../../data/sources/user_database.dart';
 import '../../../routes/app_routes.dart';
+import '../../prayer/widgets/region_picker_view.dart';
 import '../../../services/daily_notifier.dart';
 import '../../../services/online_service.dart';
 import '../../../services/prayer_notifier.dart';
@@ -91,6 +92,13 @@ class OnboardingController extends GetxController {
   }
 
   // Jadwal sholat
+
+  Future<void> pickRegion() async {
+    final r = await Get.to<PrayerRegion>(
+      () => RegionPickerView(regions: regions),
+    );
+    if (r != null) await selectRegion(r);
+  }
 
   Future<void> selectRegion(PrayerRegion r) async {
     try {

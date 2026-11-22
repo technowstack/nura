@@ -66,9 +66,22 @@ void main() {
     expect(find.text('Langkah 1 dari 3'), findsOneWidget);
     expect(find.text('Selamat datang di Nura'), findsOneWidget);
     expect(find.textContaining('Pengaturan'), findsOneWidget);
+    expect(
+      find.text("Al-Qur'an dan hadis bisa dibaca tanpa internet."),
+      findsOneWidget,
+    );
     expect(find.text('Kembali'), findsNothing);
     await tapText(t, 'Lanjut');
     expect(find.text('Jadwal sholat'), findsOneWidget);
+    expect(
+      find.text(
+        'Tanpa unduhan, jadwal sholat belum bisa ditampilkan. '
+        'Jadwal bisa diunduh nanti di Pengaturan.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('perkiraan'), findsNothing);
+    expect(find.textContaining('perhitungan di perangkat'), findsNothing);
     expect(find.text('Kembali'), findsOneWidget);
     await tapText(t, 'Lanjut');
     expect(find.text('Notifikasi'), findsOneWidget);

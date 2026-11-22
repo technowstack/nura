@@ -7,8 +7,6 @@ import '../../core/theme/tokens.dart';
 import '../../core/ui_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/nura_card.dart';
-import '../../data/models/prayer_region.dart';
-import '../prayer/widgets/region_picker_view.dart';
 import 'controllers/onboarding_controller.dart';
 
 /// Temporary UI (no onboarding mock exists yet): three steps, Round 1.5
@@ -112,20 +110,13 @@ class OnboardingView extends GetView<OnboardingController> {
         context,
         'Al-Qur\'an, hadis, dan jadwal sholat dalam satu aplikasi.',
       ),
-      _note(context, 'Semua isinya bisa dibaca tanpa internet.'),
+      _note(context, 'Al-Qur\'an dan hadis bisa dibaca tanpa internet.'),
       _note(
         context,
         'Audio murottal lewat internet bisa diaktifkan di Pengaturan.',
       ),
     ],
   );
-
-  Future<void> _pickRegion() async {
-    final r = await Get.to<PrayerRegion>(
-      () => RegionPickerView(regions: controller.regions),
-    );
-    if (r != null) await controller.selectRegion(r);
-  }
 
   Widget _schedule(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -149,7 +140,7 @@ class OnboardingView extends GetView<OnboardingController> {
                   r == null ? 'Belum dipilih' : '${r.kabkota}, ${r.provinsi}',
                 ),
                 trailing: const NuraIcon(NuraIcons.chevronRight),
-                onTap: _pickRegion,
+                onTap: controller.pickRegion,
               );
             }),
             Obx(
@@ -168,8 +159,8 @@ class OnboardingView extends GetView<OnboardingController> {
       ),
       _note(
         context,
-        'Tanpa unduhan, jadwal tetap tampil dari perhitungan di perangkat '
-        'dan diberi label "perkiraan".',
+        'Tanpa unduhan, jadwal sholat belum bisa ditampilkan. '
+        'Jadwal bisa diunduh nanti di Pengaturan.',
       ),
       Obx(
         () => controller.remindersFailed.value
