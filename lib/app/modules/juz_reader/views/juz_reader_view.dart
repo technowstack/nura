@@ -45,6 +45,16 @@ class JuzReaderView extends GetView<JuzReaderController> {
             ],
           ),
           actions: [
+            Obx(() {
+              if (!c.audioVisible.value) return const SizedBox.shrink();
+              final off = c.offline.value;
+              return IconButton(
+                tooltip: off ? 'Butuh internet' : 'Putar juz',
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: const NuraIcon(NuraIcons.playArrow),
+                onPressed: off ? null : c.playJuz,
+              );
+            }),
             IconButton(
               tooltip: 'Pengaturan tampilan',
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
@@ -62,6 +72,11 @@ class JuzReaderView extends GetView<JuzReaderController> {
           final marked = c.bookmarked.toSet();
           final prefs = c.prefs.value;
           final lastRead = c.lastRead.value;
+          // Touch audio state here so audio changes rebuild the list.
+          c.playerState;
+          c.audioVisible.value;
+          c.offline.value;
+          final playing = c.playingRef.value;
           return switch (c.state.value) {
             UiLoading() => const Center(child: CircularProgressIndicator()),
             UiEmpty() => const EmptyState(title: 'Ayat belum tersedia'),
@@ -85,6 +100,18 @@ class JuzReaderView extends GetView<JuzReaderController> {
                 ),
                 AyahItem(:final ayah) => AyahCard(
                   ayah: ayah,
+                  audio: c.audioStateOf(
+                    AyahRef(ayah.surahNumber, ayah.ayahNumber),
+                  ),
+                  playing:
+                      playing?.surah == ayah.surahNumber &&
+                      playing?.ayah == ayah.ayahNumber,
+                  onAudio: () => c.toggleAyahAudio(
+                    AyahRef(ayah.surahNumber, ayah.ayahNumber),
+                  ),
+                  onPlayFromHere: () => c.playFromAyah(
+                    AyahRef(ayah.surahNumber, ayah.ayahNumber),
+                  ),
                   bookmarked: marked.contains(
                     AyahRef(ayah.surahNumber, ayah.ayahNumber),
                   ),

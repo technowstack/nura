@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' show AppLifecycleState;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/models/qari.dart';
 import 'package:nura/app/data/repositories/audio_settings_store.dart';
 import 'package:nura/app/data/sources/audio_api_client.dart';
@@ -50,7 +51,7 @@ void main() {
   var probeCalls = 0;
   Completer<void>? probeGate;
   late StreamController<bool> conn;
-  const totals = {94: 8, 1: 7};
+  const totals = {94: 8, 1: 7, 2: 4};
 
   setUp(() {
     tmp = Directory.systemTemp.createTempSync('nura_audio_');
@@ -482,6 +483,94 @@ void main() {
           expect(t.contains(bad), isFalse, reason: '${f.path} has $bad');
         }
       }
+    });
+  });
+
+  group('playRange across surahs', () {
+    const refs = [AyahRef(1, 6), AyahRef(1, 7), AyahRef(2, 1), AyahRef(2, 2)];
+    Future<void> flush() async {
+      for (var i = 0; i < 5; i++) {
+        await tick();
+      }
+    }
+
+    test('one request per surah, fetched only when needed', () async {
+      expect(await svc.playRange(refs, totals), PlayResult.ok);
+      expect(requests.map((u) => u.pathSegments.last), ['1']);
+      expect(engine.queues.single, [_u('05', 1, 6), _u('05', 1, 7)]);
+      expect(svc.state.value, const PlaybackPlaying(1, 6));
+      // Surah 2 is requested when the last ayah of surah 1 starts.
+      engine.emit(const IndexChanged(1));
+      await flush();
+      expect(svc.state.value, const PlaybackPlaying(1, 7));
+      expect(requests.map((u) => u.pathSegments.last), ['1', '2']);
+      expect(engine.queues, hasLength(1));
+      engine.emit(const Completed());
+      await flush();
+      expect(engine.queues.last, [_u('05', 2, 1), _u('05', 2, 2)]);
+      expect(engine.calls.last, 'play');
+      expect(svc.state.value, const PlaybackPlaying(2, 1));
+      engine.emit(const IndexChanged(1));
+      expect(svc.state.value, const PlaybackPlaying(2, 2));
+      engine.emit(const Completed());
+      await flush();
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(requests, hasLength(2));
+      expect(engine.queues, hasLength(2));
+      // Cache: replaying the same range makes no new request.
+      await svc.playRange(refs, totals);
+      expect(requests, hasLength(2));
+    });
+
+    test('later surah failing stops with the existing error', () async {
+      await svc.playRange(refs, totals);
+      status = 404;
+      engine.emit(const IndexChanged(1));
+      await flush();
+      expect(svc.state.value, const PlaybackPlaying(1, 7)); // unaffected
+      engine.emit(const Completed());
+      await flush();
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(svc.lastError.value, 'Audio tidak dapat diputar.');
+      expect(engine.queues, hasLength(1));
+      expect(requests, hasLength(2));
+    });
+
+    test(
+      'backgrounding while the next surah loads stops, no restart',
+      () async {
+        await svc.playRange(refs, totals);
+        httpGate = Completer<void>();
+        engine.emit(const IndexChanged(1));
+        engine.emit(const Completed());
+        await flush();
+        life.add(AppLifecycleState.paused);
+        await flush();
+        httpGate?.complete();
+        await flush();
+        expect(svc.state.value, isA<PlaybackIdle>());
+        expect(engine.queues, hasLength(1));
+      },
+    );
+
+    test('switch off mid-queue stops; no further requests', () async {
+      await svc.playRange(refs, totals);
+      online.setAudioEnabled(false);
+      await flush();
+      expect(svc.state.value, isA<PlaybackIdle>());
+      engine.emit(const Completed());
+      await flush();
+      expect(requests, hasLength(1));
+      expect(engine.queues, hasLength(1));
+    });
+
+    test('switch off or offline: no requests', () async {
+      reachable = false;
+      expect(await svc.playRange(refs, totals), PlayResult.needsInternet);
+      online.setAudioEnabled(false);
+      expect(await svc.playRange(refs, totals), PlayResult.switchedOff);
+      expect(requests, isEmpty);
+      expect(engine.calls, isEmpty);
     });
   });
 }

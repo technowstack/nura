@@ -3,6 +3,7 @@ import 'dart:ui' show AppLifecycleState;
 
 import 'package:get/get.dart';
 
+import '../data/models/ayah.dart';
 import '../data/models/surah_audio.dart';
 import '../data/repositories/audio_settings_store.dart';
 import '../data/sources/audio_api_client.dart';
@@ -117,43 +118,57 @@ class AudioPlayerService {
   final Rx<PlaybackState> state = Rx<PlaybackState>(const PlaybackIdle());
   final Rx<String?> lastError = Rx<String?>(null);
 
-  // True while a play call is between its gate and its engine start.
+  // True while a play call (or a surah switch inside a queue) is between
+  // its gate and its engine start.
   bool _busy = false;
   int _gen = 0;
-  int _surah = 0;
-  int _firstAyah = 0;
   bool _accepting = false;
   bool _disposed = false;
 
+  // The running queue: one segment per run of ayat of the same surah. The
+  // engine only ever holds the current segment; the next one is set when it
+  // completes, so a surah's URLs are requested only when playback gets there.
+  var _segs = const <_Seg>[];
+  int _segIdx = 0;
+  Future<List<Uri>>? _nextUrls;
+
   Future<PlayResult> playAyah(int surah, int ayah, int ayahTotal) =>
-      _play(surah, ayah, ayahTotal, single: true);
+      playRange([AyahRef(surah, ayah)], {surah: ayahTotal});
 
-  Future<PlayResult> playFrom(int surah, int ayah, int ayahTotal) =>
-      _play(surah, ayah, ayahTotal, single: false);
+  Future<PlayResult> playFrom(int surah, int ayah, int ayahTotal) => playRange(
+    [for (var a = ayah; a <= ayahTotal; a++) AyahRef(surah, a)],
+    {surah: ayahTotal},
+  );
 
-  Future<PlayResult> _play(
-    int surah,
-    int ayah,
-    int total, {
-    required bool single,
-  }) async {
+  /// Plays [refs] in order, possibly across surahs. [ayahTotals] gives the
+  /// ayah count of each surah in [refs] (validates the API response).
+  Future<PlayResult> playRange(
+    List<AyahRef> refs,
+    Map<int, int> ayahTotals,
+  ) async {
     if (_disposed || !_online.audioEnabled) return PlayResult.switchedOff;
+    if (refs.isEmpty) return PlayResult.failed;
     final gen = ++_gen;
     _busy = true;
     try {
-      return await _run(gen, surah, ayah, total, single);
+      return await _run(gen, _segments(refs, ayahTotals));
     } finally {
       if (gen == _gen) _busy = false;
     }
   }
 
-  Future<PlayResult> _run(
-    int gen,
-    int surah,
-    int ayah,
-    int total,
-    bool single,
-  ) async {
+  static List<_Seg> _segments(List<AyahRef> refs, Map<int, int> totals) {
+    final segs = <_Seg>[];
+    for (final r in refs) {
+      if (segs.isEmpty || segs.last.surah != r.surah) {
+        segs.add(_Seg(r.surah, totals[r.surah] ?? 0));
+      }
+      segs.last.ayahs.add(r.ayah);
+    }
+    return segs;
+  }
+
+  Future<PlayResult> _run(int gen, List<_Seg> segs) async {
     if (!await _online.canReach()) {
       return gen == _gen ? PlayResult.needsInternet : PlayResult.ok;
     }
@@ -163,15 +178,11 @@ class AudioPlayerService {
     await _safeStop();
     try {
       if (gen != _gen) return PlayResult.ok;
-      final audio = await _fetch(surah, total);
+      final queue = await _segUrls(segs.first);
       if (gen != _gen) return PlayResult.ok;
-      final urls = audio.urlsFor(_settings.qariId);
-      if (urls == null || ayah < 1 || ayah > urls.length) {
-        return _giveUp(gen, PlayResult.failed);
-      }
-      final queue = single ? [urls[ayah - 1]] : urls.sublist(ayah - 1);
-      _surah = surah;
-      _firstAyah = ayah;
+      _segs = segs;
+      _segIdx = 0;
+      _nextUrls = null;
       await _engine.setUrls(queue);
       if (gen != _gen) {
         await _safeStop();
@@ -182,7 +193,7 @@ class AudioPlayerService {
       if (gen != _gen) return PlayResult.ok;
       lastError.value = null;
       if (state.value is PlaybackLoading) {
-        state.value = PlaybackPlaying(surah, ayah);
+        state.value = PlaybackPlaying(segs.first.surah, segs.first.ayahs.first);
       }
       return PlayResult.ok;
     } on AudioNetwork {
@@ -192,6 +203,51 @@ class AudioPlayerService {
       await _safeStop();
       return _giveUp(gen, PlayResult.failed);
     }
+  }
+
+  Future<List<Uri>> _segUrls(_Seg seg) async {
+    final audio = await _fetch(seg.surah, seg.total);
+    final urls = audio.urlsFor(_settings.qariId);
+    if (urls == null || seg.ayahs.any((a) => a < 1 || a > urls.length)) {
+      throw StateError('no audio for surah ${seg.surah}');
+    }
+    return [for (final a in seg.ayahs) urls[a - 1]];
+  }
+
+  /// Current segment finished: set the next one (its URLs were prefetched
+  /// when the last ayah of the previous segment started).
+  Future<void> _advance() async {
+    final gen = _gen;
+    _busy = true; // backgrounding now stops instead of pausing
+    final next = _segIdx + 1;
+    try {
+      final urls = await (_nextUrls ?? _segUrls(_segs[next]));
+      if (gen != _gen) return;
+      if (state.value is! PlaybackPlaying) return await stop();
+      _segIdx = next;
+      _nextUrls = null;
+      await _engine.setUrls(urls);
+      if (gen != _gen) return;
+      await _engine.play();
+      if (gen != _gen) return;
+      final seg = _segs[next];
+      state.value = PlaybackPlaying(seg.surah, seg.ayahs.first);
+    } on AudioNetwork {
+      await _failAdvance(gen, 'Koneksi terputus. Pemutaran dihentikan.');
+    } catch (_) {
+      await _failAdvance(gen, 'Audio tidak dapat diputar.');
+    } finally {
+      if (gen == _gen) _busy = false;
+    }
+  }
+
+  Future<void> _failAdvance(int gen, String message) async {
+    if (gen != _gen) return;
+    _gen++;
+    _accepting = false;
+    state.value = const PlaybackIdle();
+    lastError.value = message;
+    await _safeStop();
   }
 
   PlayResult _giveUp(int gen, PlayResult r) {
@@ -220,14 +276,26 @@ class AudioPlayerService {
     switch (e) {
       case IndexChanged(:final index):
         final s = state.value;
-        if (s is PlaybackLoading || s is PlaybackPlaying) {
-          state.value = PlaybackPlaying(_surah, _firstAyah + index);
+        final seg = _segs[_segIdx];
+        if ((s is PlaybackLoading || s is PlaybackPlaying) &&
+            index < seg.ayahs.length) {
+          state.value = PlaybackPlaying(seg.surah, seg.ayahs[index]);
+          // Last ayah of this surah: fetch the next surah's URLs now.
+          if (index == seg.ayahs.length - 1 &&
+              _segIdx + 1 < _segs.length &&
+              _nextUrls == null) {
+            _nextUrls = _segUrls(_segs[_segIdx + 1])..ignore();
+          }
         }
       case PausedByPlatform():
         final s = state.value;
         if (s is PlaybackPlaying) state.value = PlaybackPaused(s.surah, s.ayah);
       case Completed():
-        state.value = const PlaybackIdle();
+        if (_segIdx + 1 < _segs.length && state.value is PlaybackPlaying) {
+          unawaited(_advance());
+        } else {
+          state.value = const PlaybackIdle();
+        }
       case Failed():
         unawaited(_failMidQueue());
     }
@@ -306,4 +374,13 @@ class AudioPlayerService {
     }
     await _engine.dispose();
   }
+}
+
+/// Ayat of one surah in a queue, played as one engine queue.
+class _Seg {
+  _Seg(this.surah, this.total);
+
+  final int surah;
+  final int total;
+  final ayahs = <int>[];
 }

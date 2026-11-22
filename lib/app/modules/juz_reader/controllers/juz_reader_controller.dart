@@ -12,7 +12,10 @@ import '../../../data/repositories/audio_settings_store.dart';
 import '../../../data/repositories/quran_range_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/user_repository.dart';
+import '../../../services/audio_player_service.dart';
 import '../../../services/online_service.dart';
+import '../../quran_detail/controllers/quran_detail_controller.dart'
+    show AyahAudioState;
 import '../../quran_detail/last_read_tracker.dart';
 import '../../quran_detail/reading_prefs_mixin.dart';
 import '../../quran_detail/reading_settings_host.dart';
@@ -40,17 +43,20 @@ class JuzReaderController extends GetxController
   final QuranRepository _quran = Get.find();
   final QuranRangeRepository _range = Get.find();
   final UserRepository _user = Get.find();
-  // Optional so the reading screen works without them. Audio playback
-  // is not wired here yet; only the settings sheet uses them.
+  // Optional so the reading screen works without them.
   final OnlineService? _online = Get.isRegistered<OnlineService>()
       ? Get.find<OnlineService>()
+      : null;
+  final AudioPlayerService? _player = Get.isRegistered<AudioPlayerService>()
+      ? Get.find<AudioPlayerService>()
       : null;
   final AudioSettingsStore? _audioSettings =
       Get.isRegistered<AudioSettingsStore>()
       ? Get.find<AudioSettingsStore>()
       : null;
   late final LastReadTracker _tracker;
-  StreamSubscription<bool>? _audioSub;
+  final _subs = <StreamSubscription<Object?>>[];
+  final _workers = <Worker>[];
 
   final state = Rx<UiState<List<JuzItem>>>(const UiLoading());
 
@@ -63,6 +69,16 @@ class JuzReaderController extends GetxController
   /// Last-read ayah as stored at load; null when none or outside this juz.
   final lastRead = Rxn<AyahRef>();
 
+  /// True when the device looks offline (only matters while [audioVisible]).
+  final offline = false.obs;
+
+  /// Ayah playing or paused within this juz; null means none.
+  final playingRef = Rxn<AyahRef>();
+  final _pendingRef = Rxn<AyahRef>();
+
+  /// Player state, read by the view so audio changes rebuild it.
+  PlaybackState? get playerState => _player?.state.value;
+
   @override
   final audioVisible = false.obs;
   @override
@@ -72,6 +88,10 @@ class JuzReaderController extends GetxController
   final ScrollController scrollController = ScrollController();
 
   String _basmalah = '';
+  // Playable ayat of the juz in order, their list index and surah totals.
+  var _refs = const <AyahRef>[];
+  var _indexOf = const <AyahRef, int>{};
+  var _totals = const <int, int>{};
   int _loadId = 0;
 
   @override
@@ -86,19 +106,26 @@ class JuzReaderController extends GetxController
     WidgetsBinding.instance.addObserver(this);
     listController.addListener(_onVisibleRange);
     qariId.value = _audioSettings?.qariId ?? '';
-    final online = _online;
-    if (online != null) {
-      audioVisible.value = online.audioEnabled;
-      _audioSub = online.audioEnabledChanges.listen(
-        (on) => audioVisible.value = on,
-      );
-    }
+    _initAudio();
     load();
   }
 
   @override
   void onClose() {
-    unawaited(_audioSub?.cancel());
+    final player = _player;
+    final playing = playingRef.value;
+    if (player != null &&
+        ((playing != null && _indexOf.containsKey(playing)) ||
+            (player.state.value is PlaybackLoading &&
+                _pendingRef.value != null))) {
+      unawaited(player.stop());
+    }
+    for (final w in _workers) {
+      w.dispose();
+    }
+    for (final sub in _subs) {
+      unawaited(sub.cancel());
+    }
     flushLastRead();
     WidgetsBinding.instance.removeObserver(this);
     listController.removeListener(_onVisibleRange);
@@ -165,6 +192,16 @@ class JuzReaderController extends GetxController
         }
         items.add(AyahItem(a));
       }
+      _refs = [
+        for (final i in items)
+          if (i is AyahItem) AyahRef(i.ayah.surahNumber, i.ayah.ayahNumber),
+      ];
+      _indexOf = {
+        for (var i = 0; i < items.length; i++)
+          if (items[i] case AyahItem(:final ayah))
+            AyahRef(ayah.surahNumber, ayah.ayahNumber): i,
+      };
+      _totals = {for (final s in surahs.values) s.number: s.ayahCount};
       rangeText.value = QuranListController.juzRange(juz, {
         for (final s in surahs.values) s.number: s.nameLatin,
       });
@@ -290,6 +327,125 @@ class JuzReaderController extends GetxController
     }
   }
 
+  void _initAudio() {
+    final online = _online;
+    final player = _player;
+    qariId.value = _audioSettings?.qariId ?? '';
+    if (online == null || player == null) return;
+    audioVisible.value = online.audioEnabled;
+    if (audioVisible.value) unawaited(_refreshOffline());
+    _subs
+      ..add(
+        online.audioEnabledChanges.listen((on) {
+          audioVisible.value = on;
+          if (on) unawaited(_refreshOffline());
+        }),
+      )
+      ..add(online.connectivityChanges.listen((up) => offline.value = !up));
+    _workers
+      ..add(ever(player.state, (_) => _syncPlaying(player)))
+      ..add(ever(playingRef, _followAyah))
+      ..add(
+        ever(player.lastError, (e) {
+          if (e == null) return;
+          notify(e);
+          // Consume so a repeated identical failure is shown again, once.
+          player.lastError.value = null;
+        }),
+      );
+  }
+
+  Future<void> _refreshOffline() async {
+    final online = _online;
+    if (online == null) return;
+    final reachable = await online.canReach();
+    if (!isClosed) offline.value = !reachable;
+  }
+
+  void _syncPlaying(AudioPlayerService player) {
+    final ref = switch (player.state.value) {
+      PlaybackPlaying(:final surah, :final ayah) => AyahRef(surah, ayah),
+      PlaybackPaused(:final surah, :final ayah) => AyahRef(surah, ayah),
+      _ => null,
+    };
+    playingRef.value = ref != null && _indexOf.containsKey(ref) ? ref : null;
+  }
+
+  /// Scrolls to the playing ayah once per change, unless already visible.
+  void _followAyah(AyahRef? ref) {
+    final index = ref == null ? null : _indexOf[ref];
+    if (index == null || !listController.isAttached) return;
+    final range = listController.visibleRange;
+    if (range != null && index >= range.$1 && index <= range.$2) return;
+    listController.animateToItem(
+      index: index,
+      scrollController: scrollController,
+      alignment: 0.0,
+      duration: (_) => const Duration(milliseconds: 300),
+      curve: (_) => Curves.easeInOut,
+    );
+  }
+
+  /// Audio state of [ref]; other playback (other surahs/screens) is ignored.
+  AyahAudioState audioStateOf(AyahRef ref) {
+    final player = _player;
+    if (!audioVisible.value || player == null) return AyahAudioState.hidden;
+    final s = player.state.value;
+    if (s is PlaybackPlaying && AyahRef(s.surah, s.ayah) == ref) {
+      return AyahAudioState.playing;
+    }
+    if (s is PlaybackPaused && AyahRef(s.surah, s.ayah) == ref) {
+      return AyahAudioState.paused;
+    }
+    if (s is PlaybackLoading && _pendingRef.value == ref) {
+      return AyahAudioState.loading;
+    }
+    return offline.value ? AyahAudioState.needsInternet : AyahAudioState.ready;
+  }
+
+  Future<void> toggleAyahAudio(AyahRef ref) async {
+    final player = _player;
+    if (player == null) return;
+    switch (audioStateOf(ref)) {
+      case AyahAudioState.playing:
+        await player.pause();
+      case AyahAudioState.paused:
+        await player.resume();
+      case AyahAudioState.ready:
+        await _start(
+          ref,
+          () => player.playAyah(ref.surah, ref.ayah, _totals[ref.surah] ?? 0),
+        );
+      case AyahAudioState.hidden ||
+          AyahAudioState.needsInternet ||
+          AyahAudioState.loading:
+        break;
+    }
+  }
+
+  /// Plays from the first ayah of the juz to its last.
+  Future<void> playJuz() async {
+    if (_refs.isNotEmpty) await playFromAyah(_refs.first);
+  }
+
+  /// Plays from [ref] to the last ayah of the juz.
+  Future<void> playFromAyah(AyahRef ref) async {
+    final player = _player;
+    final at = _refs.indexOf(ref);
+    if (player == null || at < 0) return;
+    if (audioStateOf(ref) == AyahAudioState.hidden || offline.value) return;
+    await _start(ref, () => player.playRange(_refs.sublist(at), _totals));
+  }
+
+  Future<void> _start(AyahRef ref, Future<PlayResult> Function() play) async {
+    _pendingRef.value = ref;
+    final result = await play();
+    _pendingRef.value = null;
+    if (isClosed) return;
+    // Not marked offline: the connectivity stream owns that flag.
+    if (result == PlayResult.needsInternet) notify('Butuh internet');
+  }
+
   @override
   void setAudioEnabled(bool on) => _online?.setAudioEnabled(on);
 
@@ -305,5 +461,6 @@ class JuzReaderController extends GetxController
       return;
     }
     qariId.value = id;
+    _player?.onQariChanged();
   }
 }
