@@ -98,7 +98,13 @@ void main() {
     await pump(t, 1);
     expect(find.text(arab), findsOneWidget);
     expect(find.text(tr), findsOneWidget);
-    expect(find.text('Shahih Bukhari'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('Shahih Bukhari'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('No. 1'), findsOneWidget);
     expect(find.text(_note), findsNothing);
   });

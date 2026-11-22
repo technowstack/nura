@@ -192,6 +192,22 @@ void main() {
     addTearDown(d.dispose);
     expect(d.select('SELECT ayah_id FROM daily_ayah').single['ayah_id'], 2);
     expect(d.select('SELECT end_ayah FROM juz').single['end_ayah'], 141);
+    File('${src.path}/meta/juz.json').writeAsStringSync(
+      '{"source":"x","fetched_at":"y","juz":[{"number":1,"start_surah":1,"start_ayah":1,"end_surah":1,"end_ayah":7}]}',
+    );
+    File('${src.path}/meta/surah_info.json').writeAsStringSync(
+      '{"source":"x","fetched_at":"y","surahs":[{"number":112,"revelation":"makkiyah"}]}',
+    );
+    buildContentDb(sourceRoot: src, output: out);
+    final o = sqlite3.open(out.path, mode: OpenMode.readOnly);
+    addTearDown(o.dispose);
+    expect(o.select('SELECT end_ayah FROM juz').single['end_ayah'], 7);
+    expect(
+      o
+          .select('SELECT revelation FROM surah WHERE number=112')
+          .single['revelation'],
+      'makkiyah',
+    );
     File(
       '${src.path}/meta/daily_ayah.json',
     ).writeAsStringSync('[{"surah":1,"ayah":99}]');

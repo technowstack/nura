@@ -18,9 +18,12 @@ import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/prayer_repository.dart';
 import 'package:nura/app/services/audio_player_service.dart';
 import 'package:nura/app/data/repositories/audio_settings_store.dart';
+import 'package:nura/app/services/hijri_date_service.dart';
 import 'package:nura/app/services/online_service.dart';
 import 'package:nura/app/data/repositories/isolate_hadith_repository.dart';
 import 'package:nura/app/data/repositories/isolate_search_repository.dart';
+import 'package:nura/app/data/repositories/isolate_quran_range_repository.dart';
+import 'package:nura/app/data/repositories/quran_range_repository.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
 import 'package:nura/app/data/repositories/search_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
@@ -32,6 +35,9 @@ import 'package:nura/app/nura_app.dart';
 import 'package:nura/app/services/daily_link_router.dart';
 import 'package:nura/app/services/daily_refresher.dart';
 import 'package:nura/app/services/home_widget_service.dart';
+import 'package:nura/app/data/repositories/prayer_store.dart';
+import 'package:nura/app/modules/home/controllers/home_controller.dart';
+import 'package:nura/app/modules/home/home_view.dart';
 
 import '../support/fake_audio.dart';
 import '../support/fixture_db.dart';
@@ -68,6 +74,9 @@ void main() {
     addTearDown(s.user.close);
     final hadith = Get.find<HadithRepository>() as IsolateHadithRepository;
     addTearDown(hadith.close);
+    final range =
+        Get.find<QuranRangeRepository>() as IsolateQuranRangeRepository;
+    addTearDown(range.close);
     final search = Get.find<SearchRepository>() as IsolateSearchRepository;
     addTearDown(search.close);
     if (swapHadithForFake) {
@@ -104,6 +113,7 @@ void main() {
     expect(Get.find<PrayerRepository>(), isA<DefaultPrayerRepository>());
     expect(Get.find<PrayerRegions>().provinces, isNotEmpty);
     expect(Get.isRegistered<OnlineService>(), isTrue);
+    expect(Get.isRegistered<HijriDateService>(), isTrue);
     expect(Get.isRegistered<PrayerClock>(), isTrue);
   });
 
@@ -122,19 +132,22 @@ void main() {
     expect(Get.find<AudioSettingsStore>(), isA<AudioSettingsStore>());
   });
 
-  test('failed bootstrap disposes the audio engine, registers nothing', () async {
-    final engine = FakeAudioEngine();
-    final r = await bootstrap(
-      installer: installer(),
-      dataDir: tmp,
-      createAudioEngine: () => engine,
-      loadRegions: () async => throw StateError('boom'),
-    );
-    expect(r, isA<BootstrapFailure>());
-    expect(engine.disposed, isTrue);
-    expect(Get.isRegistered<AudioPlayerService>(), isFalse);
-    expect(Get.isRegistered<AudioSettingsStore>(), isFalse);
-  });
+  test(
+    'failed bootstrap disposes the audio engine, registers nothing',
+    () async {
+      final engine = FakeAudioEngine();
+      final r = await bootstrap(
+        installer: installer(),
+        dataDir: tmp,
+        createAudioEngine: () => engine,
+        loadRegions: () async => throw StateError('boom'),
+      );
+      expect(r, isA<BootstrapFailure>());
+      expect(engine.disposed, isTrue);
+      expect(Get.isRegistered<AudioPlayerService>(), isFalse);
+      expect(Get.isRegistered<AudioSettingsStore>(), isFalse);
+    },
+  );
 
   test('failed region load registers nothing', () async {
     final r = await bootstrap(
@@ -218,6 +231,42 @@ void main() {
     expect(Get.isRegistered<SearchRepository>(), isFalse);
   });
 
+  test(
+    'failed bootstrap closes the range worker and registers nothing',
+    () async {
+      Directory('${tmp.path}/user.db').createSync();
+      IsolateQuranRangeRepository? range;
+      final r = await bootstrap(
+        installer: installer(),
+        dataDir: tmp,
+        startRange: (f) async =>
+            range = await IsolateQuranRangeRepository.start(f),
+      );
+      expect(r, isA<BootstrapFailure>());
+      expect(range, isNotNull);
+      await range?.exited.timeout(const Duration(seconds: 5));
+      expect(Get.isRegistered<QuranRangeRepository>(), isFalse);
+    },
+  );
+
+  test(
+    'failed range start closes earlier workers, registers nothing',
+    () async {
+      IsolateSearchRepository? search;
+      final r = await bootstrap(
+        installer: installer(),
+        dataDir: tmp,
+        startSearch: (f) async =>
+            search = await IsolateSearchRepository.start(f),
+        startRange: (_) async => throw const ContentUnavailable('boom'),
+      );
+      expect(r, isA<BootstrapFailure>());
+      await search?.exited.timeout(const Duration(seconds: 5));
+      expect(Get.isRegistered<QuranRangeRepository>(), isFalse);
+      expect(Get.isRegistered<SearchRepository>(), isFalse);
+    },
+  );
+
   test('bootstrap returns failure when installer throws', () async {
     final r = await bootstrap(
       installer: ContentDbInstaller(
@@ -262,7 +311,8 @@ void main() {
     expect(find.text('Selamat datang di Nura'), findsOneWidget);
     await tester.tap(find.text('Mulai'));
     await tester.pumpAndSettle();
-    expect(find.text('Beranda'), findsNWidgets(2)); // nav label + HomeView
+    expect(find.text('Beranda'), findsOneWidget); // nav label
+    expect(find.byType(HomeView), findsOneWidget);
     expect(find.textContaining('data_version '), findsOneWidget);
     expect(s.user.getSetting(SettingKeys.onboardingDone), 'true');
   });
@@ -275,7 +325,18 @@ void main() {
             as BootstrapSuccess;
     await tester.pumpWidget(NuraApp(result: s, onRetry: () {}));
     await tester.pumpAndSettle();
-    expect(find.text('Beranda'), findsNWidgets(2)); // nav label + HomeView
+    expect(find.text('Beranda'), findsOneWidget); // nav label
+    expect(find.byType(HomeView), findsOneWidget);
+    for (final registered in [
+      Get.isRegistered<HijriDateService>(),
+      Get.isRegistered<QuranRepository>(),
+      Get.isRegistered<UserRepository>(),
+      Get.isRegistered<PrayerStore>(),
+    ]) {
+      expect(registered, isTrue);
+    }
+    // Resolved by HomeController: the Hijri date comes from the service.
+    expect(Get.find<HomeController>().hero.value.hijriDate, isNotEmpty);
   });
 
   for (final (setting, expected) in [

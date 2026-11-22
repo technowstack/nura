@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -236,12 +237,12 @@ class _SearchFieldState extends State<_SearchField> {
       onChanged: widget.onChanged,
       decoration: InputDecoration(
         hintText: "Cari kata di Al-Qur'an dan hadis",
-        prefixIcon: const Icon(Icons.search),
+        prefixIcon: const NuraIcon(NuraIcons.search),
         suffixIcon: value.text.isEmpty
             ? null
             : IconButton(
                 tooltip: 'Hapus',
-                icon: const Icon(Icons.close),
+                icon: const NuraIcon(NuraIcons.close),
                 onPressed: _clear,
               ),
         border: const OutlineInputBorder(),

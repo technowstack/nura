@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../core/theme/tokens.dart';
@@ -11,6 +12,8 @@ import '../quran_detail/surah_args.dart';
 import 'controllers/home_controller.dart';
 import 'widgets/daily_card.dart';
 import 'widgets/daily_settings_sheet.dart';
+import 'widgets/home_hero.dart';
+import 'widgets/last_read_card.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({required this.dataVersion, super.key});
@@ -19,37 +22,64 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Scaffold(
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              NuraSpace.s16,
-              NuraSpace.s8,
-              NuraSpace.s8,
-              0,
-            ),
-            child: Row(
-              children: [
-                Expanded(child: Text('Beranda', style: text.headlineSmall)),
-                IconButton(
-                  tooltip: 'Pengaturan harian',
-                  icon: const Icon(Icons.tune),
-                  style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
-                  onPressed: () => showDailySettingsSheet(context),
+    final scheme = Theme.of(context).colorScheme;
+    // The hero is dark green in both themes, so the icons are always light.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      key: const Key('home-overlay'),
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+      ),
+      child: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Obx(
+                () => HomeHero(
+                  data: controller.hero.value,
+                  onTune: () => showDailySettingsSheet(context),
                 ),
-              ],
+              ),
             ),
-          ),
-          Expanded(child: Obx(() => _body(controller.cards.value))),
-          Padding(
-            padding: const EdgeInsets.all(NuraSpace.s8),
-            child: Text('data_version $dataVersion', style: text.bodySmall),
-          ),
-        ],
+            SliverToBoxAdapter(
+              child: Container(
+                key: const Key('home-sheet'),
+                color: scheme.surface,
+                padding: const EdgeInsets.all(NuraSpace.s16),
+                child: Column(
+                  children: [
+                    Obx(
+                      () => LastReadCard(
+                        info: controller.lastRead.value,
+                        onContinue: _continue,
+                      ),
+                    ),
+                    const SizedBox(height: NuraSpace.s16),
+                    Obx(() => _body(controller.cards.value)),
+                    Padding(
+                      padding: const EdgeInsets.all(NuraSpace.s8),
+                      child: Text(
+                        'data_version $dataVersion',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _continue() async {
+    final r = controller.lastRead.value;
+    if (r == null) return;
+    await Get.toNamed<void>(
+      Routes.surah,
+      arguments: SurahArgs(r.surah, r.ayah),
+    );
+    controller.refreshLastRead();
   }
 
   Widget _body(UiState<DailyCards> state) => switch (state) {
@@ -60,8 +90,7 @@ class HomeView extends GetView<HomeController> {
       description: '',
       onRetry: controller.refreshForToday,
     ),
-    UiData(:final value) => ListView(
-      padding: const EdgeInsets.all(NuraSpace.s16),
+    UiData(:final value) => Column(
       children: [
         if (value.ayah case final ayah?) ...[
           DailyAyahCard(

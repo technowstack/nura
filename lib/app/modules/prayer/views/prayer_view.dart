@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -81,10 +82,10 @@ class PrayerView extends GetView<PrayerController> {
         ),
         ListTile(
           minTileHeight: 56,
-          leading: const Icon(Icons.place_outlined),
+          leading: const NuraIcon(NuraIcons.locationOn),
           title: const Text('Pilih wilayah'),
           subtitle: Text(s.regionLabel),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const NuraIcon(NuraIcons.chevronRight),
           onTap: _pick,
         ),
         const Divider(),

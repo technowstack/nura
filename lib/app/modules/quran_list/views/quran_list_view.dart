@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -7,6 +8,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../routes/app_routes.dart';
 import '../../bookmarks/controllers/bookmarks_controller.dart';
 import '../../bookmarks/views/bookmarks_tab.dart';
+import '../../juz_reader/juz_args.dart';
 import '../../quran_detail/surah_args.dart';
 import '../../search/search_args.dart';
 import '../controllers/quran_list_controller.dart';
@@ -36,7 +38,7 @@ class QuranListView extends GetView<QuranListController> {
               ),
               IconButton(
                 tooltip: 'Cari',
-                icon: const Icon(Icons.search),
+                icon: const NuraIcon(NuraIcons.search),
                 onPressed: () => Get.toNamed(
                   Routes.search,
                   arguments: const SearchArgs(SearchScope.quran),
@@ -66,14 +68,16 @@ class QuranListView extends GetView<QuranListController> {
                               : marked.contains(s.number)
                               ? SurahItemState.bookmarked
                               : SurahItemState.normal,
-                          onTap: () => _open(c, SurahArgs(s.number)),
+                          onTap: () =>
+                              _open(c, SurahArgs(s.number), Routes.surah),
                         );
                       },
                     ),
                   );
                 }),
-                Obx(
-                  () => _body(
+                Obx(() {
+                  final names = c.surahNames; // read here to rebuild on change
+                  return _body(
                     c.juz.value,
                     c.load,
                     'Daftar juz belum tersedia',
@@ -81,14 +85,13 @@ class QuranListView extends GetView<QuranListController> {
                       itemCount: list.length,
                       itemBuilder: (_, i) => JuzListItem(
                         juz: list[i],
-                        onTap: () => _open(
-                          c,
-                          SurahArgs(list[i].startSurah, list[i].startAyah),
-                        ),
+                        range: QuranListController.juzRange(list[i], names),
+                        onTap: () =>
+                            _open(c, JuzArgs(list[i].number), Routes.juz),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                }),
                 BookmarksTab(onReturn: c.refreshMarkers),
               ],
             ),
@@ -98,8 +101,8 @@ class QuranListView extends GetView<QuranListController> {
     );
   }
 
-  Future<void> _open(QuranListController c, SurahArgs args) async {
-    await Get.toNamed(Routes.surah, arguments: args);
+  Future<void> _open(QuranListController c, Object args, String route) async {
+    await Get.toNamed(route, arguments: args);
     c.refreshMarkers();
     Get.find<BookmarksController>().load();
   }

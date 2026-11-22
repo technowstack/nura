@@ -1,3 +1,4 @@
+import '../../../support/ayah_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -57,8 +58,12 @@ void main() {
   });
   tearDown(Get.reset);
 
-  Future<void> pump(WidgetTester tester, {double scale = 1}) async {
-    tester.view.physicalSize = const Size(360, 640);
+  Future<void> pump(
+    WidgetTester tester, {
+    double scale = 1,
+    double height = 1200,
+  }) async {
+    tester.view.physicalSize = Size(360, height);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -83,7 +88,7 @@ void main() {
   }
 
   double arabSize(WidgetTester t) =>
-      t.widget<Text>(find.text('arab2')).style!.fontSize!;
+      t.widget<Text>(ayahFinder('arab2', 2)).style!.fontSize!;
 
   testWidgets('slider changes AyahCard font size and persists', (t) async {
     await pump(t);
@@ -149,7 +154,7 @@ void main() {
   });
 
   testWidgets('Latin 130% at 360x640 fits within 90%', (t) async {
-    await pump(t, scale: 1.3);
+    await pump(t, scale: 1.3, height: 640);
     expect(t.takeException(), isNull);
     final sheet = t.getSize(find.byType(BottomSheet));
     expect(sheet.height, lessThanOrEqualTo(576));

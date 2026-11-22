@@ -5,6 +5,8 @@ import '../modules/hadith_detail/bindings/hadith_detail_binding.dart';
 import '../modules/hadith_detail/views/hadith_detail_view.dart';
 import '../modules/hadith_list/bindings/hadith_list_binding.dart';
 import '../modules/hadith_list/views/hadith_list_view.dart';
+import '../modules/juz_reader/bindings/juz_reader_binding.dart';
+import '../modules/juz_reader/views/juz_reader_view.dart';
 import '../modules/quran_detail/bindings/quran_detail_binding.dart';
 import '../modules/quran_detail/views/quran_detail_view.dart';
 import '../modules/search/bindings/search_binding.dart';
@@ -22,6 +24,11 @@ List<GetPage<dynamic>> appPages(BootstrapSuccess ready) => [
     name: Routes.surah,
     page: QuranDetailView.new,
     binding: QuranDetailBinding(),
+  ),
+  GetPage(
+    name: Routes.juz,
+    page: JuzReaderView.new,
+    binding: JuzReaderBinding(),
   ),
   GetPage(
     name: Routes.hadithList,

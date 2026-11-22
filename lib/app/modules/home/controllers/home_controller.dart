@@ -9,6 +9,15 @@ import '../../../data/repositories/daily_content_repository.dart';
 import '../../../data/repositories/daily_settings_store.dart';
 import '../../../services/daily_notifier.dart';
 import '../../../services/daily_refresher.dart';
+import '../../../services/hijri_date_service.dart';
+import '../../../data/repositories/prayer_store.dart';
+import '../../../data/repositories/quran_repository.dart';
+import '../../../data/repositories/user_repository.dart';
+import '../../../data/models/prayer_day.dart';
+import '../../../data/models/prayer_region.dart';
+import '../../../data/repositories/prayer_repository.dart';
+import '../hero_data_builder.dart';
+import '../widgets/home_hero_data.dart';
 
 /// Today's cards; at least one of them is non-null.
 class DailyCards {
@@ -45,6 +54,181 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   /// Every daily notification failed to schedule.
   final notifyFailed = false.obs;
 
+  // Optional so the daily cards work without them.
+  final HijriDateService? _hijri = Get.isRegistered<HijriDateService>()
+      ? Get.find<HijriDateService>()
+      : null;
+  final QuranRepository? _quran = Get.isRegistered<QuranRepository>()
+      ? Get.find<QuranRepository>()
+      : null;
+  final UserRepository? _user = Get.isRegistered<UserRepository>()
+      ? Get.find<UserRepository>()
+      : null;
+  final PrayerStore? _prayerStore = Get.isRegistered<PrayerStore>()
+      ? Get.find<PrayerStore>()
+      : null;
+
+  // Same repository the Sholat screen uses; its dayFor only reaches the
+  // network under the prayer-sync switch, and this never calls syncIfNeeded.
+  final PrayerRepository? _prayer = Get.isRegistered<PrayerRepository>()
+      ? Get.find<PrayerRepository>()
+      : null;
+
+  late final hero = Rx<HomeHeroData>(_buildHero());
+  final lastRead = Rx<LastReadInfo?>(null);
+
+  PrayerDay? _today;
+  PrayerDay? _tomorrow;
+  String? _loadedFor;
+  String? _tomorrowTriedFor;
+  bool _loadingTomorrow = false;
+  Timer? _minute;
+  int _loadGen = 0; // only the newest _loadPrayer may publish
+
+  DateTime now() => _now();
+
+  PrayerRegion? get _region {
+    try {
+      return _prayer?.region ?? _prayerStore?.getLocation();
+    } on Object catch (e) {
+      debugPrint('HomeController: cannot read location: $e');
+      return null;
+    }
+  }
+
+  /// The region's wall clock (device time when no region is chosen).
+  DateTime _wall(PrayerRegion? r) {
+    final t = _now();
+    return r == null ? t : t.toUtc().add(Duration(hours: r.zone.offsetHours));
+  }
+
+  static String _keyOf(PrayerRegion r, String date) => '${r.key}|$date';
+
+  static String _dateOf(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  HomeHeroData _buildHero() {
+    final r = _region;
+    final wall = _wall(r);
+    return buildHeroData(
+      today: r == null ? null : _today,
+      tomorrow: r == null ? null : _tomorrow,
+      now: wall,
+      regionLabel: r?.kabkota,
+      hijri: _hijri?.format(_now()) ?? '',
+    );
+  }
+
+  /// Loads today's day (and tomorrow's once today is over) like the Sholat
+  /// screen does; failures leave the hero in its honest empty state.
+  Future<void> _loadPrayer() async {
+    final gen = ++_loadGen;
+    final repo = _prayer;
+    final r = _region;
+    if (repo == null || r == null) {
+      _today = _tomorrow = null;
+      _loadedFor = null;
+      _tomorrowTriedFor = null;
+      hero.value = _buildHero();
+      return;
+    }
+    final date = _dateOf(_wall(r));
+    if (_loadedFor != _keyOf(r, date)) {
+      // Other region or date: never show the old times under the new label.
+      _today = _tomorrow = null;
+      hero.value = _buildHero();
+    }
+    PrayerDay? day;
+    try {
+      final res = await repo.dayFor(date);
+      final ok =
+          res.outcome == DayOutcome.api || res.outcome == DayOutcome.calc;
+      day = ok ? res.day : null;
+    } on Object catch (e) {
+      debugPrint('HomeController: prayer times unavailable: $e');
+    }
+    if (gen != _loadGen) return; // a newer load owns the hero now
+    _today = day;
+    _tomorrow = null;
+    _tomorrowTriedFor = null;
+    _loadedFor = _keyOf(r, date);
+    _rebuild();
+  }
+
+  /// Rebuilds only the hero; fetches tomorrow when today is over.
+  void _rebuild() {
+    final h = _buildHero();
+    hero.value = h;
+    final repo = _prayer;
+    if (repo != null &&
+        _today != null &&
+        h.nextIndex == null &&
+        _tomorrow == null &&
+        _tomorrowTriedFor != _loadedFor &&
+        !_loadingTomorrow) {
+      _loadingTomorrow = true;
+      _tomorrowTriedFor = _loadedFor; // retried only on resume or day change
+      final gen = _loadGen;
+      final r = _region;
+      final next = DateTime.utc(
+        _wall(r).year,
+        _wall(r).month,
+        _wall(r).day + 1,
+      );
+      unawaited(
+        () async {
+          try {
+            final res = await repo.dayFor(_dateOf(next));
+            if (gen == _loadGen &&
+                (res.outcome == DayOutcome.api ||
+                    res.outcome == DayOutcome.calc)) {
+              _tomorrow = res.day;
+            }
+          } on Object catch (e) {
+            debugPrint('HomeController: tomorrow unavailable: $e');
+          }
+          if (gen != _loadGen) return;
+          if (_tomorrow != null) hero.value = _buildHero();
+        }().whenComplete(() => _loadingTomorrow = false),
+      );
+    }
+  }
+
+  /// Fires at the next minute boundary so the clock never lags.
+  void _armMinute() {
+    _minute?.cancel();
+    final t = _now();
+    _minute = Timer(Duration(seconds: 60 - t.second), () {
+      final r = _region;
+      if (r == null || _loadedFor != _keyOf(r, _dateOf(_wall(r)))) {
+        unawaited(_loadPrayer());
+      } else {
+        _rebuild();
+      }
+      _armMinute();
+    });
+  }
+
+  void refreshLastRead() {
+    try {
+      final ref = _user?.getLastRead()?.ref;
+      final s = ref == null ? null : _quran?.getSurah(ref.surah);
+      lastRead.value = ref == null || s == null
+          ? null
+          : LastReadInfo(
+              surah: ref.surah,
+              ayah: ref.ayah,
+              nameArab: s.nameArab,
+              nameLatin: s.nameLatin,
+            );
+    } on Object catch (e) {
+      debugPrint('HomeController: last read unavailable: $e');
+      lastRead.value = null;
+    }
+  }
+
   Timer? _midnight;
 
   @override
@@ -52,10 +236,13 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
     refreshForToday();
+    unawaited(_loadPrayer());
+    _armMinute();
   }
 
   @override
   void onClose() {
+    _minute?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _midnight?.cancel();
     super.onClose();
@@ -63,7 +250,14 @@ class HomeController extends GetxController with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) refreshForToday();
+    if (state == AppLifecycleState.resumed) {
+      refreshForToday();
+      unawaited(_loadPrayer());
+      _armMinute();
+    } else if (state == AppLifecycleState.paused) {
+      _minute?.cancel();
+      _midnight?.cancel();
+    }
   }
 
   void setHadithSource(HadithSource s) {
@@ -116,6 +310,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
 
   void refreshForToday() {
     final day = _now();
+    _rebuild();
+    refreshLastRead();
     try {
       final ayah = _repo.ayahFor(day);
       final hadith = _repo.hadithFor(day, hadithSource.value);

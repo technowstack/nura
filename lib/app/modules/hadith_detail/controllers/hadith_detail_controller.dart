@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
+import '../../../../content_pipeline/content_schema.dart';
 import '../../../core/ui_state.dart';
 import '../../../data/models/hadith.dart';
 import '../../../data/models/reading_prefs.dart';
@@ -63,6 +64,7 @@ class HadithDetailController extends GetxController {
       final h = await _hadith.getHadith(ref);
       if (gen != _gen || isClosed) return;
       final (prev, next) = await _neighbors(ref);
+      final count = await _bookCount(ref.slug);
       if (gen != _gen || isClosed) return;
       if (readPrefs) _readPrefs();
       _ref = ref;
@@ -71,7 +73,7 @@ class HadithDetailController extends GetxController {
       hasPrevious.value = prev != null;
       hasNext.value = next != null;
       bookmarked.value = _readBookmark(ref);
-      state.value = UiData(_content(h));
+      state.value = UiData(_content(h, count));
     } on Object catch (e) {
       if (gen != _gen || isClosed) return;
       debugPrint('HadithDetailController: load failed: $e');
@@ -109,7 +111,23 @@ class HadithDetailController extends GetxController {
     }
   }
 
-  HadithDetailContent _content(Hadith h) => HadithDetailContent(
+  final _counts = <String, int>{};
+
+  /// Optional hero info: a failure shows 0 rather than blocking reading.
+  Future<int> _bookCount(String slug) async {
+    final cached = _counts[slug];
+    if (cached != null) return cached;
+    try {
+      for (final b in await _hadith.listBooks()) {
+        _counts[b.slug] = b.hadithCount;
+      }
+    } on Object catch (e) {
+      debugPrint('HadithDetailController: book count unavailable: $e');
+    }
+    return _counts[slug] ?? 0;
+  }
+
+  HadithDetailContent _content(Hadith h, int count) => HadithDetailContent(
     ref: h.ref,
     title: h.bookName,
     subtitle: 'No. ${h.ref.number}',
@@ -117,6 +135,8 @@ class HadithDetailController extends GetxController {
     translation: h.translation,
     showTruncationNote: h.arabTruncated || h.translationTruncated,
     referenceLabel: 'HR. ${h.bookName} No. ${h.ref.number}',
+    hadithCount: count,
+    nameArab: hadithBookNameArab(h.ref.slug),
   );
 
   void toggleBookmark() {

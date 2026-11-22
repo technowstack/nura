@@ -54,7 +54,7 @@ class SqliteHadithRepository implements HadithRepository {
     final book = _select('SELECT 1 FROM hadith_book WHERE slug = ?', [slug]);
     if (book.isEmpty) throw ContentUnavailable('Kitab $slug tidak ditemukan');
     final rows = _select(
-      'SELECT number, substr(translation_id, 1, 200) AS preview, '
+      'SELECT number, substr(translation_id, 1, 1000) AS preview, '
       'translation_length FROM hadith '
       'WHERE book_slug = ? AND number > ? ORDER BY number LIMIT ?',
       [slug, afterNumber, limit + 1],

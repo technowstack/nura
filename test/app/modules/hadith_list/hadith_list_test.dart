@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/icon_finders.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
+import 'package:nura/app/core/widgets/ornament_badge.dart';
+import 'package:nura/app/modules/hadith_list/widgets/hadith_list_tile.dart';
 import 'package:nura/app/core/ui_state.dart';
 import 'package:nura/app/core/widgets/empty_state.dart';
 import 'package:nura/app/core/widgets/error_state.dart';
@@ -109,16 +112,33 @@ void main() {
 
   testWidgets('first page 30 items, title is book name', (tester) async {
     await pump(tester);
-    expect(find.text('Shahih Bukhari'), findsOneWidget);
-    expect(find.text('No. 1'), findsOneWidget);
+    expect(find.text('Shahih Bukhari'), findsWidgets);
+    expect(find.widgetWithText(OrnamentBadge, '1'), findsOneWidget);
     expect(count(), 30);
+  });
+
+  testWidgets('card shows badge, book name, matan preview', (tester) async {
+    repo.summaries = {
+      _slug: [
+        HadithSummary(
+          ref: const HadithRef(_slug, 7),
+          preview:
+              'Telah menceritakan kami [A] bahwa Nabi bersabda: "Isi matan"',
+          length: 60,
+        ),
+      ],
+    };
+    await pump(tester);
+    expect(find.widgetWithText(OrnamentBadge, '7'), findsOneWidget);
+    expect(find.text('Isi matan"'), findsOneWidget);
+    expect(find.textContaining('Telah menceritakan'), findsNothing);
   });
 
   testWidgets('scrolling to the end loads page 2 without duplicates', (
     tester,
   ) async {
     await pump(tester);
-    await tester.drag(find.byType(ListView), const Offset(0, -1500));
+    await tester.drag(find.byType(ListView), const Offset(0, -3500));
     await tester.pumpAndSettle();
     expect(repo.listPageCalls, 2);
     expect(count(), 60);
@@ -164,7 +184,7 @@ void main() {
   ) async {
     repo.failPageCalls = {2};
     await pump(tester);
-    await tester.drag(find.byType(ListView), const Offset(0, -1500));
+    await tester.drag(find.byType(ListView), const Offset(0, -3500));
     await tester.pumpAndSettle();
     expect(count(), 30);
     expect(ctl().loadMoreFailed.value, isTrue);
@@ -240,7 +260,7 @@ void main() {
       await tester.tap(find.text('Coba lagi'));
       await tester.pumpAndSettle();
       expect(find.byType(ErrorState), findsNothing);
-      expect(find.text('No. 1'), findsOneWidget);
+      expect(find.widgetWithText(OrnamentBadge, '1'), findsOneWidget);
     });
   }
 
@@ -258,8 +278,8 @@ void main() {
       ],
     };
     await pump(tester);
-    expect(find.text('No. 50'), findsOneWidget);
-    expect(find.text('No. 3'), findsNothing);
+    expect(find.widgetWithText(OrnamentBadge, '50'), findsOneWidget);
+    expect(find.widgetWithText(OrnamentBadge, '3'), findsNothing);
     expect(find.text('  spasi 50  '), findsOneWidget);
   });
 
@@ -270,7 +290,8 @@ void main() {
     user.toggleHadithBookmark(const HadithRef(_slug, 2));
     await pump(tester);
     expect(find.bySemanticsLabel(RegExp('Ditandai')), findsOneWidget);
-    await tester.tap(find.text('No. 1'));
+    expect(bookmarkIcon(filled: true), findsOneWidget);
+    await tester.tap(find.widgetWithText(OrnamentBadge, '1'));
     await tester.pumpAndSettle();
     user.toggleHadithBookmark(const HadithRef(_slug, 3));
     Get.back();
@@ -285,7 +306,7 @@ void main() {
     Get.put<BookmarksController>(bookmarks);
     await pump(tester);
     final before = bookmarks.loads;
-    await tester.tap(find.text('No. 1'));
+    await tester.tap(find.widgetWithText(OrnamentBadge, '1'));
     await tester.pumpAndSettle();
     user.toggleHadithBookmark(const HadithRef(_slug, 3));
     Get.back();
@@ -299,7 +320,7 @@ void main() {
     final sem = tester.ensureSemantics();
     user.failure = StateError('db');
     await pump(tester);
-    expect(find.text('No. 1'), findsOneWidget);
+    expect(find.widgetWithText(OrnamentBadge, '1'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('Ditandai')), findsNothing);
     sem.dispose();
   });
@@ -314,7 +335,7 @@ void main() {
 
   testWidgets('tapping an item opens detail with its args', (tester) async {
     await pump(tester);
-    await tester.tap(find.text('No. 2'));
+    await tester.tap(find.widgetWithText(OrnamentBadge, '2'));
     await tester.pumpAndSettle();
     expect(detailArgs, isA<HadithDetailArgs>());
     final a = detailArgs as HadithDetailArgs;
@@ -326,6 +347,26 @@ void main() {
     repo.summaries = {_slug: _rows(65, preview: (i) => 'kata panjang ' * 40)};
     await pump(tester, scale: 1.3);
     await toEnd(tester);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('list card tile is at least 48 dp tall', (tester) async {
+    repo.summaries = {_slug: _rows(3, preview: (i) => 'x')};
+    await pump(tester);
+    final tiles = find.byType(HadithListTile);
+    expect(tiles, findsWidgets);
+    for (final e in tiles.evaluate()) {
+      expect(
+        tester.getSize(find.byElementPredicate((x) => x == e)).height,
+        greaterThanOrEqualTo(48),
+      );
+    }
+  });
+
+  testWidgets('list card tile at 130% does not overflow', (tester) async {
+    repo.summaries = {_slug: _rows(3, preview: (i) => 'kata panjang ' * 40)};
+    await pump(tester, scale: 1.3);
+    expect(find.byType(HadithListTile), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 }

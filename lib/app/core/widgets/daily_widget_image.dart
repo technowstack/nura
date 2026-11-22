@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -6,6 +7,7 @@ import 'package:flutter/rendering.dart';
 
 import '../../data/models/daily_content.dart';
 import '../theme/app_theme.dart';
+import '../theme/nura_colors.dart';
 import '../theme/tokens.dart';
 
 /// Static widget drawn into the home screen widget PNG (no buttons). Provides
@@ -31,7 +33,6 @@ class DailyWidgetImage extends StatelessWidget {
         ? AppTheme.dark
         : AppTheme.light;
     final scheme = theme.colorScheme;
-    final isAyah = content.kind == DailyKind.ayah;
     return MediaQuery(
       data: MediaQueryData(size: size),
       child: Theme(
@@ -40,23 +41,24 @@ class DailyWidgetImage extends StatelessWidget {
           size: size,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: isAyah
-                  ? scheme.primaryContainer
-                  : scheme.surfaceContainerLow,
+              color: scheme.surfaceContainerLowest,
+              border: Border.all(color: scheme.outlineVariant),
               borderRadius: BorderRadius.circular(NuraRadius.xl),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(NuraRadius.xl),
               child: Stack(
                 children: [
-                  if (isAyah)
+                  if (content.kind == DailyKind.ayah)
                     Positioned(
                       right: -NuraSpace.s24,
                       top: -NuraSpace.s24,
-                      child: Icon(
-                        Icons.brightness_low,
+                      child: NuraIcon(
+                        NuraIcons.brightnessLow,
                         size: 120,
-                        color: context.nuraColors.ornament,
+                        color:
+                            (theme.extension<NuraColors>() ?? NuraColors.light)
+                                .ornament,
                       ),
                     ),
                   Padding(
@@ -80,19 +82,40 @@ class DailyWidgetImage extends StatelessWidget {
       builder: (context) {
         final arab = context.nuraText.arabicCard;
         final tr = context.nuraText.translation;
+        final accent = context.nuraColors.iconAccent;
+        final surahName = content.surahNameArab;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              content.kind == DailyKind.ayah
-                  ? 'Ayat hari ini'
-                  : 'Hadis hari ini',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: scheme.primary,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Text(
+                    content.kind == DailyKind.ayah
+                        ? 'Ayat hari ini'
+                        : 'Hadis hari ini',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelLarge?.copyWith(color: accent),
+                  ),
+                ),
+                if (surahName != null)
+                  Flexible(
+                    child: Text(
+                      surahName,
+                      textDirection: TextDirection.rtl,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.nuraText.arabicTitle.copyWith(
+                        color: accent,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: NuraSpace.s4),
-            // Device fonts (Arabic fallback) can have taller line metrics than
+            // Arabic glyphs can have taller line metrics than
             // the token line height: the strut pins the line height, and the
             // flex shares shrink the two texts instead of overflowing.
             Flexible(
@@ -132,9 +155,7 @@ class DailyWidgetImage extends StatelessWidget {
               content.reference,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: scheme.primary,
-              ),
+              style: theme.textTheme.labelLarge?.copyWith(color: accent),
             ),
           ],
         );

@@ -70,7 +70,7 @@ void main() {
       "INSERT INTO meta VALUES ('data_version','t'),('schema_version','1')",
     );
     db.execute(
-      "INSERT INTO surah VALUES (94,'x','Asy-Syarh','x',8,'Makkiyah')",
+      "INSERT INTO surah VALUES (94,' ٱلشَّرْحِ ','Asy-Syarh','x',8,'Makkiyah')",
     );
     db.execute("INSERT INTO ayah VALUES (1,94,6,'arab6','tr6','')");
     db.execute("INSERT INTO ayah VALUES (2,94,7,'arab7','tr7','')");
@@ -91,6 +91,7 @@ void main() {
       expect(c.reference, 'HR. Shahih Bukhari No. 34');
       expect(c.deepLink, 'nura://hadith/bukhari/34');
       expect(c.hadithRef, const HadithRef('bukhari', 34));
+      expect(c.surahNameArab, isNull);
     });
 
     test('wraps for index beyond count and negative index', () {
@@ -167,6 +168,7 @@ void main() {
       expect(c.reference, 'QS. Asy-Syarh: 6');
       expect(c.deepLink, 'nura://ayah/94/6');
       expect(c.ayahRef, const AyahRef(94, 6));
+      expect(c.surahNameArab, ' ٱلشَّرْحِ '); // exact, untrimmed
       expect(r.ayahFor(DateTime(2026, 1, 2))!.reference, 'QS. Asy-Syarh: 7');
       expect(r.ayahFor(DateTime(2026, 1, 3))!.reference, 'QS. Asy-Syarh: 6');
       expect(r.ayahFor(DateTime(2025, 12, 31))!.reference, 'QS. Asy-Syarh: 7');

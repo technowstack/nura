@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:nura/app/core/theme/arabic_font.dart';
 
-/// Font families from design tokens (`type/font/*`). The Arabic family is not
-/// bundled yet and falls back to the system font.
+/// Latin font family from design tokens (`type/font/latin`). The Arabic family
+/// is in arabic_font.dart.
 const String nuraLatinFont = 'Plus Jakarta Sans';
-const String nuraArabicFont = 'LPMQ Isep Misbah';
 
 /// Builds a style from token size and line height (Flutter height = ratio).
 TextStyle nuraTextStyle({
@@ -26,6 +26,7 @@ class NuraTextStyles extends ThemeExtension<NuraTextStyles> {
     required this.arabicCard,
     required this.arabicTitle,
     required this.arabicReading36,
+    required this.arabicHero,
     required this.translation,
   });
 
@@ -46,6 +47,7 @@ class NuraTextStyles extends ThemeExtension<NuraTextStyles> {
       size: 36,
       lineHeight: 72,
     ),
+    arabicHero: nuraTextStyle(family: nuraArabicFont, size: 40, lineHeight: 56),
     translation: nuraTextStyle(family: nuraLatinFont, size: 15, lineHeight: 24),
   );
 
@@ -53,6 +55,7 @@ class NuraTextStyles extends ThemeExtension<NuraTextStyles> {
   final TextStyle arabicCard;
   final TextStyle arabicTitle;
   final TextStyle arabicReading36;
+  final TextStyle arabicHero;
   final TextStyle translation;
 
   @override
@@ -61,12 +64,14 @@ class NuraTextStyles extends ThemeExtension<NuraTextStyles> {
     TextStyle? arabicCard,
     TextStyle? arabicTitle,
     TextStyle? arabicReading36,
+    TextStyle? arabicHero,
     TextStyle? translation,
   }) => NuraTextStyles(
     arabicReading: arabicReading ?? this.arabicReading,
     arabicCard: arabicCard ?? this.arabicCard,
     arabicTitle: arabicTitle ?? this.arabicTitle,
     arabicReading36: arabicReading36 ?? this.arabicReading36,
+    arabicHero: arabicHero ?? this.arabicHero,
     translation: translation ?? this.translation,
   );
 
@@ -83,6 +88,7 @@ class NuraTextStyles extends ThemeExtension<NuraTextStyles> {
       arabicReading36:
           TextStyle.lerp(arabicReading36, other.arabicReading36, t) ??
           arabicReading36,
+      arabicHero: TextStyle.lerp(arabicHero, other.arabicHero, t) ?? arabicHero,
       translation:
           TextStyle.lerp(translation, other.translation, t) ?? translation,
     );

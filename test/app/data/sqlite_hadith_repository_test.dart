@@ -98,16 +98,19 @@ void main() {
     );
   });
 
-  test('preview is first 200 code points, untrimmed; length is full', () async {
-    final tr = '${' ' * 3}${'x' * 197}\u{1F600}tail  ';
-    open({
-      'a': [row(1, 'a', tr)],
-    });
-    final s = (await repo.listPage('a')).items.single;
-    expect(s.preview, String.fromCharCodes(tr.runes.take(200)));
-    expect(s.preview.runes.length, 200);
-    expect(s.length, tr.length);
-  });
+  test(
+    'preview is first 1000 code points, untrimmed; length is full',
+    () async {
+      final tr = '${' ' * 3}${'x' * 997}\u{1F600}tail  ';
+      open({
+        'a': [row(1, 'a', tr)],
+      });
+      final s = (await repo.listPage('a')).items.single;
+      expect(s.preview, String.fromCharCodes(tr.runes.take(1000)));
+      expect(s.preview.runes.length, 1000);
+      expect(s.length, tr.length);
+    },
+  );
 
   test('getHadith returns exact text and book name', () async {
     final tr = 'x' * 16384;

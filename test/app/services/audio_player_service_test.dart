@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' show AppLifecycleState;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/models/qari.dart';
 import 'package:nura/app/data/repositories/audio_settings_store.dart';
 import 'package:nura/app/data/sources/audio_api_client.dart';
@@ -50,7 +51,7 @@ void main() {
   var probeCalls = 0;
   Completer<void>? probeGate;
   late StreamController<bool> conn;
-  const totals = {94: 8, 1: 7};
+  const totals = {94: 8, 1: 7, 2: 4};
 
   setUp(() {
     tmp = Directory.systemTemp.createTempSync('nura_audio_');
@@ -277,22 +278,63 @@ void main() {
     expect(engine.queues.last, [_u('01', 94, 1)]);
   });
 
-  test('no files are written during play, queue and failure', () async {
-    List<String> list(Directory d) =>
-        d.listSync(recursive: true).map((e) => e.path).toList()..sort();
-    // Other tests share the system temp dir in parallel: only look for audio.
-    List<String> audioFiles() => list(Directory.systemTemp)
-        .where((p) => RegExp(r'\.(mp3|m4a|aac|ogg|wav|part)$').hasMatch(p))
-        .toList();
-    final before = [list(tmp), audioFiles()];
-    await svc.playFrom(94, 1, 8);
-    engine.emit(const IndexChanged(2));
-    engine.emit(const Failed('x'));
-    await tick();
-    await svc.playAyah(94, 2, 8);
-    await svc.stop();
-    expect([list(tmp), audioFiles()], before);
-  });
+  // Other test processes write into the shared system temp dir in parallel,
+  // so the scan runs on a private dir that Directory.systemTemp is redirected
+  // to for the duration of [body].
+  Future<void> isolated(Future<void> Function(Directory priv) body) async {
+    final priv = Directory.systemTemp.createTempSync('nura_iso_');
+    try {
+      await IOOverrides.runZoned(
+        () => body(priv),
+        getSystemTempDirectory: () => priv,
+      );
+    } finally {
+      priv.deleteSync(recursive: true);
+    }
+  }
+
+  List<String> files(Directory d) =>
+      d.listSync(recursive: true).map((e) => e.path).toList()..sort();
+
+  test(
+    'no files are written during play, queue and failure',
+    () => isolated((priv) async {
+      // Guards against future temp writes by the audio layer (the service has
+      // no temp-dir access today). Fresh service and fakes are built inside
+      // the zone so any temp lookup they make hits the private dir.
+      final eng = FakeAudioEngine();
+      final lc = StreamController<AppLifecycleState>.broadcast(sync: true);
+      addTearDown(lc.close);
+      final s = AudioPlayerService(
+        online,
+        AudioApiClient(
+          (uri, {jsonBody}) async =>
+              (status: 200, body: _body(int.parse(uri.pathSegments.last), 8)),
+        ),
+        settings,
+        eng,
+        lifecycle: lc.stream,
+        connectivity: conn.stream,
+      );
+      final before = [files(tmp), files(priv)];
+      await s.playFrom(94, 1, 8);
+      eng.emit(const IndexChanged(2));
+      eng.emit(const Failed('x'));
+      await tick();
+      await s.playAyah(94, 2, 8);
+      await s.stop();
+      expect([files(tmp), files(priv)], before);
+    }),
+  );
+
+  test(
+    'negative control: a write to the isolated temp dir is detected',
+    () => isolated((priv) async {
+      final before = files(priv);
+      File('${Directory.systemTemp.path}/leak.mp3').writeAsStringSync('x');
+      expect(files(priv), isNot(before));
+    }),
+  );
 
   test('dispose cancels subscriptions', () async {
     await svc.playFrom(94, 1, 8);
@@ -441,6 +483,200 @@ void main() {
           expect(t.contains(bad), isFalse, reason: '${f.path} has $bad');
         }
       }
+    });
+  });
+
+  group('playRange across surahs', () {
+    const refs = [AyahRef(1, 6), AyahRef(1, 7), AyahRef(2, 1), AyahRef(2, 2)];
+    Future<void> flush() async {
+      for (var i = 0; i < 5; i++) {
+        await tick();
+      }
+    }
+
+    test('one request per surah, fetched only when needed', () async {
+      expect(await svc.playRange(refs, totals), PlayResult.ok);
+      expect(requests.map((u) => u.pathSegments.last), ['1']);
+      expect(engine.queues.single, [_u('05', 1, 6), _u('05', 1, 7)]);
+      expect(svc.state.value, const PlaybackPlaying(1, 6));
+      // Surah 2 is requested when the last ayah of surah 1 starts.
+      engine.emit(const IndexChanged(1));
+      await flush();
+      expect(svc.state.value, const PlaybackPlaying(1, 7));
+      expect(requests.map((u) => u.pathSegments.last), ['1', '2']);
+      expect(engine.queues, hasLength(1));
+      engine.emit(const Completed());
+      await flush();
+      expect(engine.queues.last, [_u('05', 2, 1), _u('05', 2, 2)]);
+      expect(engine.calls.last, 'play');
+      expect(svc.state.value, const PlaybackPlaying(2, 1));
+      engine.emit(const IndexChanged(1));
+      expect(svc.state.value, const PlaybackPlaying(2, 2));
+      engine.emit(const Completed());
+      await flush();
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(requests, hasLength(2));
+      expect(engine.queues, hasLength(2));
+      // Cache: replaying the same range makes no new request.
+      await svc.playRange(refs, totals);
+      expect(requests, hasLength(2));
+    });
+
+    test('later surah failing stops with the existing error', () async {
+      await svc.playRange(refs, totals);
+      status = 404;
+      engine.emit(const IndexChanged(1));
+      await flush();
+      expect(svc.state.value, const PlaybackPlaying(1, 7)); // unaffected
+      engine.emit(const Completed());
+      await flush();
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(svc.lastError.value, 'Audio tidak dapat diputar.');
+      expect(engine.queues, hasLength(1));
+      expect(requests, hasLength(3)); // one retry
+    });
+
+    test(
+      'backgrounding while the next surah loads stops, no restart',
+      () async {
+        await svc.playRange(refs, totals);
+        httpGate = Completer<void>();
+        engine.emit(const IndexChanged(1));
+        engine.emit(const Completed());
+        await flush();
+        life.add(AppLifecycleState.paused);
+        await flush();
+        httpGate?.complete();
+        await flush();
+        expect(svc.state.value, isA<PlaybackIdle>());
+        expect(engine.queues, hasLength(1));
+      },
+    );
+
+    test('switch off mid-queue stops; no further requests', () async {
+      await svc.playRange(refs, totals);
+      online.setAudioEnabled(false);
+      await flush();
+      expect(svc.state.value, isA<PlaybackIdle>());
+      engine.emit(const Completed());
+      await flush();
+      expect(requests, hasLength(1));
+      expect(engine.queues, hasLength(1));
+    });
+
+    Future<void> toBoundary() async {
+      await svc.playRange(refs, totals);
+      engine.emit(const IndexChanged(1));
+      await flush();
+    }
+
+    test('after a later-surah failure nothing leaks into idle state', () async {
+      await svc.playRange(refs, totals);
+      status = 404;
+      engine.emit(const IndexChanged(1));
+      await flush();
+      engine.emit(const Completed());
+      await flush();
+      expect(svc.lastError.value, 'Audio tidak dapat diputar.');
+      svc.lastError.value = null;
+      final calls = engine.calls.length;
+      conn.add(false);
+      life.add(AppLifecycleState.paused);
+      await flush();
+      expect(svc.lastError.value, isNull);
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(engine.calls.length, calls);
+    });
+
+    test('failed prefetch is retried once; success continues', () async {
+      await svc.playRange(refs, totals);
+      status = 500;
+      engine.emit(const IndexChanged(1));
+      await flush();
+      status = 200;
+      engine.emit(const Completed());
+      await flush();
+      expect(requests.map((u) => u.pathSegments.last), ['1', '2', '2']);
+      expect(engine.queues.last, [_u('05', 2, 1), _u('05', 2, 2)]);
+      expect(svc.state.value, const PlaybackPlaying(2, 1));
+    });
+
+    test('failed prefetch and failed retry stop with the error', () async {
+      await svc.playRange(refs, totals);
+      status = 404;
+      engine.emit(const IndexChanged(1));
+      await flush();
+      engine.emit(const Completed());
+      await flush();
+      expect(requests.map((u) => u.pathSegments.last), ['1', '2', '2']);
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(svc.lastError.value, 'Audio tidak dapat diputar.');
+      expect(engine.queues, hasLength(1));
+    });
+
+    for (final (name, act) in <(String, void Function())>[
+      ('switch off', () => online.setAudioEnabled(false)),
+      ('connectivity lost', () => conn.add(false)),
+      ('backgrounded', () => life.add(AppLifecycleState.paused)),
+    ]) {
+      test('prefetch in flight, $name: nothing starts afterwards', () async {
+        await svc.playRange(refs, totals);
+        httpGate = Completer<void>();
+        engine.emit(const IndexChanged(1));
+        engine.emit(const Completed());
+        await flush();
+        act();
+        await flush();
+        httpGate?.complete();
+        await flush();
+        expect(svc.state.value, isA<PlaybackIdle>());
+        expect(engine.queues, hasLength(1));
+        expect(requests, hasLength(2));
+        final e = svc.lastError.value;
+        expect(e == null || e.startsWith('Koneksi'), isTrue);
+      });
+    }
+
+    test('pause and resume across a segment boundary', () async {
+      await toBoundary();
+      engine.emit(const Completed());
+      await flush();
+      expect(svc.state.value, const PlaybackPlaying(2, 1));
+      await svc.pause();
+      expect(svc.state.value, const PlaybackPaused(2, 1));
+      await svc.resume();
+      expect(svc.state.value, const PlaybackPlaying(2, 1));
+      engine.emit(const IndexChanged(1));
+      expect(svc.state.value, const PlaybackPlaying(2, 2));
+    });
+
+    test('double playRange: the older call is superseded', () async {
+      httpGate = Completer<void>();
+      final a = svc.playRange(refs, totals);
+      final b = svc.playRange(refs.sublist(1), totals);
+      await flush();
+      httpGate?.complete();
+      expect(await a, PlayResult.ok);
+      expect(await b, PlayResult.ok);
+      expect(engine.queues, hasLength(1));
+      expect(engine.queues.single.first, _u('05', 1, 7));
+      expect(requests, hasLength(1));
+    });
+
+    test('playFrom beyond the last ayah fails like before', () async {
+      expect(await svc.playFrom(94, 9, 8), PlayResult.failed);
+      expect(svc.state.value, isA<PlaybackIdle>());
+      expect(svc.lastError.value, 'Audio tidak dapat diputar.');
+      expect(engine.queues, isEmpty);
+    });
+
+    test('switch off or offline: no requests', () async {
+      reachable = false;
+      expect(await svc.playRange(refs, totals), PlayResult.needsInternet);
+      online.setAudioEnabled(false);
+      expect(await svc.playRange(refs, totals), PlayResult.switchedOff);
+      expect(requests, isEmpty);
+      expect(engine.calls, isEmpty);
     });
   });
 }

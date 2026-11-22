@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import '../../../support/ayah_text.dart';
+import 'package:nura/app/core/theme/arabic_font.dart';
 import 'package:nura/app/core/search_snippet.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
 import 'package:nura/app/core/theme/nura_colors.dart';
-import 'package:nura/app/core/theme/nura_text_styles.dart';
 import 'package:nura/app/core/widgets/error_state.dart';
 import 'package:nura/app/data/models/hadith.dart';
 import 'package:nura/app/data/models/search_hit.dart';
@@ -204,8 +205,11 @@ void main() {
       double scale = 1,
       ThemeData? theme,
       SearchScope scope = SearchScope.quran,
+      // Cards are taller than the old tiles; tall by default so the lazy list
+      // builds every row the finders look for.
+      double height = 2400,
     }) async {
-      tester.view.physicalSize = const Size(360, 640);
+      tester.view.physicalSize = Size(360, height);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
@@ -487,7 +491,8 @@ void main() {
       final text = tester.widget<Text>(richOf('Ayat 1'));
       expect(text.textDirection, TextDirection.rtl);
       expect(text.textSpan?.style?.fontFamily, nuraArabicFont);
-      expect(text.textSpan?.toPlainText(), _basmalah);
+      // Whole ayah shown: end marker appended (display only).
+      expect(text.textSpan?.toPlainText(), ayahSearchPlain(_basmalah, 1));
     });
 
     testWidgets('Latin results stay LTR', (tester) async {
@@ -500,7 +505,7 @@ void main() {
     testWidgets('Latin 130% at 360x640 with results does not overflow', (
       tester,
     ) async {
-      await pump(tester, scale: 1.3, scope: SearchScope.hadith);
+      await pump(tester, scale: 1.3, scope: SearchScope.hadith, height: 640);
       expect(tester.takeException(), isNull);
       await tester.tap(find.widgetWithText(ChoiceChip, "Al-Qur'an"));
       await type(tester, 'sabar');

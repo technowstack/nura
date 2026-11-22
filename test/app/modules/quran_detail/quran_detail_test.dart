@@ -1,6 +1,8 @@
+import '../../../support/ayah_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/icon_finders.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/widgets/error_state.dart';
@@ -70,8 +72,9 @@ void main() {
     WidgetTester tester,
     int surah, {
     double scale = 1,
+    double height = 640,
   }) async {
-    tester.view.physicalSize = const Size(360, 640);
+    tester.view.physicalSize = Size(360, height);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     Get.put(
@@ -144,9 +147,10 @@ void main() {
   });
 
   testWidgets('ayat follow repository order', (tester) async {
-    await pumpPage(tester, 2);
+    await pumpPage(tester, 2, height: 1200); // action bar row made cards taller
     final ys = [
-      for (final n in [1, 2, 3]) tester.getTopLeft(find.text('arab2:$n')).dy,
+      for (final n in [1, 2, 3])
+        tester.getTopLeft(ayahFinder('arab2:$n', n)).dy,
     ];
     expect(ys, [...ys]..sort());
   });
@@ -178,38 +182,38 @@ void main() {
       ),
     );
     await t.pumpWidget(card(prefs));
-    expect(find.text(arab), findsOneWidget);
+    expect(ayahFinder(arab, 5), findsOneWidget);
     expect(find.text(tr), findsOneWidget);
     await t.pumpWidget(
       card(const ReadingPrefs(arabicFontSize: 28, showTranslation: false)),
     );
-    expect(find.text(arab), findsOneWidget);
+    expect(ayahFinder(arab, 5), findsOneWidget);
     expect(find.text(tr), findsNothing);
   });
 
   testWidgets('bookmark tap toggles and icon/semantics change', (tester) async {
     final handle = tester.ensureSemantics();
-    await pumpPage(tester, 2);
+    await pumpPage(tester, 2, height: 800);
     expect(find.bySemanticsLabel('Tambah bookmark'), findsWidgets);
     await tester.tap(find.bySemanticsLabel('Tambah bookmark').first);
     await tester.pumpAndSettle();
     expect(user.ayahBookmarks[2], {1});
     expect(find.bySemanticsLabel('Hapus bookmark'), findsOneWidget);
-    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+    expect(bookmarkIcon(filled: true), findsOneWidget);
     await tester.pump(Duration.zero);
     handle.dispose();
   });
 
   testWidgets('bookmark twice returns to unbookmarked', (tester) async {
     final handle = tester.ensureSemantics();
-    await pumpPage(tester, 2);
+    await pumpPage(tester, 2, height: 800);
     await tester.tap(find.bySemanticsLabel('Tambah bookmark').first);
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Hapus bookmark'));
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Hapus bookmark'), findsNothing);
-    expect(find.byIcon(Icons.bookmark), findsNothing);
-    expect(find.byIcon(Icons.bookmark_border), findsWidgets);
+    expect(bookmarkIcon(filled: true), findsNothing);
+    expect(bookmarkIcon(filled: false), findsWidgets);
     expect(user.ayahBookmarks[2], isEmpty);
     handle.dispose();
   });
@@ -265,7 +269,7 @@ void main() {
     await tester.tap(find.text('Coba lagi'));
     await tester.pumpAndSettle();
     expect(find.byType(ErrorState), findsNothing);
-    expect(find.text('arab2:1'), findsOneWidget);
+    expect(ayahFinder('arab2:1', 1), findsOneWidget);
   });
 }
 
@@ -306,7 +310,7 @@ void _robustnessTests() {
     await tester.pumpWidget(const GetMaterialApp(home: QuranDetailView()));
     await tester.pumpAndSettle();
     u.failure = StateError('db');
-    await tester.tap(find.byIcon(Icons.bookmark_border).first);
+    await tester.tap(bookmarkIcon(filled: false).first);
     await tester.pump();
     expect(Get.find<QuranDetailController>().bookmarked, isEmpty);
     expect(find.text('Gagal menyimpan bookmark'), findsOneWidget);
@@ -370,7 +374,7 @@ void _robustnessTests() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('arab1:1'), findsNothing);
+    expect(ayahFinder('arab1:1', 1), findsNothing);
     expect(find.byType(SurahHeaderCard), findsNothing);
     expect(find.byType(AyahCard), findsNothing);
   });

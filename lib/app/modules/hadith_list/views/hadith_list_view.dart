@@ -43,6 +43,7 @@ class HadithListView extends GetView<HadithListController> {
         ),
         UiData(:final value) => ListView.builder(
           controller: controller.scroll,
+          padding: const EdgeInsets.only(top: NuraSpace.s8),
           itemCount: value.length + footer,
           itemBuilder: (_, i) {
             if (i < value.length) {

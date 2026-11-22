@@ -3,23 +3,41 @@ import 'package:flutter/material.dart';
 import '../../../core/search_snippet.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/widgets/ayah_end_marker.dart';
+import '../../../core/widgets/nura_card.dart';
+import '../../../data/models/search_hit.dart';
 import '../controllers/search_results_controller.dart';
 
 /// [s] as one span: "…" where the source was cut, highlights on
 /// [highlight] background (spec 5.5).
-InlineSpan snippetSpan(Snippet s, TextStyle base, Color highlight) {
+InlineSpan snippetSpan(
+  Snippet s,
+  TextStyle base,
+  Color highlight, {
+  List<InlineSpan>? suffix,
+}) {
   final mark = TextStyle(backgroundColor: highlight);
   final children = <InlineSpan>[if (s.cutStart) const TextSpan(text: '…')];
+  // The marker follows the text directly, so trailing ASCII spaces go.
+  var end = s.text.length;
+  if (suffix != null) {
+    while (end > 0 && s.text.codeUnitAt(end - 1) == 0x20) {
+      end--;
+    }
+  }
   var at = 0;
   for (final h in s.highlights) {
-    if (h.start > at) {
-      children.add(TextSpan(text: s.text.substring(at, h.start)));
+    final hs = h.start.clamp(0, end);
+    final he = h.end.clamp(0, end);
+    if (hs > at) children.add(TextSpan(text: s.text.substring(at, hs)));
+    if (he > hs) {
+      children.add(TextSpan(text: s.text.substring(hs, he), style: mark));
     }
-    children.add(TextSpan(text: s.text.substring(h.start, h.end), style: mark));
-    at = h.end;
+    at = he > at ? he : at;
   }
-  if (at < s.text.length) children.add(TextSpan(text: s.text.substring(at)));
+  if (at < end) children.add(TextSpan(text: s.text.substring(at, end)));
   if (s.cutEnd) children.add(const TextSpan(text: '…'));
+  if (suffix != null) children.addAll(suffix);
   return TextSpan(style: base, children: children);
 }
 
@@ -52,16 +70,43 @@ class SearchResultTile extends StatelessWidget {
         : context.nuraText.translation.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           );
-    return ListTile(
-      onTap: onTap,
-      minTileHeight: 56,
-      contentPadding: const EdgeInsets.symmetric(horizontal: NuraSpace.s16),
-      title: Text(item.label, style: Theme.of(context).textTheme.labelLarge),
-      subtitle: Text.rich(
-        snippetSpan(snippet, base, context.nuraColors.searchHighlight),
-        maxLines: 3,
-        overflow: TextOverflow.ellipsis,
-        textDirection: arabic ? TextDirection.rtl : TextDirection.ltr,
+    final hit = item.hit;
+    // The end marker is display-only and only for a whole ayah; a cut
+    // snippet or the snippet data itself is never altered.
+    final marker =
+        arabic && hit is AyahSearchHit && !snippet.cutStart && !snippet.cutEnd
+        ? ayahTextSpans('', hit.ayahNumber, style: base)
+        : null;
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: NuraSpace.s16,
+        vertical: NuraSpace.s4,
+      ),
+      child: NuraCard(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              item.label,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: context.nuraColors.iconAccent,
+              ),
+            ),
+            const SizedBox(height: NuraSpace.s8),
+            Text.rich(
+              snippetSpan(
+                snippet,
+                base,
+                context.nuraColors.searchHighlight,
+                suffix: marker,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              textDirection: arabic ? TextDirection.rtl : TextDirection.ltr,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/ui_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../controllers/hadith_detail_controller.dart';
 import '../hadith_detail_content.dart';
+import '../widgets/hadith_action_bar.dart';
+import '../widgets/hadith_hero_card.dart';
 import '../widgets/hadith_text_card.dart';
 
 class HadithDetailView extends GetView<HadithDetailController> {
@@ -32,39 +35,6 @@ class HadithDetailView extends GetView<HadithDetailController> {
             ],
           );
         }),
-        actions: [
-          Obx(() {
-            if (c.state.value is! UiData<HadithDetailContent>) {
-              return const SizedBox.shrink();
-            }
-            final on = c.bookmarked.value;
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  onPressed: c.toggleBookmark,
-                  constraints: const BoxConstraints(
-                    minWidth: 48,
-                    minHeight: 48,
-                  ),
-                  icon: Icon(
-                    on ? Icons.bookmark : Icons.bookmark_border,
-                    color: on ? Theme.of(context).colorScheme.primary : null,
-                    semanticLabel: on ? 'Hapus bookmark' : 'Tambah bookmark',
-                  ),
-                ),
-                IconButton(
-                  onPressed: c.copy,
-                  constraints: const BoxConstraints(
-                    minWidth: 48,
-                    minHeight: 48,
-                  ),
-                  icon: const Icon(Icons.copy, semanticLabel: 'Salin hadis'),
-                ),
-              ],
-            );
-          }),
-        ],
       ),
       body: Obx(() {
         final prefs = c.prefs.value;
@@ -85,7 +55,22 @@ class HadithDetailView extends GetView<HadithDetailController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                HadithHeroCard(content: value),
+                const SizedBox(height: NuraSpace.s12),
                 HadithTextCard(content: value, prefs: prefs),
+                const SizedBox(height: NuraSpace.s12),
+                Text(
+                  value.referenceLabel,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: context.nuraColors.iconAccent,
+                  ),
+                ),
+                const SizedBox(height: NuraSpace.s12),
+                HadithActionBar(
+                  bookmarked: c.bookmarked.value,
+                  onBookmark: c.toggleBookmark,
+                  onCopy: c.copy,
+                ),
                 const SizedBox(height: NuraSpace.s24),
                 IntrinsicHeight(
                   child: Row(

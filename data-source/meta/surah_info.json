@@ -1,0 +1,462 @@
+{
+  "source": "https://equran.id/api/v2/surat",
+  "fetched_at": "2026-11-21T23:03:28.691825Z",
+  "surahs": [
+    {
+      "number": 1,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 2,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 3,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 4,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 5,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 6,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 7,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 8,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 9,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 10,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 11,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 12,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 13,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 14,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 15,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 16,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 17,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 18,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 19,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 20,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 21,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 22,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 23,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 24,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 25,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 26,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 27,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 28,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 29,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 30,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 31,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 32,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 33,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 34,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 35,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 36,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 37,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 38,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 39,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 40,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 41,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 42,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 43,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 44,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 45,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 46,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 47,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 48,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 49,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 50,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 51,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 52,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 53,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 54,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 55,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 56,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 57,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 58,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 59,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 60,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 61,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 62,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 63,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 64,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 65,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 66,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 67,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 68,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 69,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 70,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 71,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 72,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 73,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 74,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 75,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 76,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 77,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 78,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 79,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 80,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 81,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 82,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 83,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 84,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 85,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 86,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 87,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 88,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 89,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 90,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 91,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 92,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 93,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 94,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 95,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 96,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 97,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 98,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 99,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 100,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 101,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 102,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 103,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 104,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 105,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 106,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 107,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 108,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 109,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 110,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 111,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 112,
+      "revelation": "makkiyah"
+    },
+    {
+      "number": 113,
+      "revelation": "madaniyah"
+    },
+    {
+      "number": 114,
+      "revelation": "madaniyah"
+    }
+  ]
+}

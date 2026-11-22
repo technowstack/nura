@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 
 import 'empty_state.dart';
@@ -21,7 +22,7 @@ class ErrorState extends StatelessWidget {
     description: description,
     action: FilledButton.icon(
       onPressed: onRetry,
-      icon: const Icon(Icons.refresh),
+      icon: const NuraIcon(NuraIcons.refresh),
       label: const Text('Coba lagi'),
       style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
     ),

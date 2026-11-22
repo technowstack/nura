@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/widgets/empty_state.dart';
 import 'package:nura/app/core/widgets/error_state.dart';
+import 'package:nura/app/modules/hadith_books/widgets/hadith_book_tile.dart';
 import 'package:nura/app/data/models/hadith_book.dart';
 import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/modules/hadith_books/bindings/hadith_books_binding.dart';
@@ -148,6 +149,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('Shahih Bukhari'), findsOneWidget);
+  });
+
+  testWidgets('book tile is at least 48 dp tall', (tester) async {
+    await pump(tester);
+    await tester.pumpAndSettle();
+    final tiles = find.byType(HadithBookTile);
+    expect(tiles, findsWidgets);
+    for (final e in tiles.evaluate()) {
+      expect(
+        tester.getSize(find.byElementPredicate((x) => x == e)).height,
+        greaterThanOrEqualTo(48),
+      );
+    }
+  });
+
+  testWidgets('book tile at 130% does not overflow', (tester) async {
+    await pump(tester, scale: 1.3);
+    await tester.pumpAndSettle();
+    expect(find.byType(HadithBookTile), findsWidgets);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('search icon opens search with hadith scope', (tester) async {

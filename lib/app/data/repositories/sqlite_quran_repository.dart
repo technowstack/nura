@@ -72,6 +72,35 @@ class SqliteQuranRepository implements QuranRepository {
     return _ayah(rows.first);
   }
 
+  /// Ayat from [start] to [end] inclusive, across surahs, in one query.
+  /// Throws ContentUnavailable for refs outside the surah table or start > end.
+  List<Ayah> getAyahRange(AyahRef start, AyahRef end) {
+    for (final r in [start, end]) {
+      final count = _select('SELECT ayah_count FROM surah WHERE number = ?', [
+        r.surah,
+      ]);
+      if (count.isEmpty ||
+          r.ayah < 1 ||
+          r.ayah > (count.first['ayah_count'] as int)) {
+        throw ContentUnavailable('Ayat ${r.surah}:${r.ayah} tidak valid');
+      }
+    }
+    if (start.surah > end.surah ||
+        (start.surah == end.surah && start.ayah > end.ayah)) {
+      throw ContentUnavailable(
+        'Rentang ${start.surah}:${start.ayah}-${end.surah}:${end.ayah} '
+        'tidak valid',
+      );
+    }
+    return _select(
+      'SELECT $_ayahCols FROM ayah '
+      'WHERE (surah_number, ayah_number) >= (?, ?) '
+      'AND (surah_number, ayah_number) <= (?, ?) '
+      'ORDER BY surah_number, ayah_number',
+      [start.surah, start.ayah, end.surah, end.ayah],
+    ).map(_ayah).toList();
+  }
+
   @override
   List<Juz> listJuz() => _select('SELECT * FROM juz ORDER BY number')
       .map(

@@ -20,14 +20,17 @@ void main() {
   });
 
   test('catalog has exactly the six qaris', () {
-    expect({for (final q in kQaris) q.id: q.name}, {
-      '01': 'Abdullah Al-Juhany',
-      '02': 'Abdul Muhsin Al-Qasim',
-      '03': 'Abdurrahman As-Sudais',
-      '04': 'Ibrahim Al-Dossari',
-      '05': 'Misyari Rasyid Al-Afasi',
-      '06': 'Yasser Al-Dosari',
-    });
+    expect(
+      {for (final q in kQaris) q.id: q.name},
+      {
+        '01': 'Abdullah Al-Juhany',
+        '02': 'Abdul Muhsin Al-Qasim',
+        '03': 'Abdurrahman As-Sudais',
+        '04': 'Ibrahim Al-Dossari',
+        '05': 'Misyari Rasyid Al-Afasi',
+        '06': 'Yasser Al-Dosari',
+      },
+    );
     expect(kQaris.length, 6);
     expect(qariById('03')?.name, 'Abdurrahman As-Sudais');
     expect(qariById('99'), isNull);

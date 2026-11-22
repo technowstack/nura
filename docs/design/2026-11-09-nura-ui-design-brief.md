@@ -4,6 +4,8 @@ Tanggal: 9 November 2026 · Pemilik: Taufik Hidayat
 Lokasi di repo: `docs/design/2026-11-09-nura-ui-design-brief.md`
 Dokumen terkait: `docs/PRD.md`, `docs/specs/2026-11-09-nura-v1-design.md`, `docs/STATUS.md`, `AGENTS.md`
 
+Pembaruan 2026-11-18: bagian 4, 5, 10, 11, 12 disesuaikan dengan penyegaran visual (putaran 1.5, `2026-11-17-nura-penyegaran-visual.md`). Bagian yang tidak terdampak tidak diubah.
+
 Brief ini jadi acuan Claude Code saat mendesain di Figma lewat FigCraft. Kalau ada yang bertentangan dengan PRD, ikuti PRD dan catat perbedaannya di bagian "Catatan terbuka".
 
 ---
@@ -16,7 +18,7 @@ Prinsip:
 
 1. **Teks dulu.** Teks Arab dan terjemahan selalu jadi elemen paling penting di layar baca. Ornamen tidak boleh mengganggu.
 2. **Tenang.** Satu warna aksen utama, banyak ruang kosong, bayangan tipis atau tidak ada sama sekali.
-3. **Ornamen Islami secukupnya.** Pola geometris tipis (opacity rendah) hanya di area dekoratif seperti header Beranda, kartu harian, dan onboarding. Jangan dipakai di area baca.
+3. **Ornamen Islami secukupnya.** Pola geometris tipis (opacity rendah) hanya di area dekoratif seperti kartu harian dan onboarding. Jangan dipakai di area baca. Sejak putaran 1.5 ornamen juga dipakai sebagai elemen fungsional (bingkai bintang delapan pada nomor surah/ayat), bukan hiasan latar.
 4. **Jujur soal offline/online.** Fitur yang butuh internet (audio, sinkron jadwal) punya status visual yang jelas: mati, sedang mengunduh, tersimpan offline.
 5. **Siap dark mode sejak awal.** Semua warna diambil dari variables dengan mode Light dan Dark.
 
@@ -33,7 +35,7 @@ Prinsip:
 
 ## 3. Design tokens (Figma Variables)
 
-Buat empat koleksi variables: `color`, `type`, `space`, `radius`. Koleksi `color` punya dua mode, **Light** dan **Dark**. Nama variabel mengikuti peran `ColorScheme` Material 3 supaya pemetaan ke Flutter 1:1.
+Buat lima koleksi variables: `color`, `type`, `space`, `radius`, `opacity` (bagian 3.4). Koleksi `color` punya dua mode, **Light** dan **Dark**. Nama variabel mengikuti peran `ColorScheme` Material 3 supaya pemetaan ke Flutter 1:1.
 
 ### 3.1 Warna
 
@@ -45,9 +47,9 @@ Nilai di bawah adalah titik awal dan sudah dicek kontrasnya: pasangan teks utama
 | `color/onPrimary` | `#FFFFFF` | `#00382C` | Teks/ikon di atas primary |
 | `color/primaryContainer` | `#D3EEE5` | `#0F4F41` | Kartu sorotan, chip terpilih |
 | `color/onPrimaryContainer` | `#00201A` | `#C9EDE1` | Teks di atas primaryContainer |
-| `color/secondary` | `#7D6038` | `#D9BE92` | Aksen emas lembut: nomor ayat, ornamen |
+| `color/secondary` | `#7D6038` | `#D9BE92` | Aksen emas lembut: judul kartu harian, label "Terakhir dibaca" |
 | `color/surface` | `#F8F7F3` | `#0F1513` | Latar layar |
-| `color/surfaceContainerLow` | `#F1F0EB` | `#161D1B` | Kartu biasa |
+| `color/surfaceContainerLow` | `#F1F0EB` | `#161D1B` | Latar bilah aksi `AyahCard` dan elemen sekunder |
 | `color/surfaceContainer` | `#EBEAE4` | `#1B2220` | Bottom sheet, nav bar |
 | `color/onSurface` | `#1A1C1B` | `#E2E4E1` | Teks utama |
 | `color/onSurfaceVariant` | `#55605C` | `#A9B3AF` | Teks sekunder, label |
@@ -66,6 +68,12 @@ Warna tambahan (nanti jadi `ThemeExtension` di Flutter, bukan bagian `ColorSchem
 | `color/ext/searchHighlight` | `#FFE3A3` | `#5A4A1E` | Sorotan kata hasil pencarian |
 | `color/ext/ornament` | `#1F6F5C` @ 8% | `#7FC8B2` @ 6% | Pola geometris dekoratif |
 | `color/ext/offlineBadge` | `#2B7430` | `#81C784` | Lencana "tersimpan offline" (Light digelapkan dari `#2E7D32` agar ≥4.5:1 di atas `surfaceContainerLow`) |
+| `color/ext/hero` | `#185A4B` | `#0F3F34` | Latar kartu/area hero (SurahHeaderCard, Beranda) |
+| `color/ext/heroShape` | `#1B6252` | `#124A3D` | Bidang siluet datar di dalam hero; samar tetapi beda dari hero (rasio bidang 1,12 Light, 1,16 Dark); onHero 6,7:1/9,0:1 dan onHeroAccent 4,6:1/6,5:1 di atasnya. Kontras 4,61:1 (Light) diterima oleh Taufik; **cek ulang kontras jika `heroShape` atau `onHeroAccent` diubah** |
+| `color/ext/onHero` | `#F8F7F3` | `#F1F2EF` | Teks di atas hero |
+| `color/ext/onHeroAccent` | `#EBCB8B` | `#EBCB8B` | Angka/aksen emas di atas hero |
+| `color/ext/iconAccent` | `#8A6A3E` | `#D9BE92` | Ikon garis emas dan nomor di kartu terang |
+| `color/surfaceContainerLowest` | `#FFFFFF` | `#0A0F0D` | Kartu terang di atas `surface` |
 
 ### 3.2 Tipografi
 
@@ -85,13 +93,14 @@ Warna tambahan (nanti jadi `ThemeExtension` di Flutter, bukan bagian `ColorSchem
 | `type/arabicReading` | LPMQ | 28 / 56 | 400 |
 | `type/arabicCard` | LPMQ | 22 / 44 | 400 |
 | `type/arabicTitle` | LPMQ | 24 / 36 | 400 |
+| `type/arabicHero` | LPMQ | 40 / 56 | 400 |
 | `type/translation` | Jakarta | 15 / 24 | 400 |
 
 Ukuran teks Arab nantinya bisa diatur pengguna (20–40). Desain default memakai 28. Buat satu varian contoh di 36 untuk mengecek tata letak saat teks membesar.
 
 ### 3.3 Jarak dan radius
 
-- `space/*`: grid 4 pt → 4, 8, 12, 16, 20, 24, 32, 40, 48.
+- `space/*`: grid 4 pt → 4, 8, 12, 16, 20, 24, 32, 36, 40, 48.
 - Padding layar horizontal: 20. Jarak antarkartu: 12.
 - `radius/*`: sm 8, md 12, lg 16, xl 24, full 999.
 - Elevasi: tanpa drop shadow. Kedalaman dibangun dari tingkatan `surfaceContainer*` dan border `outlineVariant` tipis.
@@ -99,7 +108,7 @@ Ukuran teks Arab nantinya bisa diatur pengguna (20–40). Desain default memakai
 
 #### Ukuran komponen/platform tetap (dikecualikan dari aturan token)
 
-Ukuran komponen/platform tetap berikut berupa angka literal di Figma, tidak terikat variable, karena merupakan ukuran bawaan komponen atau elemen dekoratif. Tidak diekspor ke Flutter kecuali ada kebutuhan. Ukuran yang sudah terikat token (badge nomor 40 = `space/40`, ikon 24 = `space/24`, area sentuh dan tinggi minimum Button/SearchField 48 = `space/48`) bukan pengecualian.
+Ukuran komponen/platform tetap berikut berupa angka literal di Figma, tidak terikat variable, karena merupakan ukuran bawaan komponen atau elemen dekoratif. Tidak diekspor ke Flutter kecuali ada kebutuhan. Ukuran yang sudah terikat token (badge nomor 40 = `space/40`, OrnamentBadge 36 = `space/36`, ikon 24 = `space/24`, area sentuh dan tinggi minimum Button/SearchField 48 = `space/48`) bukan pengecualian.
 
 | Elemen | Ukuran |
 |---|---|
@@ -109,7 +118,7 @@ Ukuran komponen/platform tetap berikut berupa angka literal di Figma, tidak teri
 | Ilustrasi placeholder | tinggi 200 |
 | Pegangan sheet | 32 × 4 |
 | Track slider | tinggi 4 |
-| Indikator tab | tinggi 4 |
+| Indikator tab | tinggi 2 |
 | Isi progress | tinggi 8 |
 | Tinggi baris daftar tetap (frame "Baris") | 64, 65, 68, 108, 130 (menurut isi baris) |
 | Status bar placeholder | 360 × 24 |
@@ -150,6 +159,8 @@ Aturan pemakaian garis:
 - `color/outlineVariant` untuk garis pemisah dan border dekoratif: pemisah daftar, border kartu, handle `BottomSheet`.
 - Jangan memakai `outlineVariant` sebagai satu-satunya penanda batas komponen yang bisa disentuh (kontrasnya di bawah 3:1).
 
+Aturan ikon (putaran 1.5): ikon fungsi memakai Material Symbols Rounded weight 300 (sumber google/material-design-icons, Apache 2.0), warna `iconAccent` di kartu terang dan `onHero` di hero (waktu berikutnya: `onHeroAccent`). Ikon navigasi bawah tetap `onSurfaceVariant`/`primary`. Ikon panah navigasi ayat adalah chevron buatan sendiri.
+
 | Komponen | Varian / properti |
 |---|---|
 | `TopAppBar` | default, dengan aksi (cari, menu), dengan subjudul (mis. "Al-Baqarah · 286 ayat") |
@@ -157,19 +168,20 @@ Aturan pemakaian garis:
 | `Button` | filled, tonal, outlined, text · default/disabled · dengan/tanpa ikon |
 | `Chip` | filter · terpilih/tidak |
 | `SearchField` | kosong, terisi, dengan tombol hapus |
-| `SurahListItem` | nomor (bingkai ornamen), nama Latin, arti, jumlah ayat, Makkiyah/Madaniyah, nama Arab · default/bookmarked/terakhir dibaca |
-| `JuzListItem` | nomor juz, rentang surah:ayat |
-| `AyahNumberBadge` | angka 1–3 digit |
-| `AyahCard` | Arab + terjemahan · default/lastRead/bookmarked/lastRead+bookmarked · terjemahan tampil/tersembunyi · baris aksi. lastRead = latar `lastReadHighlight` + label "Terakhir dibaca" + ikon history (Material Symbols Rounded). Bookmarked = ikon bookmark terisi di `AyahActionBar` saja (tanpa ikon kecil di dekat badge). Sorotan hasil pencarian lewat rentang teks SemiBold + garis bawah (bagian 5 layar 10), bukan varian AyahCard |
-| `AyahActionBar` | bookmark, tafsir, salin, bagikan, putar audio · audio: mati (tersembunyi), siap streaming, tersimpan offline, sedang memutar |
+| `SurahListItem` | kiri `OrnamentBadge`, tengah nama Latin (titleMedium) + baris "Arti · N ayat · [Q4]" (labelMedium; `[Q4]` = Makkiyah/Madaniyah), kanan nama Arab surah (LPMQ, `type/arabicTitle`, warna `iconAccent`, diambil dari field `name` data) · default/bookmarked/terakhir dibaca. Kartu `surfaceContainerLowest` + border `outlineVariant` 1 px + radius `lg` |
+| `JuzListItem` | selaras `SurahListItem`: kiri `OrnamentBadge` (nomor juz, saat ini "[Q4]"), tengah judul "Juz [Q4]" + rentang surah:ayat "[Q4]" (layer berakhiran "(menunggu Q4)"), kanan chevron. Kartu `surfaceContainerLowest` + border `outlineVariant` 1 px + radius `lg` |
+| `OrnamentBadge` | menggantikan `AyahNumberBadge`: bingkai bintang delapan bergaris tipis warna `iconAccent` berisi angka · Digits 1/2/3 · ukuran 36 (`space/36`). Dipakai di `SurahListItem` (angka Latin) dan `JuzListItem`. Nomor ayat di `AyahCard` kini angka kecil `iconAccent` tanpa bingkai |
+| `AyahCard` | Kartu `surfaceContainerLowest` + border `outlineVariant` 1 px + radius `lg`. Isi berurutan: baris atas (nomor ayat kecil `iconAccent` di kiri, menu `Icon/more` di kanan dalam area sentuh 48), Arab rata kanan (`arabicReading`) diakhiri **penanda akhir ayat** (U+00A0 + simbol ۝ U+06DD + angka Arab-Indik; U+00A0 mencegah penanda putus baris sendirian; LPMQ mendukung glyph U+06DD), terjemahan, garis `outlineVariant`, lalu `AyahActionBar`. Varian: default/lastRead/bookmarked/lastRead+bookmarked · terjemahan tampil/tersembunyi · Arab 28/36. lastRead = latar `lastReadHighlight` + label "Terakhir dibaca" + ikon history (Material Symbols Rounded). Bookmarked = ikon bookmark terisi di `AyahActionBar` saja (tanpa ikon kecil di dekat nomor). Sorotan hasil pencarian lewat rentang teks SemiBold + garis bawah (bagian 5 layar 10), bukan varian AyahCard |
+| `AyahActionBar` | bilah aksi 5 tombol sama lebar dan sama tinggi (48, area sentuh), latar `surfaceContainerLow` radius `md`: salin, bookmark, putar, bagikan, tafsir. Putar hilang saat audio mati (4 tombol). Audio: mati (tersembunyi), siap streaming, tersimpan offline, sedang memutar; sel audio vertikal (ikon di atas, teks status di bawah) dengan tinggi sama seperti tombol lain · Bookmark: Tidak/Ya |
 | `BismillahHeader` | teks Basmalah; dipakai sebagai instans di dalam `SurahHeaderCard` varian Bismillah=Ya, tidak lagi berdiri sendiri di layar. At-Taubah tanpa Basmalah; Al-Fatihah tanpa (Basmalah adalah ayat 1) |
-| `SurahHeaderCard` | nama Arab, Latin, arti, jumlah ayat, tempat turun · varian `Bismillah=Ya` (memuat Basmalah di dalam kartu, tinggi 158) / `Bismillah=Tidak` (94; dipakai At-Taubah dan Al-Fatihah) |
-| `NextPrayerCard` | nama sholat berikutnya, jam, hitung mundur, lokasi · label "perkiraan" saat pakai perhitungan offline |
-| `DailyWidget` | tipe Ayat / Hadis · 4×2 dan 4×3 cell · Light/Dark · versi teks sangat panjang untuk uji pemotongan. Satu area ketuk, tanpa tombol di dalam, radius ±24 (widget Android 12+). Lihat bagian 12 |
-| `DailyNotification` | collapsed / expanded (BigText), gaya notifikasi Android standar, ikon kecil aplikasi (placeholder), tanpa teks Arab. Lihat bagian 12 |
-| `DailyCard` | tipe Ayat / Hadis (**pratinjau widget**, bahasa visual sama dengan `DailyWidget`) · aksi bagikan. **Ayat:** kartu menonjol dengan ornamen tipis di latar, Arab `arabicCard`, terjemahan, sumber (mis. "QS. Asy-Syarh: 6"). **Hadis:** kartu biasa yang lebih sederhana, hanya **matan** Arab (di atas) dan terjemahan matan (teks di dalam tanda kutip setelah "bersabda:", tanpa sanad), baris sumber gaya `labelLarge` (mis. "HR. Shahih Bukhari No. 34") dan tautan "Baca selengkapnya" ke hadis lengkap dengan sanad (layar detail masuk putaran 2). Tanpa batas baris untuk matan |
-| `LastReadCard` | surah:ayat, tombol lanjutkan |
+| `SurahHeaderCard` | kartu `ext/hero` (radius `lg`): kiri daftar info (Nama, Arti, Jumlah ayat, Tempat turun [Q4]) dengan label `onHero` dan nilai `onHeroAccent`, kanan nama surah Arab besar (LPMQ, `type/arabicHero`). Varian `Bismillah=Ya` = Basmalah dalam kartu terang terpisah (`surfaceContainerLowest` + border `outlineVariant`) di bawah kartu hero, tinggi total 226 / `Bismillah=Tidak` (kartu hero saja, 124; dipakai At-Taubah dan Al-Fatihah) |
+| `NextPrayerCard` | nama sholat berikutnya, jam, hitung mundur, lokasi · label "perkiraan" saat pakai perhitungan offline. Tidak dipakai di Beranda sejak putaran 1.5 (fungsinya diambil alih hero); komponen disimpan untuk layar Jadwal Sholat putaran 2 |
+| `DailyWidget` | tipe Ayat / Hadis · 4×2 dan 4×3 cell · Light/Dark · versi teks sangat panjang untuk uji pemotongan. Kartu terang (`surfaceContainerLowest`); widget Ayat memuat nama surah Arab (LPMQ, `arabicTitle`, `iconAccent`) di baris atas. Satu area ketuk, tanpa tombol di dalam, radius ±24 (widget Android 12+). Lihat bagian 12 |
+| `DailyNotification` | collapsed / expanded (BigText), gaya notifikasi Android standar, kartu terang (`surfaceContainerLowest`) + border `outlineVariant` 1 px, ikon kecil aplikasi (placeholder), tanpa teks Arab. Lihat bagian 12 |
+| `DailyCard` | tipe Ayat / Hadis (**pratinjau widget**, bahasa visual sama dengan `DailyWidget`, kartu terang `surfaceContainerLowest`) · aksi bagikan. **Ayat:** kartu menonjol dengan ornamen tipis di latar, Arab `arabicCard`, terjemahan, sumber (mis. "QS. Asy-Syarh: 6"). **Hadis:** kartu biasa yang lebih sederhana, hanya **matan** Arab (di atas) dan terjemahan matan (teks di dalam tanda kutip setelah "bersabda:", tanpa sanad), baris sumber gaya `labelLarge` (mis. "HR. Shahih Bukhari No. 34") dan tautan "Baca selengkapnya" ke hadis lengkap dengan sanad (layar detail masuk putaran 2). Tanpa batas baris untuk matan |
+| `LastReadCard` | kartu terang (`surfaceContainerLowest` + border `outlineVariant` + radius `lg`): ikon history, label "Terakhir dibaca" dengan nama surah Arab kecil (LPMQ) di sampingnya, surah:ayat, tombol Lanjutkan |
 | `BottomSheet` | handle, judul, isi bergulir |
+| `Tab` | Surah / Juz / Bookmark; tab aktif: garis bawah `primary` 2 px (ukuran tetap) + label `primary` |
 | `Toggle` / `Slider` / `ListTile` | untuk pengaturan |
 | `ProgressBlock` | progres instalasi konten (persen + label) |
 | `EmptyState` | ilustrasi tipis, judul, deskripsi, aksi |
@@ -191,12 +203,16 @@ Aturan pemakaian garis:
    - Ruang penyimpanan tidak cukup. Tampilkan perkiraan ruang yang dibutuhkan; ukuran akhir mengikuti hasil pengukuran Task 7.
    - Instalasi konten gagal/rusak, dengan tombol "Coba lagi".
    - Error tak terduga (fallback umum).
-5. **Beranda.** Urutan: header dengan salam + tanggal Hijriah/Masehi dan ikon cari → `NextPrayerCard` (kartu utama: isi `primaryContainer`, jam `displaySmall`, tanpa border) → `LastReadCard` (ringkas satu baris: surah:ayat + tombol Lanjutkan, area sentuh 48) → `DailyCard` Ayat (menonjol) → `DailyCard` Hadis (sederhana). Dilengkapi `BottomNav`. `QuickMenuItem` dihapus dari putaran ini (menduplikasi `BottomNav`). Ornamen header/kartu ayat: pola bintang delapan kecil berulang memakai `color/ext/ornament`.
+5. **Beranda** (dibuat ulang di putaran 1.5). Urutan dari atas:
+   - **Hero full-bleed `ext/hero`** (tinggi 360, termasuk status bar): baris atas lokasi (ikon pin) dan ikon cari (area sentuh 48) → tanggal Hijriah (contoh) → jam sekarang besar (`onHero`) → "Maghrib dalam N menit" (angka `onHeroAccent`) → baris 6 waktu (Subuh, Terbit, Dzuhur, Ashar, Maghrib, Isya; ikon, nama, jam). Waktu berikutnya ditandai warna `onHeroAccent` **plus titik** (tidak hanya warna). Label "perkiraan" tetap muncul saat jadwal dari perhitungan offline.
+   - Latar hero: **siluet datar** kubah dan menara satu nada (`ext/heroShape`), tanpa gradasi atau detail realistis; tidak boleh menurunkan kontras teks di atasnya.
+   - **Lembar konten** menumpuk 24 px di atas hero, sudut atas melengkung (`radius/xl`), latar `surface`. Isi: `LastReadCard` (kartu terang, nama surah Arab kecil) → `DailyCard` Ayat (menonjol, ornamen bintang tipis `color/ext/ornament`) → `DailyCard` Hadis (sederhana). Dilengkapi `BottomNav` 4 item.
+   - `NextPrayerCard` tidak dipakai di Beranda; `QuickMenuItem` tetap dihapus (menduplikasi `BottomNav`).
 
 ### Fase 2 — Al-Qur'an offline
 
-6. **Daftar Al-Qur'an.** Tab Surah / Juz / Bookmark dan `SearchField`. Tab Juz bergantung pada Q4 (sumber `juz.json`), jadi didesain dengan data contoh.
-7. **Baca Surah.** `SurahHeaderCard` (varian Bismillah=Ya, Basmalah di dalam kartu; At-Taubah/Al-Fatihah memakai Bismillah=Tidak) → daftar `AyahCard`. Satu ayat ditampilkan dalam keadaan `lastRead`. App bar menampilkan nama surah dan pengaturan tampilan.
+6. **Daftar Al-Qur'an.** Tab Surah / Juz / Bookmark dan `SearchField`; daftar surah memakai `SurahListItem` baru. Tab Juz bergantung pada Q4 (sumber `juz.json`), jadi didesain dengan data contoh; `JuzListItem` selaras `SurahListItem`.
+7. **Baca Surah.** `SurahHeaderCard` kartu hero (varian Bismillah=Ya: Basmalah di kartu terang terpisah di bawahnya; At-Taubah/Al-Fatihah memakai Bismillah=Tidak) → daftar `AyahCard`. Satu ayat ditampilkan dalam keadaan `lastRead`. Layar 6–11 dirakit ulang dari komponen baru (`SurahListItem`, `SurahHeaderCard`, `AyahCard`, `Tab`). App bar menampilkan nama surah dan pengaturan tampilan.
 8. **Tafsir (bottom sheet).** Tafsir Kemenag untuk satu ayat. Teksnya panjang dan bisa digulir; ada navigasi ayat berlabel "Sebelumnya" dan "Berikutnya" (Button Text berikon panah kiri/kanan; baris wrap bila tidak muat di Latin 130%). Sheet menempel di bawah (Overlay layout vertikal rata bawah).
 9. **Pengaturan tampilan baca (bottom sheet).** Slider ukuran teks Arab dengan pratinjau langsung, sakelar tampilkan terjemahan, dan pilihan tema (Sistem/Terang/Gelap). Tinggi sheet maksimum 90% layar (720 dari 800); isi yang melebihi digulir/dipotong, pegangan dan judul tetap terlihat. Frame F2/09b menampilkan seluruh isi tanpa terpotong (tinggi hug).
 10. **Pencarian Al-Qur'an.** Hasil dikelompokkan per surah, kata cocok disorot dengan `searchHighlight`, pencarian di teks Arab maupun terjemahan. Sertakan keadaan kosong ("Tidak ada hasil").
@@ -247,7 +263,9 @@ Setelah token disetujui, ekspor ke `docs/design/tokens.json` sebagai satu-satuny
 
 ## 10. Di luar putaran ini
 
-Layar hadis (termasuk detail hadis dengan sanad lengkap), jadwal sholat bulanan, pengaturan notifikasi lengkap, pengunduhan audio, pengaturan umum, ikon aplikasi final, dan materi Play Store. Semua ini masuk putaran 2 dengan memakai komponen dari putaran ini.
+Layar hadis (termasuk detail hadis dengan sanad lengkap), jadwal sholat bulanan, pengaturan notifikasi lengkap, pengunduhan audio, pengaturan umum, ikon aplikasi final, dan materi Play Store. Semua ini masuk putaran 2 dengan memakai komponen dari putaran ini (termasuk `NextPrayerCard` untuk layar Jadwal Sholat).
+
+Keputusan penyegaran visual (putaran 1.5, 2026-11-17/18): palet tidak diganti (hanya token baru ditambahkan, bagian 3.1); ornamen dipakai sebagai elemen fungsional (bingkai nomor, nama surah Arab); Beranda memakai area hero. Tidak diambil dari referensi: ilustrasi 3D/fotorealistik (mushaf, masjid), bulan sabit + bintang sebagai logo atau hiasan, gradasi di hero (kedalaman dari bidang datar dua nada), fitur di luar cakupan v1 (checklist aktivitas, Hifz, Qibla, Zakat, Donasi, Tasbih, transliterasi Latin; tidak boleh muncul meski hanya ikon), dan menu cepat di Beranda.
 
 ## 11. Catatan terbuka
 
@@ -255,6 +273,7 @@ Layar hadis (termasuk detail hadis dengan sanad lengkap), jadwal sholat bulanan,
 - Tab Juz bergantung pada Q4.
 - Nama "Nura" belum lolos Q2. Wordmark di putaran ini masih sementara.
 - Jam default notifikasi harian 06.00 adalah asumsi, belum diputuskan produk.
+- Terbuka setelah putaran 1.5: (a) ukuran widget Ayat 168/256 tetap perkiraan (lihat bagian 12; ukuran sebenarnya dari launcher); (b) kontras `onHeroAccent` di atas `heroShape` Light 4,61:1 diterima (batas tipis; cek ulang bila token berubah); (c) ikon Subuh/Isya memakai glyph bulan sabit fungsional (penanda waktu, bukan logo); (d) penanda ۝ bisa tetap jatuh ke baris sendiri pada hasil pencarian bila baris Arab pas penuh (U+00A0 sudah dipakai); (e) ilustrasi EmptyState/ErrorState/onboarding dan ikon aplikasi final belum ada.
 - Aturan seleksi hadis harian (matan Arab dan terjemahan harus bisa diekstrak bersih, batas karakter N, pembatasan ke Bukhari/Muslim) masuk Fase 6.
 
 ## 12. Keputusan produk: 1 Hari 1 Ayat/Hadis (tiga tempat)
@@ -279,4 +298,4 @@ Catatan teknis: widget dirender sebagai gambar (mis. paket `home_widget`); notif
 
 ### Catatan implementasi widget (3b)
 
-Ukuran widget di desain adalah perkiraan (4×2 ≈ 320×152, 4×3 ≈ 320×240, radius 24). Ukuran sebenarnya bergantung launcher; Flutter merender gambar sesuai ukuran widget yang diminta Android. Teks Arab dan terjemahan yang melebihi ruang dipotong dengan elipsis (Arab 1 baris di 4×2 dan 2 baris di 4×3; terjemahan 1 dan 3 baris).
+Ukuran widget di desain adalah perkiraan (Ayat 4×2 ≈ 320×168 dan 4×3 ≈ 320×256 karena ada baris nama surah Arab; Hadis 4×2 ≈ 320×152 dan 4×3 ≈ 320×240; radius 24). Ukuran sebenarnya bergantung launcher; Flutter merender gambar sesuai ukuran widget yang diminta Android. Teks Arab dan terjemahan yang melebihi ruang dipotong dengan elipsis (Arab 1 baris di 4×2 dan 2 baris di 4×3; terjemahan 1 dan 3 baris).

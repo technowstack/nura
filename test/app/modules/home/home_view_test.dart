@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:nura/app/core/theme/arabic_font.dart';
 import 'package:nura/app/core/errors.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
-import 'package:nura/app/core/theme/nura_text_styles.dart';
+import 'package:nura/app/core/widgets/nura_card.dart';
 import 'package:nura/app/data/models/daily_content.dart';
 import 'package:nura/app/data/repositories/daily_content_repository.dart';
 import 'package:nura/app/data/repositories/daily_settings_store.dart';
@@ -14,6 +15,9 @@ import 'package:nura/app/modules/quran_detail/surah_args.dart';
 import 'package:nura/app/routes/app_routes.dart';
 
 import '../../../support/fake_daily.dart';
+import '../../../support/fake_prayer.dart';
+import '../../../support/prayer_harness.dart' show jakarta, api;
+import 'package:nura/app/data/repositories/prayer_repository.dart';
 
 const _notice =
     'Kitab selain Bukhari dan Muslim memuat hadis dengan derajat yang beragam.';
@@ -53,7 +57,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     // A fixed clock: the fakes derive their text from the day of the month.
-    Get.put(HomeController(now: () => DateTime(2026, 11, 15, 12)));
+    Get.put(HomeController(now: () => DateTime.utc(2026, 11, 15, 4).toLocal()));
     await tester.pumpWidget(
       GetMaterialApp(
         theme: theme ?? AppTheme.light,
@@ -98,10 +102,13 @@ void main() {
     expect(find.text('Ayat hari ini'), findsNothing);
     final card = find.ancestor(
       of: find.text('Hadis hari ini'),
-      matching: find.byType(Card),
+      matching: find.byType(NuraCard),
     );
-    final header = find.text('Beranda');
-    final gap = tester.getTopLeft(card).dy - tester.getBottomLeft(header).dy;
+    final lastRead = find.ancestor(
+      of: find.text('Belum ada bacaan terakhir'),
+      matching: find.byType(NuraCard),
+    );
+    final gap = tester.getTopLeft(card).dy - tester.getBottomLeft(lastRead).dy;
     expect(gap, lessThan(40));
   });
 
@@ -144,6 +151,8 @@ void main() {
       find.text('QS. Asy-Syarh: 15'),
       find.text('Ayat hari 15'),
     ]) {
+      await tester.ensureVisible(target);
+      await tester.pumpAndSettle();
       await tester.tap(target);
       await tester.pumpAndSettle();
       expect(routeName, Routes.surah);
@@ -212,4 +221,27 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  tw('hero shows real prayer times when a schedule exists', (tester) async {
+    Get.put<PrayerRepository>(
+      FakePrayerRepository(
+        region: jakarta,
+        days: {'2026-11-15': api('2026-11-15')},
+      ),
+    );
+    await pump(tester);
+    await tester.pump();
+    expect(find.text('04:30'), findsOneWidget);
+    expect(find.text('Maghrib'), findsOneWidget);
+    expect(find.text('Dzuhur dalam 50 menit'), findsOneWidget);
+  });
+
+  tw('hero shows the honest empty state without a schedule', (tester) async {
+    await pump(tester);
+    expect(
+      find.text('Pilih wilayah untuk melihat jadwal sholat'),
+      findsOneWidget,
+    );
+    expect(find.text('04:30'), findsNothing);
+  });
 }

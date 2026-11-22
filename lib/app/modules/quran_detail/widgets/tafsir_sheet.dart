@@ -1,3 +1,4 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/tokens.dart';
@@ -97,7 +98,7 @@ class _TafsirSheetState extends State<_TafsirSheet> {
               children: [
                 TextButton.icon(
                   onPressed: _index > 0 ? () => _go(-1) : null,
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const NuraIcon(NuraIcons.arrowBack),
                   label: const Text('Sebelumnya'),
                 ),
                 TextButton.icon(
@@ -105,7 +106,7 @@ class _TafsirSheetState extends State<_TafsirSheet> {
                       ? () => _go(1)
                       : null,
                   iconAlignment: IconAlignment.end,
-                  icon: const Icon(Icons.arrow_forward),
+                  icon: const NuraIcon(NuraIcons.arrowForward),
                   label: const Text('Berikutnya'),
                 ),
               ],

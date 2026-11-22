@@ -1,16 +1,16 @@
+import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/theme/tokens.dart';
-import '../../../core/ui_state.dart';
 import '../../../data/models/qari.dart';
-import '../controllers/quran_detail_controller.dart';
+import '../reading_settings_host.dart';
 
 Future<void> showReadingSettingsSheet(
   BuildContext context, {
-  required QuranDetailController controller,
+  required ReadingSettingsHost controller,
   required ThemeController theme,
 }) {
   final scheme = Theme.of(context).colorScheme;
@@ -28,7 +28,7 @@ Future<void> showReadingSettingsSheet(
 class _ReadingSettingsSheet extends StatelessWidget {
   const _ReadingSettingsSheet({required this.controller, required this.theme});
 
-  final QuranDetailController controller;
+  final ReadingSettingsHost controller;
   final ThemeController theme;
 
   @override
@@ -45,7 +45,7 @@ class _ReadingSettingsSheet extends StatelessWidget {
         child: Obx(() {
           final prefs = controller.prefs.value;
           final mode = theme.mode.value;
-          final s = controller.state.value;
+          final preview = controller.previewText;
           final audioOn = controller.audioVisible.value;
           final qariId = controller.qariId.value;
           return Column(
@@ -69,9 +69,9 @@ class _ReadingSettingsSheet extends StatelessWidget {
                 child: Text('Pengaturan tampilan', style: text.titleMedium),
               ),
               const SizedBox(height: NuraSpace.s12),
-              if (s is UiData<SurahContent>)
+              if (preview != null)
                 Text(
-                  s.value.basmalah,
+                  preview,
                   textAlign: TextAlign.center,
                   textDirection: TextDirection.rtl,
                   style: context.nuraText.arabicReading.copyWith(
@@ -133,10 +133,10 @@ class _ReadingSettingsSheet extends StatelessWidget {
                     minTileHeight: 48,
                     title: Text(q.name),
                     selected: q.id == qariId,
-                    trailing: Icon(
+                    trailing: NuraIcon(
                       q.id == qariId
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
+                          ? NuraIcons.radioChecked
+                          : NuraIcons.radioUnchecked,
                     ),
                     onTap: () => controller.setQari(q.id),
                   ),

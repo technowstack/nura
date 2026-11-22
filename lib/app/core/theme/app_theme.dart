@@ -11,6 +11,7 @@ abstract final class AppTheme {
     onPrimaryContainer: Color(0xFF00201A),
     secondary: Color(0xFF7D6038),
     surface: Color(0xFFF8F7F3),
+    surfaceContainerLowest: Color(0xFFFFFFFF),
     surfaceContainerLow: Color(0xFFF1F0EB),
     surfaceContainer: Color(0xFFEBEAE4),
     onSurface: Color(0xFF1A1C1B),
@@ -29,6 +30,7 @@ abstract final class AppTheme {
     onPrimaryContainer: Color(0xFFC9EDE1),
     secondary: Color(0xFFD9BE92),
     surface: Color(0xFF0F1513),
+    surfaceContainerLowest: Color(0xFF0A0F0D),
     surfaceContainerLow: Color(0xFF161D1B),
     surfaceContainer: Color(0xFF1B2220),
     onSurface: Color(0xFFE2E4E1),
@@ -64,6 +66,15 @@ abstract final class AppTheme {
     colorScheme: scheme,
     scaffoldBackgroundColor: scheme.surface,
     textTheme: _textTheme,
+    tabBarTheme: TabBarThemeData(
+      labelColor: scheme.primary,
+      unselectedLabelColor: scheme.onSurface,
+      indicator: UnderlineTabIndicator(
+        borderSide: BorderSide(color: scheme.primary, width: 2),
+      ),
+      indicatorSize: TabBarIndicatorSize.tab,
+      dividerColor: Colors.transparent,
+    ),
     extensions: [colors, NuraTextStyles.standard],
   );
 

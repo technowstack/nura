@@ -37,10 +37,11 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 ### 5.1 Al-Qur'an (offline)
 - Daftar 114 surah: nomor, nama Latin, nama Arab, arti, jumlah ayat, tempat turun.
 - Detail surah: teks Arab dan terjemahan Indonesia per ayat. Tafsir Kemenag bisa dibuka atau ditutup per ayat.
-- Tab Juz: 30 juz dengan awal dan akhir masing-masing.
+- Tab Juz: 30 juz dengan awal dan akhir masing-masing. Mengetuk juz membuka pembaca per juz: seluruh ayat juz itu dari ayat awal sampai akhir, menyeberang antar surah, dengan header surah (dan Basmalah sesuai aturan surah) setiap masuk surah baru; memakai komponen layar baca surah (kartu ayat, bookmark, tafsir, last read menyimpan surah dan ayat yang sebenarnya); audio "Putar juz" memutar sampai akhir juz.
 - Bookmark ayat dan Last Read.
 - Pencarian di terjemahan dan teks Arab. Hasil dikelompokkan per surah. Terjemahan tampil sebagai cuplikan (maksimal 3 baris) yang berpusat pada kata cocok, dan semua kata cocok disorot (aturan lengkap di spec bagian 5.5).
 - Pengaturan baca: ukuran font Arab (20–40, default 28), sakelar tampil/sembunyi terjemahan, dan pilihan tema. Ukuran font terjemahan tetap, tidak diatur pengguna.
+- Teks Arab ayat diakhiri penanda akhir ayat ۝ (U+06DD) dan nomor ayat Arab-Indik (U+0660 sampai U+0669). Penanda digambar aplikasi sebagai widget sebaris (cincin ۝ dengan nomor di dalamnya), karena mesin teks Flutter tidak menerapkan ligatur GSUB yang melingkupi angka di font; kata terakhir dan penanda berada dalam satu widget agar penanda tidak jatuh sendirian ke baris baru. Ini hanya di lapisan tampilan: teks di `content.db` dan `data-source/` tidak diubah (Aturan Mutlak 3).
 
 ### 5.2 Al-Qur'an (online, opsional)
 - Sakelar "Fitur Online" di Pengaturan, **mati secara default**.
@@ -163,7 +164,9 @@ Pakai `sqlite3` dan `sqlite3_flutter_libs` (bukan `sqflite`). Library SQLite dib
 | Hadis 9 kitab | github.com/gadingnst/hadith-api (MIT), data asal tafsirq.com | Lisensi MIT mencakup repo. Status lisensi teks terjemahan dari sumber asal perlu dikonfirmasi |
 | Audio murottal | equran.id v2 (`/api/v2/surat/{id}`; sumber audio: Verse By Verse Quran) | Diputuskan 2026-11-16. Syarat layanan dibaca (2026-11-16); konfirmasi tertulis dianjurkan sebelum rilis. Atribusi di Sumber & Atribusi |
 | Jadwal sholat (API) | equran.id v2 (`https://equran.id/api/v2/shalat`, dokumentasi `https://equran.id/apidev/shalat`); diputuskan | Syarat layanan belum dibaca: wajib dibaca sebelum rilis |
-| Info surah, juz, kota | Belum dipilih | Perlu sumber dengan lisensi jelas |
+| Info surah (tempat turun) | equran.id v2 (`/api/v2/surat`, data Kemenag RI via equran.id), snapshot `data-source/meta/surah_info.json` | Diputuskan 2026-11-22. Atribusi "Tempat turun surah: EQuran.id (sumber Kemenag)" di Sumber & Atribusi. Syarat layanan equran.id: lihat Q3 |
+| Pemetaan juz | Tanzil.info (metadata Tanzil `quran-data.xml`), snapshot `data-source/meta/juz.json` | Diputuskan 2026-11-22. Creative Commons Attribution 3.0: wajib kredit ke Tanzil.info, tautan lisensi https://creativecommons.org/licenses/by/3.0/, dan pernyataan data diformat ulang, di Sumber & Atribusi |
+| Kota (wilayah jadwal sholat) | equran.id v2 (`/api/v2/shalat`, snapshot `data-source/meta/prayer_regions.json`) | Koordinat per kab/kota untuk cadangan offline belum ada: Q4 hanya terbuka untuk ini |
 | Daftar kurasi ayat harian | Disusun pemilik proyek | Menunggu daftar (Q9) |
 | Font Arab LPMQ Isep Misbah (cadangan KFGQPC Uthmanic Script Hafs) | LPMQ Kemenag (lajnah.kemenag.go.id/unduhan) | Lisensi kedua font wajib dicek sebelum rilis (Q6). Catat tanggal unduh di catatan rilis |
 | Font Latin Plus Jakarta Sans | Plus Jakarta Sans | OFL |

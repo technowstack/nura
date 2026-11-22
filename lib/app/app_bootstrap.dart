@@ -22,6 +22,8 @@ import 'data/repositories/sqlite_daily_settings_store.dart';
 import 'data/repositories/sqlite_prayer_store.dart';
 import 'data/repositories/hadith_repository.dart';
 import 'data/repositories/isolate_hadith_repository.dart';
+import 'data/repositories/isolate_quran_range_repository.dart';
+import 'data/repositories/quran_range_repository.dart';
 import 'data/repositories/isolate_search_repository.dart';
 import 'data/repositories/quran_repository.dart';
 import 'data/repositories/search_repository.dart';
@@ -44,6 +46,7 @@ import 'services/daily_link_router.dart';
 import 'services/daily_notifier.dart';
 import 'services/daily_refresher.dart';
 import 'services/flutter_local_notifications_scheduler.dart';
+import 'services/hijri_date_service.dart';
 import 'services/home_widget_service.dart';
 import 'services/notification_scheduler.dart';
 import 'services/online_service.dart';
@@ -69,7 +72,7 @@ class BootstrapFailure extends BootstrapResult {
 /// Installs and opens both databases and the hadith and search workers;
 /// registers everything in GetX only after all of them are up, so a failure at
 /// any step closes what was opened (including the workers) and registers
-/// nothing. Order: content db, hadith worker, search worker, user db, then
+/// nothing. Order: content db, hadith worker, search worker, range worker, user db, then
 /// registration.
 Future<BootstrapResult> bootstrap({
   required ContentDbInstaller installer,
@@ -81,6 +84,9 @@ Future<BootstrapResult> bootstrap({
   Future<IsolateSearchRepository> Function(File) startSearch =
       IsolateSearchRepository.start,
   @visibleForTesting
+  Future<IsolateQuranRangeRepository> Function(File) startRange =
+      IsolateQuranRangeRepository.start,
+  @visibleForTesting
   Future<PrayerRegions> Function() loadRegions = _defaultLoadRegions,
   @visibleForTesting
   AudioEngine Function() createAudioEngine = JustAudioEngine.new,
@@ -89,6 +95,7 @@ Future<BootstrapResult> bootstrap({
   UserDatabase? user;
   IsolateHadithRepository? hadith;
   IsolateSearchRepository? search;
+  IsolateQuranRangeRepository? range;
   AudioPlayerService? player;
   AppLifecycleStream? lifecycle;
   try {
@@ -96,6 +103,7 @@ Future<BootstrapResult> bootstrap({
     content = ContentDatabase.open(file);
     hadith = await startHadith(content.file);
     search = await startSearch(content.file);
+    range = await startRange(content.file);
     user = UserDatabase.open(File('${dataDir.path}/user.db'));
     final online = OnlineService(user);
     lifecycle = AppLifecycleStream();
@@ -116,9 +124,11 @@ Future<BootstrapResult> bootstrap({
     Get.put<UserRepository>(SqliteUserRepository(user), permanent: true);
     Get.put<HadithRepository>(hadith, permanent: true);
     Get.put<SearchRepository>(search, permanent: true);
+    Get.put<QuranRangeRepository>(range, permanent: true);
     Get.put<PrayerRegions>(regions, permanent: true);
     Get.put<PrayerClock>(clock, permanent: true);
     Get.put<OnlineService>(online, permanent: true);
+    Get.put<HijriDateService>(HijriDateService(user: user), permanent: true);
     Get.put<AudioSettingsStore>(
       SqliteAudioSettingsStore(user),
       permanent: true,
@@ -211,6 +221,7 @@ Future<BootstrapResult> bootstrap({
     await player?.dispose();
     await hadith?.close();
     await search?.close();
+    await range?.close();
     content?.close();
     user?.close();
     return BootstrapFailure(e);
