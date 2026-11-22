@@ -3,9 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/theme/app_theme.dart';
 import 'package:nura/app/core/ui_state.dart';
+import 'package:nura/app/routes/app_routes.dart';
 import 'package:nura/app/data/models/daily_content.dart';
 import 'package:nura/app/data/models/prayer_day.dart';
 import 'package:nura/app/modules/settings/controllers/settings_controller.dart';
+import 'package:nura/app/modules/settings/views/attribution_view.dart';
 import 'package:nura/app/modules/settings/views/settings_view.dart';
 import 'package:nura/app/services/notification_scheduler.dart';
 
@@ -45,6 +47,9 @@ void main() {
             ).copyWith(textScaler: TextScaler.linear(scale)),
             child: child ?? const SizedBox.shrink(),
           ),
+          getPages: [
+            GetPage(name: Routes.attribution, page: AttributionView.new),
+          ],
           home: const SettingsView(),
         ),
       ),
@@ -95,7 +100,8 @@ void main() {
     }
     await show(t, find.text('Tanggal'));
     expect(find.text('Tanggal'), findsOneWidget);
-    expect(find.text('Tentang'), findsNothing);
+    await show(t, find.text('Tentang'));
+    expect(find.text('Tentang'), findsOneWidget);
   });
 
   testWidgets('store error shows the error state; retry recovers', (t) async {
@@ -385,6 +391,12 @@ void main() {
       await show(t, f);
       expect(f, findsOneWidget);
     }
+  });
+
+  testWidgets('Tentang row opens the attribution screen', (t) async {
+    await pump(t);
+    await tapText(t, 'Sumber & Atribusi');
+    expect(find.byType(AttributionView), findsOneWidget);
   });
 }
 

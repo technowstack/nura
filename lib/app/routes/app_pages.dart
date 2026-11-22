@@ -12,6 +12,7 @@ import '../modules/quran_detail/views/quran_detail_view.dart';
 import '../modules/search/bindings/search_binding.dart';
 import '../modules/search/views/search_view.dart';
 import '../modules/settings/bindings/settings_binding.dart';
+import '../modules/settings/views/attribution_view.dart';
 import '../modules/settings/views/settings_view.dart';
 import '../modules/shell/views/shell_view.dart';
 import '../modules/onboarding/onboarding_view.dart';
@@ -48,6 +49,7 @@ List<GetPage<dynamic>> appPages(BootstrapSuccess ready) => [
     page: SettingsView.new,
     binding: SettingsBinding(),
   ),
+  GetPage(name: Routes.attribution, page: AttributionView.new),
   GetPage(
     name: Routes.onboarding,
     page: () => OnboardingView(user: ready.user),

@@ -10,6 +10,7 @@ import '../../../data/models/prayer_day.dart';
 import '../../../data/models/prayer_region.dart';
 import '../../../data/models/qari.dart';
 import '../../../data/models/daily_content.dart';
+import '../../../routes/app_routes.dart';
 import '../../../data/models/reading_prefs.dart';
 import '../../prayer/views/prayer_view.dart' show prayerNameLabel;
 import '../../prayer/widgets/region_picker_view.dart';
@@ -51,6 +52,8 @@ class SettingsView extends GetView<SettingsController> {
         SettingsSection(title: 'Harian', children: _daily(context)),
         gap,
         SettingsSection(title: 'Tanggal', children: _date(context)),
+        gap,
+        SettingsSection(title: 'Tentang', children: _about()),
       ],
     );
   }
@@ -322,6 +325,16 @@ class SettingsView extends GetView<SettingsController> {
         trailing: Text(controller.dailyTime.value),
         onTap: controller.dailyOn.value ? () => _pickTime(context) : null,
       ),
+    ),
+  ];
+
+  List<Widget> _about() => [
+    ListTile(
+      contentPadding: EdgeInsets.zero,
+      minTileHeight: 48,
+      title: const Text('Sumber & Atribusi'),
+      trailing: const NuraIcon(NuraIcons.chevronRight),
+      onTap: () => Get.toNamed(Routes.attribution),
     ),
   ];
 
