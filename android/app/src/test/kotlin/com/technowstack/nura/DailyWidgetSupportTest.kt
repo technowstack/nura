@@ -2,6 +2,7 @@ package com.technowstack.nura
 
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class DailyWidgetSupportTest {
@@ -151,4 +152,11 @@ class DailyWidgetSupportTest {
         assertEquals(BitmapPlan.NONE, DailyWidgetSupport.bitmapPlan(501, 100, night = false, budget = budget))
         assertEquals(BitmapPlan.NONE, DailyWidgetSupport.bitmapPlan(900, 900, night = true, budget = budget))
     }
+    @Test
+    fun sizeEntryNamesTheVariantByHeight() {
+        assertEquals("widget_size_ayah_4x2" to "388x130", DailyWidgetSupport.sizeEntry(DailyKind.AYAH, 388, 130))
+        assertEquals("widget_size_hadith_4x3" to "388x214", DailyWidgetSupport.sizeEntry(DailyKind.HADITH, 388, 214))
+        assertNull(DailyWidgetSupport.sizeEntry(DailyKind.AYAH, 0, 130))
+    }
+
 }

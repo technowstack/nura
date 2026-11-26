@@ -104,6 +104,13 @@ abstract class DailyWidgetProvider(private val kind: DailyKind, private val labe
                 AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT
             },
         )
+        // Portrait only: the app renders for the portrait layout (MIN_WIDTH x MAX_HEIGHT).
+        if (config.orientation != Configuration.ORIENTATION_LANDSCAPE) {
+            val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+            DailyWidgetSupport.sizeEntry(kind, widthDp, heightDp)?.let { (key, value) ->
+                if (data.getString(key, null) != value) data.edit().putString(key, value).apply()
+            }
+        }
         val keys = data.all.keys
         fun pick(dark: Boolean) = DailyWidgetSupport.select(
             keys,

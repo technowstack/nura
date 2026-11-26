@@ -34,6 +34,14 @@ object DailyWidgetSupport {
 
     fun sizeTag(heightDp: Int) = if (heightDp >= TALL_MIN_HEIGHT_DP) "4x3" else "4x2"
 
+    /** Where the Flutter side reads the size a widget actually has, or null when unknown. */
+    fun sizeEntry(kind: DailyKind, widthDp: Int, heightDp: Int): Pair<String, String>? =
+        if (widthDp <= 0 || heightDp <= 0) {
+            null
+        } else {
+            "widget_size_${kind.key}_${sizeTag(heightDp)}" to "${widthDp}x$heightDp"
+        }
+
     fun select(
         keys: Collection<String>,
         read: (String) -> String?,
