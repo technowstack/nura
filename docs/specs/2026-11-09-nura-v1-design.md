@@ -379,7 +379,7 @@ Aturan ini juga menjadi spesifikasi implementasi (dari desain putaran 1, layar 1
 ### 6.1 `OnlineService`
 
 - `bool get audioEnabled` dari setting `online_enabled` (default `false`).
-- `bool get prayerSyncEnabled` dari setting `prayer_sync_enabled` (ditanyakan saat onboarding).
+- `bool get prayerSyncEnabled` dari setting `prayer_sync_enabled` (default `false`; ditanyakan saat onboarding). Di onboarding sakelar "Unduh jadwal sholat" tampil menyala secara bawaan (keputusan 2026-11-26); baru disimpan dan jadwal baru diunduh setelah pengguna mengetuk "Lanjut" pada langkah itu. Tanpa onboarding, bawaannya tetap mati. Nilai yang sudah tersimpan tidak ditimpa. Yang dikirim ke equran.id: provinsi, kabupaten/kota, bulan, dan tahun.
 - `Future<bool> canReach()` mengecek koneksi lewat `connectivity_plus`. Hasil ini hanya petunjuk awal. Kegagalan request tetap ditangani.
 - Klien HTTP hanya bisa dipanggil lewat repository yang terlebih dulu bertanya ke `OnlineService`.
 
