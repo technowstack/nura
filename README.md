@@ -1,82 +1,135 @@
-# Nura
+<p align="center">
+  <img src="assets/icon/play-store/icon-512.png" alt="Logo Nura" width="128">
+</p>
 
-Aplikasi Islami untuk Android yang mengutamakan offline: Al-Qur'an, hadis, jadwal sholat, dan satu ayat serta satu hadis setiap hari. Dibuat dengan Flutter.
+<h1 align="center">Nura</h1>
 
-Versi `1.0.0+1`. Belum dirilis: lihat [syarat rilis](#syarat-rilis).
+<p align="center">
+  <strong>Al-Qur'an, hadis, dan jadwal sholat dalam satu aplikasi yang tenang.</strong><br>
+  Bisa dibaca tanpa internet. Tanpa akun, tanpa iklan, tanpa pelacakan.
+</p>
 
-## Fitur
+<p align="center">
+  Android · Bahasa Indonesia · Segera hadir
+</p>
 
-- **Al-Qur'an:** 114 surah dengan terjemahan dan tafsir Kemenag, baca per surah atau per juz, bookmark, terakhir dibaca.
-- **Hadis:** 9 kitab (38.102 hadis), bookmark, salin dengan rujukan.
-- **Pencarian** di Al-Qur'an dan hadis.
-- **Jadwal sholat** per kabupaten/kota dengan pengingat.
-- **Harian:** ayat dan hadis hari ini di Beranda, widget layar depan, dan notifikasi.
-- **Audio murottal** (streaming), termasuk memutar satu juz.
-- Tema terang dan gelap, ukuran huruf Arab dan terjemahan bisa diatur.
+---
 
-Konten Al-Qur'an dan hadis bisa dibaca tanpa internet. Dua hal memakai internet, dan keduanya bisa dimatikan: unduhan jadwal sholat (menyala secara default di onboarding) dan "Fitur Online" untuk audio (mati secara default). Tidak ada akun, analitik, atau iklan.
+## Kenapa Nura
 
-## Menjalankan
+- **Selalu ada, walau tanpa sinyal.** Seluruh Al-Qur'an dan 38.102 hadis tersimpan di ponsel Anda.
+- **Tidak mengganggu.** Tidak ada iklan, tidak perlu daftar, dan notifikasi hanya muncul bila Anda menyalakannya.
+- **Nyaman dibaca.** Huruf Arab dan terjemahan bisa diperbesar, dengan tema terang dan gelap.
 
-Prasyarat:
+## Yang bisa Anda lakukan
 
-- Flutter 3.44 atau lebih baru.
-- Android SDK platform 37.
-- Linux: `sudo apt install libsqlite3-dev` (dipakai `flutter test` dan skrip di `tool/`).
+### 📖 Membaca Al-Qur'an
+
+- 114 surah dengan terjemahan Indonesia dan tafsir Kementerian Agama.
+- Baca per surah, atau per juz tanpa terputus di antara surah.
+- Tandai ayat, dan lanjutkan dari bacaan terakhir.
+- Dengarkan murottal per ayat, per surah, atau satu juz penuh (butuh internet).
+
+### 🕌 Menjelajahi hadis
+
+- 9 kitab: Bukhari, Muslim, Abu Daud, Tirmidzi, Nasa'i, Ibnu Majah, Ahmad, Malik, dan Darimi.
+- Simpan hadis pilihan, dan salin lengkap dengan rujukannya.
+
+### 🔎 Mencari
+
+Cari kata di Al-Qur'an maupun hadis, langsung dari ponsel.
+
+### ⏰ Menjaga waktu sholat
+
+- Jadwal untuk kabupaten dan kota di 34 provinsi.
+- Hitung mundur menuju waktu sholat berikutnya, dan pengingat untuk tiap waktu.
+- Tanggal Hijriah, dengan penyesuaian satu hari bila perlu.
+
+### 🌤️ Satu ayat dan satu hadis setiap hari
+
+Tampil di Beranda, di widget layar depan, dan bila mau, sebagai notifikasi harian.
+
+## Mulai dalam tiga langkah
+
+1. Buka Nura dan kenali isinya.
+2. Pilih kabupaten atau kota Anda untuk mengunduh jadwal sholat.
+3. Nyalakan pengingat yang Anda inginkan, atau lewati saja.
+
+Semua bisa diubah kapan saja di tab **Setelan**.
+
+## Privasi
+
+Bookmark, bacaan terakhir, dan setelan Anda ada di ponsel Anda. Nura tidak punya akun, analitik, atau iklan.
+
+Internet dipakai hanya untuk:
+
+| Fitur | Yang dikirim ke [EQuran.id](https://equran.id) | Bawaan |
+|---|---|---|
+| Unduh jadwal sholat | Nama provinsi dan kabupaten atau kota, bulan, tahun | Menyala saat pengaturan awal, bisa dimatikan |
+| Audio murottal | Nomor surah yang diputar | Mati |
+
+Seperti permintaan internet pada umumnya, alamat IP Anda ikut terlihat oleh server. Tautan di halaman sumber dibuka di peramban Anda. Bila backup Android aktif, data pengguna dan setelan Nura ikut dicadangkan oleh Android.
+
+Selengkapnya: [draf kebijakan privasi](docs/release/privacy-policy.md).
+
+## Pertanyaan umum
+
+**Apakah Nura gratis?**
+Tidak ada iklan maupun pembelian di dalam aplikasi.
+
+**Bisa dipakai tanpa internet?**
+Al-Qur'an, hadis, pencarian, dan bookmark bisa. Jadwal sholat perlu diunduh dulu, dan audio selalu butuh internet.
+
+**Sudah ada di Play Store?**
+Belum. Nura sedang disiapkan untuk uji tertutup.
+
+## Sumber dan terima kasih
+
+- Teks Arab, terjemahan, dan tafsir Al-Qur'an: **Kementerian Agama RI**.
+- Hadis: [**gadingnst/hadith-api**](https://github.com/gadingnst/hadith-api) (MIT), data asal tafsirq.com.
+- Jadwal sholat, audio, dan tempat turun surah: [**EQuran.id**](https://equran.id). Audio: EQuran.id (sumber: Verse By Verse Quran).
+- Batas juz: [**Tanzil.info**](https://tanzil.net), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), data diformat ulang.
+- Font: Plus Jakarta Sans dan Scheherazade New (SIL OFL 1.1).
+- Ikon: Material Symbols (Apache 2.0).
+
+Menemukan salah ketik atau teks yang keliru? Mohon laporkan lewat *Issues* di repositori ini.
+
+---
+
+<details>
+<summary><strong>Untuk pengembang</strong></summary>
+
+### Menjalankan
+
+Butuh Flutter 3.44 atau lebih baru dan Android SDK platform 37. Di Linux: `sudo apt install libsqlite3-dev`.
 
 ```sh
 flutter pub get
-tool/prepare_content.sh   # membuat assets/db/content.db dari data-source/
+tool/prepare_content.sh   # wajib pada clone baru: membuat assets/db/content.db
 flutter run
 ```
 
-`tool/prepare_content.sh` wajib dijalankan pada clone baru. `content.db` tidak disimpan di git.
-
-## Memeriksa
+### Memeriksa
 
 ```sh
 flutter analyze
 flutter test
 ```
 
-## Build rilis
+### Build rilis
 
-Penandatanganan membaca `android/key.properties` dan tidak memakai kunci debug sebagai cadangan. Tanpa berkas itu build rilis gagal. Langkah membuat keystore dan membangun AAB ada di [docs/release/signing.md](docs/release/signing.md).
+Ikuti [docs/release/signing.md](docs/release/signing.md). Keystore dan `android/key.properties` tidak boleh masuk git.
 
-Keystore dan `key.properties` tidak boleh masuk git.
-
-## Struktur
+### Struktur
 
 ```
 data-source/   JSON asli (sumber kebenaran, jangan diedit)
 tool/          skrip pembuat, pemeriksa, dan pengambil data
 lib/app/       core, data, services, modules, routes
-assets/        content.db (hasil skrip), font, logo (assets/icon/)
 docs/          PRD, spec, rencana, desain, status, dokumen rilis
 test/
 ```
 
-Arsitektur: GetX untuk state, DI, dan routing; view menampilkan state dari controller, controller memakai repository atau service. `content.db` dibuka read-only; data pengguna ada di `user.db`.
+Baca [AGENTS.md](AGENTS.md) sebelum mengubah kode. Kondisi proyek dan syarat rilis ada di [docs/STATUS.md](docs/STATUS.md), lisensi data di [data-source/README.md](data-source/README.md).
 
-## Dokumen
-
-- [AGENTS.md](AGENTS.md): aturan kerja, baca sebelum mengubah kode.
-- [docs/PRD.md](docs/PRD.md): apa yang dibangun.
-- [docs/STATUS.md](docs/STATUS.md): kondisi saat ini dan daftar kerja.
-- [docs/design/](docs/design/): token dan handoff desain.
-- [docs/release/](docs/release/): penandatanganan, izin, Data Safety, kebijakan privasi (draf).
-
-## Sumber dan atribusi
-
-- Teks Arab, terjemahan, dan tafsir Al-Qur'an: Kementerian Agama RI.
-- Hadis: [gadingnst/hadith-api](https://github.com/gadingnst/hadith-api) (MIT), data asal tafsirq.com.
-- Jadwal sholat, audio, dan tempat turun surah: [EQuran.id](https://equran.id). Audio: EQuran.id (sumber: Verse By Verse Quran).
-- Batas juz: [Tanzil.info](https://tanzil.net), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), data diformat ulang.
-- Font: Plus Jakarta Sans dan Scheherazade New (SIL OFL 1.1).
-- Ikon: Material Symbols (Apache 2.0).
-
-Rincian lisensi data ada di [data-source/README.md](data-source/README.md).
-
-## Syarat rilis
-
-Rilis publik masih terblokir oleh beberapa hal di luar kode, antara lain status lisensi teks Al-Qur'an (tashih LPMQ) dan terjemahan hadis. Daftar lengkapnya ada di bagian "Pertanyaan Terbuka" pada [docs/STATUS.md](docs/STATUS.md).
+</details>

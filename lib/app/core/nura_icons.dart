@@ -30,6 +30,7 @@ abstract final class NuraIcons {
   static const IconData twilight = Symbols.wb_twilight_rounded;
   static const IconData sunny = Symbols.wb_sunny_rounded;
   static const IconData moreHoriz = Symbols.more_horiz_rounded;
+  static const IconData notifications = Symbols.notifications_rounded;
 }
 
 /// Material Symbols icon at weight 300; [filled] drives the fill axis.

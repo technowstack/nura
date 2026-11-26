@@ -67,7 +67,7 @@ void main() {
         getPages: [
           GetPage(
             name: Routes.home,
-            page: () => const ShellView(dataVersion: 'v1'),
+            page: () => const ShellView(),
           ),
           GetPage(
             name: Routes.hadithList,

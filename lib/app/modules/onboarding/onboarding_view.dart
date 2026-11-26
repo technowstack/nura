@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../core/notification_notes.dart';
 import '../../core/nura_icons.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/nura_card.dart';
 import 'controllers/onboarding_controller.dart';
+import 'widgets/onboarding_header.dart';
 
-/// Temporary UI (no onboarding mock exists yet): three steps, Round 1.5
-/// language. Scrolls so 130% text on a small screen never overflows.
+/// Three steps in the Round 1.5 language under the logo's niche header.
+/// Scrolls so 130% text on a small screen never overflows.
 class OnboardingView extends GetView<OnboardingController> {
   const OnboardingView({super.key});
 
@@ -23,18 +26,25 @@ class OnboardingView extends GetView<OnboardingController> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) c.back();
       },
-      child: Scaffold(
-        body: SafeArea(
-          child: switch (c.state.value) {
-            UiLoading() => const Center(child: CircularProgressIndicator()),
-            UiEmpty() => const SizedBox.shrink(),
-            UiError(:final message) => ErrorState(
-              title: 'Gagal memuat',
-              description: message,
-              onRetry: c.load,
-            ),
-            UiData() => _flow(context),
-          },
+      // The header is dark green in both themes.
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light.copyWith(
+          statusBarColor: Colors.transparent,
+        ),
+        child: Scaffold(
+          body: SafeArea(
+            top: false,
+            child: switch (c.state.value) {
+              UiLoading() => const Center(child: CircularProgressIndicator()),
+              UiEmpty() => const SizedBox.shrink(),
+              UiError(:final message) => ErrorState(
+                title: 'Gagal memuat',
+                description: message,
+                onRetry: c.load,
+              ),
+              UiData() => _flow(context),
+            },
+          ),
         ),
       ),
     );
@@ -42,52 +52,124 @@ class OnboardingView extends GetView<OnboardingController> {
 
   Widget _flow(BuildContext context) {
     final c = controller;
-    final text = Theme.of(context).textTheme;
+    final step = c.step.value;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            NuraSpace.s16,
-            NuraSpace.s16,
-            NuraSpace.s16,
-            0,
-          ),
-          child: Text(
-            'Langkah ${c.step.value + 1} dari $kOnboardingSteps',
-            style: text.labelLarge,
-          ),
-        ),
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(NuraSpace.s16),
-            child: switch (c.step.value) {
-              0 => _welcome(context),
-              1 => _schedule(context),
-              _ => _notifications(context),
-            },
+            // A new key per step so each one starts at the top.
+            key: ValueKey(step),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Compact after the welcome so the switches stay in view.
+                OnboardingHeader(
+                  height: step == 0 ? 168 : 104,
+                  icon: switch (step) {
+                    0 => null,
+                    1 => NuraIcons.locationOn,
+                    _ => NuraIcons.notifications,
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(NuraSpace.s16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _progress(context, step),
+                      const SizedBox(height: NuraSpace.s16),
+                      switch (step) {
+                        0 => _welcome(context),
+                        1 => _schedule(context),
+                        _ => _notifications(context),
+                      },
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         Padding(
           padding: const EdgeInsets.all(NuraSpace.s16),
-          child: Wrap(
-            alignment: WrapAlignment.end,
-            spacing: NuraSpace.s8,
-            runSpacing: NuraSpace.s8,
+          child: Row(
             children: [
               if (!c.isFirst)
                 TextButton(onPressed: c.back, child: const Text('Kembali')),
-              if (c.isLast) ...[
-                TextButton(onPressed: c.finish, child: const Text('Lewati')),
-                FilledButton(onPressed: c.finish, child: const Text('Mulai')),
-              ] else
-                FilledButton(onPressed: c.next, child: const Text('Lanjut')),
+              Expanded(
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: NuraSpace.s8,
+                  runSpacing: NuraSpace.s8,
+                  children: [
+                    if (c.isLast) ...[
+                      TextButton(
+                        onPressed: c.finish,
+                        child: const Text('Lewati'),
+                      ),
+                      FilledButton(
+                        onPressed: c.finish,
+                        child: const Text('Mulai'),
+                      ),
+                    ] else
+                      FilledButton(
+                        onPressed: c.next,
+                        child: const Text('Lanjut'),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ],
     );
   }
+
+  Widget _progress(BuildContext context, int step) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          spacing: NuraSpace.s8,
+          children: [
+            for (var i = 0; i < kOnboardingSteps; i++)
+              Expanded(
+                child: Container(
+                  height: NuraSpace.s4,
+                  decoration: BoxDecoration(
+                    color: i <= step ? scheme.primary : scheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(NuraRadius.full),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: NuraSpace.s8),
+        Text(
+          'Langkah ${step + 1} dari $kOnboardingSteps',
+          style: Theme.of(context).textTheme.labelMedium,
+        ),
+      ],
+    );
+  }
+
+  Widget _feature(BuildContext context, IconData icon, String text) => Padding(
+    padding: const EdgeInsets.only(bottom: NuraSpace.s12),
+    child: NuraCard(
+      child: Row(
+        spacing: NuraSpace.s16,
+        children: [
+          NuraIcon(icon, color: context.nuraColors.iconAccent),
+          Expanded(
+            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _title(BuildContext context, String title) => Padding(
     padding: const EdgeInsets.only(bottom: NuraSpace.s12),
@@ -106,13 +188,19 @@ class OnboardingView extends GetView<OnboardingController> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       _title(context, 'Selamat datang di Nura'),
-      _note(
+      _feature(
         context,
+        NuraIcons.menuBook,
         'Al-Qur\'an, hadis, dan jadwal sholat dalam satu aplikasi.',
       ),
-      _note(context, 'Al-Qur\'an dan hadis bisa dibaca tanpa internet.'),
-      _note(
+      _feature(
         context,
+        NuraIcons.autoStories,
+        'Al-Qur\'an dan hadis bisa dibaca tanpa internet.',
+      ),
+      _feature(
+        context,
+        NuraIcons.playArrow,
         'Audio murottal lewat internet bisa diaktifkan di Pengaturan.',
       ),
     ],
@@ -175,12 +263,6 @@ class OnboardingView extends GetView<OnboardingController> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       _title(context, 'Notifikasi'),
-      _note(
-        context,
-        'Izin notifikasi hanya diminta saat Anda menyalakan salah satu '
-        'pengingat. Sistem juga bisa membuka halaman "Alarm & pengingat" '
-        'agar pengingat adzan tepat waktu. Langkah ini boleh dilewati.',
-      ),
       NuraCard(
         padding: const EdgeInsets.symmetric(
           horizontal: NuraSpace.s16,
@@ -228,6 +310,12 @@ class OnboardingView extends GetView<OnboardingController> {
             : null;
         return note == null ? const SizedBox.shrink() : _note(context, note);
       }),
+      _note(
+        context,
+        'Izin notifikasi hanya diminta saat Anda menyalakan salah satu '
+        'pengingat. Sistem juga bisa membuka halaman "Alarm & pengingat" '
+        'agar pengingat adzan tepat waktu. Langkah ini boleh dilewati.',
+      ),
     ],
   );
 }
