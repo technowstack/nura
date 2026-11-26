@@ -19,10 +19,12 @@ import '../../../services/prayer_notifier.dart';
 import '../../../services/prayer_refresh.dart';
 
 const kOnboardingSteps = 3;
+const _scheduleStep = 1;
 
 /// First-run flow: welcome, prayer schedule, notifications. It owns no
 /// settings: every choice goes to the same stores and services Settings uses,
-/// so the two stay in sync. `onboarding_done` is written only by [finish].
+/// so the two stay in sync. The download switch is written only on leaving step 2
+/// forward; `onboarding_done` only by [finish].
 class OnboardingController extends GetxController {
   final UserDatabase _user = Get.find();
   final OnlineService _online = Get.find();
@@ -60,7 +62,10 @@ class OnboardingController extends GetxController {
       if (isClosed) return;
       try {
         region.value = _prayer.region;
-        syncOn.value = _online.prayerSyncEnabled;
+        // On by default here only: without onboarding the setting stays off.
+        syncOn.value =
+            _user.getSetting(SettingKeys.prayerSyncEnabled) == null ||
+            _online.prayerSyncEnabled;
         prayerOn.value = PrayerName.values.every(_prayerNotifier.isEnabled);
         dailyOn.value = _daily.notifyEnabled;
         dailyTime.value = _daily.notifyTime;
@@ -73,6 +78,7 @@ class OnboardingController extends GetxController {
   }
 
   void next() {
+    if (step.value == _scheduleStep) unawaited(_commitSync());
     if (!isLast) step.value++;
   }
 
@@ -97,10 +103,10 @@ class OnboardingController extends GetxController {
     final r = await Get.to<PrayerRegion>(
       () => RegionPickerView(regions: regions),
     );
-    if (r != null) await selectRegion(r);
+    if (r != null) selectRegion(r);
   }
 
-  Future<void> selectRegion(PrayerRegion r) async {
+  void selectRegion(PrayerRegion r) {
     try {
       _prayer.selectRegion(r);
     } on Object catch (e) {
@@ -108,17 +114,18 @@ class OnboardingController extends GetxController {
       return;
     }
     region.value = r;
-    remindersFailed.value = await syncAndReschedule(_prayer, _prayerNotifier);
   }
 
+  /// Local only until [next] leaves step 2.
+  void setSyncEnabled(bool on) => syncOn.value = on;
+
   /// The first moment anything online can happen.
-  Future<void> setSyncEnabled(bool on) async {
+  Future<void> _commitSync() async {
     try {
-      _online.setPrayerSyncEnabled(on);
+      _online.setPrayerSyncEnabled(syncOn.value);
     } on Object catch (e) {
       debugPrint('OnboardingController: sync switch failed: $e');
     }
-    syncOn.value = _online.prayerSyncEnabled;
     remindersFailed.value = await syncAndReschedule(_prayer, _prayerNotifier);
   }
 

@@ -34,7 +34,8 @@ void main() {
     expect(c.state.value, isA<UiData<void>>());
     expect(c.step.value, 0);
     expect(c.region.value, isNull);
-    expect(c.syncOn.value, isFalse);
+    expect(c.syncOn.value, isTrue);
+    expect(h.db.getSetting('prayer_sync_enabled'), isNull);
     expect(c.prayerOn.value, isFalse);
     expect(c.dailyOn.value, isFalse);
     expect(c.dailyTime.value, '06:00');
@@ -70,50 +71,127 @@ void main() {
     Get.testMode = true; // finish() navigates
     c.next();
     c.next();
-    await c.selectRegion(jakarta);
-    await c.setSyncEnabled(true);
+    c.selectRegion(jakarta);
+    c.setSyncEnabled(true);
     await c.setPrayerReminders(true);
     expect(h.db.getSetting('onboarding_done'), isNull);
     c.finish();
     expect(h.db.getSetting('onboarding_done'), 'true');
   });
 
-  test(
-    'never touches online_enabled or the network before the switch',
-    () async {
-      final api = FakePrayerApi((r, y, m) async => monthDays(y, m));
-      final repo = DefaultPrayerRepository(
-        store: h.prayerStore,
-        api: api,
-        online: h.online,
-        clock: FakeClock(DateTime.utc(2026, 11, 15, 3)),
-        calculator: FakeCalculator(),
-        coordinates: FixedCoordinates(),
-      );
-      Get.replace<PrayerRepository>(repo);
-      Get.delete<OnboardingController>(force: true);
-      c = make();
-      await SettingsHarness.settle();
+  group('download switch (default on, written on Lanjut)', () {
+    late FakePrayerApi api;
 
-      await c.selectRegion(jakarta);
+    Future<OnboardingController> fresh() async {
+      Get.delete<OnboardingController>(force: true);
+      final x = make();
+      await SettingsHarness.settle();
+      return x;
+    }
+
+    setUp(() async {
+      api = FakePrayerApi((r, y, m) async => monthDays(y, m));
+      Get.replace<PrayerRepository>(
+        DefaultPrayerRepository(
+          store: h.prayerStore,
+          api: api,
+          online: h.online,
+          clock: FakeClock(DateTime.utc(2026, 11, 15, 3)),
+          calculator: FakeCalculator(),
+          coordinates: FixedCoordinates(),
+        ),
+      );
+      c = await fresh();
+      c.next(); // step 2
+    });
+
+    String? stored() => h.db.getSetting('prayer_sync_enabled');
+
+    Future<void> lanjut() async {
+      c.next();
+      await SettingsHarness.settle();
+    }
+
+    test('shows on; region and toggles send and store nothing', () async {
+      expect(c.syncOn.value, isTrue);
+      c.selectRegion(jakarta);
+      c.setSyncEnabled(false);
+      c.setSyncEnabled(true);
       await c.setPrayerReminders(true);
       await c.setDailyNotify(true);
+      expect(stored(), isNull);
       expect(api.calls, isEmpty);
-      expect(h.db.getSetting('prayer_sync_enabled'), isNull);
-      expect(h.db.getSetting('online_enabled'), isNull);
+    });
 
-      await c.setSyncEnabled(true);
-      expect(h.db.getSetting('prayer_sync_enabled'), 'true');
-      expect(api.calls, isNotEmpty);
+    test('Lanjut with it on stores true and syncs once', () async {
+      c.selectRegion(jakarta);
+      await lanjut();
+      expect(stored(), 'true');
+      expect(api.calls, hasLength(2)); // this month and the next
       expect(h.db.getSetting('online_enabled'), isNull);
-    },
-  );
+    });
+
+    test('Lanjut without a region only stores the switch', () async {
+      await lanjut();
+      expect(stored(), 'true');
+      expect(api.calls, isEmpty);
+    });
+
+    test('off then Lanjut stores false and never calls', () async {
+      c.selectRegion(jakarta);
+      c.setSyncEnabled(false);
+      await lanjut();
+      expect(stored(), 'false');
+      expect(api.calls, isEmpty);
+      expect(h.db.getSetting('online_enabled'), isNull);
+    });
+
+    test('Kembali or closing the app on step 2 stores nothing', () async {
+      c.selectRegion(jakarta);
+      c.back();
+      await SettingsHarness.settle();
+      expect(stored(), isNull);
+      c = await fresh(); // restart
+      expect(c.syncOn.value, isTrue);
+      expect(stored(), isNull);
+      expect(api.calls, isEmpty);
+    });
+
+    test('going back to step 2 shows the last choice', () async {
+      c.setSyncEnabled(false);
+      c.back();
+      c.next();
+      expect(c.syncOn.value, isFalse);
+      await lanjut();
+      c.back();
+      expect(c.syncOn.value, isFalse);
+    });
+
+    for (final value in ['true', 'false']) {
+      test('a stored $value is shown and kept', () async {
+        h.db.setSetting('prayer_sync_enabled', value);
+        c = await fresh();
+        expect(c.syncOn.value, value == 'true');
+        c.next();
+        await lanjut();
+        expect(stored(), value);
+      });
+    }
+
+    test('a stored true does not sync a region before Lanjut', () async {
+      h.db.setSetting('prayer_sync_enabled', 'true');
+      c = await fresh();
+      c.next();
+      c.selectRegion(jakarta);
+      expect(api.calls, isEmpty);
+    });
+  });
 
   test('region is saved through the shared repository', () async {
-    await c.selectRegion(jakarta);
+    c.selectRegion(jakarta);
     expect(c.region.value, jakarta);
     expect(h.prayer.region, jakarta);
-    expect(h.prayer.calls, contains('sync'));
+    expect(h.prayer.calls, isNot(contains('sync')));
   });
 
   group('notification step', () {
@@ -162,8 +240,9 @@ void main() {
   test(
     'choices are the same state Settings reads; a restart keeps them',
     () async {
-      await c.selectRegion(jakarta);
-      await c.setSyncEnabled(true);
+      c.next();
+      c.selectRegion(jakarta);
+      c.next(); // leaves step 2: stores the switch
       await c.setPrayerReminders(true);
       await c.setDailyNotify(true);
 

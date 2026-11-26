@@ -92,14 +92,21 @@ void main() {
     expect(find.text('Jadwal sholat'), findsOneWidget);
   });
 
-  testWidgets('no Fitur Online switch; nothing is written before use', (
+  testWidgets('no Fitur Online switch; download is on but unwritten', (
     t,
   ) async {
     final h = await open(t);
     await tapText(t, 'Lanjut');
     expect(find.text('Fitur Online'), findsNothing);
     expect(find.text('Unduh jadwal sholat'), findsOneWidget);
-    expect(tester(t, find.byType(SwitchListTile)).first.value, isFalse);
+    expect(tester(t, find.byType(SwitchListTile)).first.value, isTrue);
+    expect(
+      find.text(
+        'Setelah Lanjut, wilayah yang dipilih dikirim ke equran.id untuk '
+        'mengunduh jadwal bulanan, lalu disimpan di perangkat.',
+      ),
+      findsOneWidget,
+    );
     expect(h.db.getSetting('prayer_sync_enabled'), isNull);
     expect(h.db.getSetting('online_enabled'), isNull);
     expect(h.db.getSetting('onboarding_done'), isNull);
@@ -122,12 +129,18 @@ void main() {
     expect(find.text('Kota Jakarta, DKI Jakarta'), findsOneWidget);
   });
 
-  testWidgets('turning the download switch on writes the setting', (t) async {
+  testWidgets('the download switch is written only on Lanjut', (t) async {
     final h = await open(t);
     await tapText(t, 'Lanjut');
     await t.tap(find.byType(SwitchListTile));
     await pumpSettled(t);
-    expect(h.db.getSetting('prayer_sync_enabled'), 'true');
+    expect(
+      t.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+      isFalse,
+    );
+    expect(h.db.getSetting('prayer_sync_enabled'), isNull);
+    await tapText(t, 'Lanjut');
+    expect(h.db.getSetting('prayer_sync_enabled'), 'false');
     expect(h.db.getSetting('online_enabled'), isNull);
     expect(h.db.getSetting('onboarding_done'), isNull);
   });

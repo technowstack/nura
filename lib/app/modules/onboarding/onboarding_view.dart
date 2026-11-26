@@ -148,7 +148,8 @@ class OnboardingView extends GetView<OnboardingController> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Unduh jadwal sholat'),
                 subtitle: const Text(
-                  'Jadwal diunduh per bulan dan tersimpan di perangkat.',
+                  'Setelah Lanjut, wilayah yang dipilih dikirim ke equran.id '
+                  'untuk mengunduh jadwal bulanan, lalu disimpan di perangkat.',
                 ),
                 value: controller.syncOn.value,
                 onChanged: controller.setSyncEnabled,
