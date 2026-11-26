@@ -40,6 +40,7 @@ class OnboardingController extends GetxController {
   final region = Rxn<PrayerRegion>();
   final syncOn = false.obs;
   final prayerOn = false.obs;
+  final prayerBusy = false.obs;
   final dailyOn = false.obs;
   final dailyTime = '06:00'.obs;
   final denied = false.obs;
@@ -135,17 +136,14 @@ class OnboardingController extends GetxController {
 
   // Notifikasi
 
-  /// All five prayer reminders on or off. The permission is requested by the
-  /// first one turned on; a refusal leaves the switch off.
+  /// All five prayer reminders on or off; a refused permission leaves the
+  /// switch off. Taps are ignored while a change is running.
   Future<void> setPrayerReminders(bool on) async {
+    if (prayerBusy.value) return;
+    prayerBusy.value = true;
     denied.value = false;
     try {
-      for (final p in PrayerName.values) {
-        if (!await _prayerNotifier.setEnabled(p, on)) {
-          denied.value = true;
-          break;
-        }
-      }
+      if (!await _prayerNotifier.setAll(on)) denied.value = true;
       remindersFailed.value = false;
       syncFailed.value = false;
     } on PrayerScheduleException catch (e) {
@@ -156,6 +154,7 @@ class OnboardingController extends GetxController {
     }
     prayerOn.value = PrayerName.values.every(_prayerNotifier.isEnabled);
     await _refreshExactNote();
+    prayerBusy.value = false;
   }
 
   /// Same condition as the note in Settings.

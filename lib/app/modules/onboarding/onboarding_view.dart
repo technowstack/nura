@@ -194,7 +194,9 @@ class OnboardingView extends GetView<OnboardingController> {
                 title: const Text('Pengingat adzan'),
                 subtitle: const Text('Lima waktu sholat.'),
                 value: controller.prayerOn.value,
-                onChanged: controller.setPrayerReminders,
+                onChanged: controller.prayerBusy.value
+                    ? null
+                    : controller.setPrayerReminders,
               ),
             ),
             Obx(

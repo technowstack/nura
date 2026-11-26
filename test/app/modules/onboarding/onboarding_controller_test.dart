@@ -242,6 +242,15 @@ void main() {
       expect(c.prayerOn.value, isFalse);
     });
 
+    test('turning all on reschedules once; a double tap is ignored', () async {
+      final first = c.setPrayerReminders(true);
+      expect(c.prayerBusy.value, isTrue);
+      await Future.wait([first, c.setPrayerReminders(true)]);
+      expect(h.scheduler.log.where((e) => e == 'cancel'), hasLength(1));
+      expect(c.prayerBusy.value, isFalse);
+      expect(c.prayerOn.value, isTrue);
+    });
+
     test('denied leaves the switch off with the note; retry works', () async {
       h.scheduler.notif = PermissionState.denied;
       h.scheduler.notifAfterRequest = PermissionState.denied;

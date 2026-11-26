@@ -107,6 +107,16 @@ class PrayerNotifier {
     return true;
   }
 
+  /// [setEnabled] for all five switches with a single reschedule.
+  Future<bool> setAll(bool on) async {
+    if (on && !await _requestPermissions()) return false;
+    for (final p in PrayerName.values) {
+      _store.setNotifyEnabled(p, on);
+    }
+    await reschedule();
+    return true;
+  }
+
   /// Asked whenever missing, not only for the first switch: a restored backup
   /// has switches on without any grant. False when notifications are refused.
   Future<bool> _requestPermissions() async {
