@@ -61,7 +61,7 @@ void main() {
           data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(scale)),
           child: child ?? const SizedBox.shrink(),
         ),
-        home: const HomeView(dataVersion: 'v1'),
+        home: const HomeView(),
         getPages: [stub(Routes.surah), stub(Routes.hadithDetail)],
       ),
     );
@@ -89,7 +89,7 @@ void main() {
     expect(find.text('QS. Asy-Syarh: 15'), findsOneWidget);
     expect(find.text('HR. Bukhari No. 15'), findsOneWidget);
     expect(find.text('Baca selengkapnya'), findsOneWidget);
-    expect(find.textContaining('data_version v1'), findsOneWidget);
+    expect(find.textContaining('data_version'), findsNothing);
   });
 
   tw('ayah hidden leaves no gap above the hadith card', (tester) async {

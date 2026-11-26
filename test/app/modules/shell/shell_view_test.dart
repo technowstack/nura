@@ -40,7 +40,7 @@ void main() {
   });
   tearDown(Get.reset);
 
-  const shell = MaterialApp(home: ShellView(dataVersion: 'v1'));
+  const shell = MaterialApp(home: ShellView());
 
   testWidgets('has five labelled destinations and Hadis shows the book list', (
     tester,

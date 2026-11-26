@@ -15,9 +15,7 @@ import 'widgets/home_hero.dart';
 import 'widgets/last_read_card.dart';
 
 class HomeView extends GetView<HomeController> {
-  const HomeView({required this.dataVersion, super.key});
-
-  final String dataVersion;
+  const HomeView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +30,7 @@ class HomeView extends GetView<HomeController> {
         body: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: Obx(
-                () => HomeHero(data: controller.hero.value),
-              ),
+              child: Obx(() => HomeHero(data: controller.hero.value)),
             ),
             SliverToBoxAdapter(
               child: Container(
@@ -51,13 +47,6 @@ class HomeView extends GetView<HomeController> {
                     ),
                     const SizedBox(height: NuraSpace.s16),
                     Obx(() => _body(controller.cards.value)),
-                    Padding(
-                      padding: const EdgeInsets.all(NuraSpace.s8),
-                      child: Text(
-                        'data_version $dataVersion',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
                   ],
                 ),
               ),

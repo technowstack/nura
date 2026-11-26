@@ -35,7 +35,7 @@ Widget _app({ThemeData? theme}) => GetMaterialApp(
   getPages: [
     GetPage(
       name: Routes.home,
-      page: () => const ShellView(dataVersion: 'v1'),
+      page: () => const ShellView(),
     ),
     GetPage(
       name: Routes.settings,

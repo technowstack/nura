@@ -15,9 +15,7 @@ import '../../settings/views/settings_view.dart';
 import '../controllers/shell_controller.dart';
 
 class ShellView extends StatelessWidget {
-  const ShellView({required this.dataVersion, super.key});
-
-  final String dataVersion;
+  const ShellView({super.key});
 
   @override
   Widget build(BuildContext context) => GetBuilder<ShellController>(
@@ -36,7 +34,7 @@ class ShellView extends StatelessWidget {
         child: IndexedStack(
           index: c.index,
           children: [
-            HomeView(dataVersion: dataVersion),
+            const HomeView(),
             const QuranListView(),
             const HadithBooksView(),
             const PrayerView(),

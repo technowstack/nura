@@ -25,7 +25,7 @@ void main() {
     Get.put(HomeController(now: () => DateTime(2026, 11, 15, 10)));
     await t.pumpWidget(
       GetMaterialApp(
-        home: const HomeView(dataVersion: 'v1'),
+        home: const HomeView(),
         getPages: [
           GetPage(
             name: Routes.settings,

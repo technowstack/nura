@@ -318,7 +318,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Beranda'), findsOneWidget); // nav label
     expect(find.byType(HomeView), findsOneWidget);
-    expect(find.textContaining('data_version '), findsOneWidget);
+    expect(find.textContaining('data_version'), findsNothing);
     expect(s.user.getSetting(SettingKeys.onboardingDone), 'true');
   });
 

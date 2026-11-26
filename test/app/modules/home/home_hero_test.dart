@@ -112,7 +112,7 @@ void main() {
           data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(scale)),
           child: child ?? const SizedBox.shrink(),
         ),
-        home: home ?? const HomeView(dataVersion: 'v1'),
+        home: home ?? const HomeView(),
         getPages: [
           stub(Routes.surah),
           stub(Routes.search),
