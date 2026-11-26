@@ -1,7 +1,28 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Release signing comes only from android/key.properties (docs/release/signing.md).
+val keyPropertiesFile = rootProject.file("key.properties")
+val keyProperties = Properties().apply {
+    if (keyPropertiesFile.isFile) keyPropertiesFile.reader().use { load(it) }
+}
+fun signingValue(name: String): String? = keyProperties.getProperty(name)?.takeIf { it.isNotBlank() }
+// A relative storeFile is resolved against android/.
+val releaseStoreFile = signingValue("storeFile")?.let { rootProject.file(it) }
+val signingProblem: String? = run {
+    val missing = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+        .filter { signingValue(it) == null }
+    when {
+        !keyPropertiesFile.isFile -> "android/key.properties tidak ditemukan"
+        missing.isNotEmpty() -> "android/key.properties belum lengkap: ${missing.joinToString()}"
+        releaseStoreFile?.isFile != true -> "keystore di storeFile tidak ditemukan"
+        else -> null
+    }
 }
 
 android {
@@ -31,11 +52,21 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            if (signingProblem == null) {
+                storeFile = releaseStoreFile
+                storePassword = signingValue("storePassword")
+                keyAlias = signingValue("keyAlias")
+                keyPassword = signingValue("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // No debug-key fallback: see the task graph check below.
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
@@ -53,4 +84,15 @@ dependencies {
 
 flutter {
     source = "../.."
+}
+
+// Checked on the task graph so debug builds and tests need no keystore.
+gradle.taskGraph.whenReady {
+    val releaseRequested = allTasks.any {
+        it.project == project &&
+            it.name in setOf("assembleRelease", "bundleRelease", "packageRelease", "packageReleaseBundle", "signReleaseBundle")
+    }
+    if (releaseRequested && signingProblem != null) {
+        throw GradleException("$signingProblem: lihat docs/release/signing.md")
+    }
 }
