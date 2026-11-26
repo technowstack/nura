@@ -21,6 +21,7 @@ Baca dokumen ini sebelum mengubah kode. Dokumen pendamping: `docs/PRD.md` (apa y
 6. **Jangan mengarang data.** Kalau data tidak ada di sumber, catat sebagai pertanyaan di STATUS.md.
 7. **Jangan hapus atau ubah atribusi sumber** tanpa instruksi eksplisit.
 8. **Jangan commit perubahan folder platform bersama pekerjaan fitur.**
+9. **Jangan menimpa, memindahkan, menghapus, atau mengubah berkas yang diabaikan git milik pemilik, dalam kondisi apa pun, termasuk saat menguji.** Ini mencakup `android/key.properties`, keystore (`*.jks`, `*.keystore`), berkas rahasia atau `secrets/`, dan berkas lokal pemilik lainnya. Jangan membuka atau mencetak isinya. Berlaku untuk agen maupun subagen (sebutkan larangan ini saat mendelegasikan). Untuk menguji jalur "berkas tidak ada" atau "berkas tidak lengkap", pakai salinan proyek sementara di luar repo atau variabel lingkungan, bukan berkas asli. Pengecualian hanya untuk keluaran yang dibuat ulang oleh perintah proyek sendiri (`build/`, `.dart_tool/`, `content.db` dan `content.version` oleh `tool/prepare_content.sh`) serta berkas sementara yang dibuat agen itu sendiri.
 
 ## Struktur
 
