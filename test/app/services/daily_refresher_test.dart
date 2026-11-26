@@ -177,4 +177,23 @@ void main() {
     await r.refresh();
     expect(notifies, 2);
   });
+  test('a resized widget refreshes again on the same day', () async {
+    var size = '320x152';
+    var renders = 0;
+    final r = DailyRefresher(
+      renderWidgets: () async {
+        renders++;
+        return true;
+      },
+      reschedule: () async {},
+      now: () => DateTime(2026, 11, 15, 9),
+      widgetState: () async => size,
+    );
+    await r.refresh();
+    await r.refresh();
+    expect(renders, 1);
+    size = '388x130';
+    await r.refresh();
+    expect(renders, 2);
+  });
 }

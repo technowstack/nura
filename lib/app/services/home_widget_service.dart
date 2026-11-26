@@ -20,6 +20,7 @@ typedef DailyImageRenderer =
 const _days = 7;
 const _updatedKey = 'daily_widget_updated';
 const _indexKey = 'daily_widget_index';
+// Design sizes, used until the launcher has reported a real one.
 const _sizes = {'4x2': Size(320, 152), '4x3': Size(320, 240)};
 
 /// Renders the home screen widget images for today..today+6 and stores them
@@ -36,6 +37,8 @@ const _sizes = {'4x2': Size(320, 152), '4x3': Size(320, 240)};
 ///   key plus `.png`; they are written to a temp file and renamed.
 /// - `daily_widget_updated` = ISO-8601 timestamp of the last refresh in which
 ///   every entry succeeded.
+/// - `widget_size_<kind>_<4x2|4x3>` = `<width>x<height>` in dp, written by the
+///   native providers; images are rendered at that size.
 /// - `daily_widget_index` = JSON list of the keys written (cleanup only; the
 ///   native side ignores it).
 /// - The ayah kind is not written at all while the repository has no ayah;
@@ -90,6 +93,46 @@ class HomeWidgetService {
     return run;
   }
 
+  /// Changes when a widget is placed or resized, so the images get redrawn.
+  Future<String> sizeSignature() async {
+    final parts = <String>[];
+    for (final kind in DailyKind.values) {
+      for (final tag in _sizes.keys) {
+        parts.add(await _storage.read('widget_size_${kind.name}_$tag') ?? '');
+      }
+    }
+    return parts.join(',');
+  }
+
+  /// The launcher's size per variant of [kind], clamped to sane bounds. A
+  /// variant never reported keeps its design height and borrows the width.
+  Future<Map<String, Size>> _sizesFor(DailyKind kind) async {
+    final reported = <String, Size>{};
+    for (final tag in _sizes.keys) {
+      String? raw;
+      try {
+        raw = await _storage.read('widget_size_${kind.name}_$tag');
+      } catch (e) {
+        debugPrint('widget size unreadable: $e');
+      }
+      final parts = raw?.split('x') ?? const <String>[];
+      if (parts.length != 2) continue;
+      final w = double.tryParse(parts[0]);
+      final h = double.tryParse(parts[1]);
+      if (w == null || h == null || !w.isFinite || !h.isFinite) continue;
+      reported[tag] = Size(w.clamp(200.0, 600.0), h.clamp(100.0, 480.0));
+    }
+    return {
+      for (final e in _sizes.entries)
+        e.key:
+            reported[e.key] ??
+            Size(
+              reported.values.firstOrNull?.width ?? e.value.width,
+              e.value.height,
+            ),
+    };
+  }
+
   static Iterable<String> _keys(String kind, String date) => [
     for (final b in Brightness.values)
       for (final t in _sizes.keys) 'daily_${kind}_${date}_${b.name}_$t',
@@ -104,6 +147,9 @@ class HomeWidgetService {
     await _dir.create(recursive: true);
     final ratio = _pixelRatio();
     final source = _settings.hadithSource;
+    final sizes = {
+      for (final kind in DailyKind.values) kind: await _sizesFor(kind),
+    };
 
     for (var i = 0; i < _days; i++) {
       // Calendar arithmetic, so DST shifts cannot skip or repeat a date.
@@ -126,7 +172,7 @@ class HomeWidgetService {
         }
         if (content == null) continue;
         for (final brightness in Brightness.values) {
-          for (final tag in _sizes.entries) {
+          for (final tag in (sizes[kind] ?? _sizes).entries) {
             final key = 'daily_${kind.name}_${d}_${brightness.name}_${tag.key}';
             wanted.add(key);
             if (await _write(key, content, tag.value, ratio, brightness)) {

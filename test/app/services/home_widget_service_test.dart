@@ -52,6 +52,42 @@ void main() {
   List<String> files() =>
       dir.listSync().map((e) => e.uri.pathSegments.last).toList()..sort();
 
+  String imageOf(String kind, String tag) {
+    final key = 'daily_${kind}_2026-11-15_light_$tag';
+    final raw = jsonDecode(storage.data[key] ?? '{}') as Map<String, dynamic>;
+    return File(raw['image'] as String).readAsStringSync();
+  }
+
+  test('renders at the size the launcher reported for each widget', () async {
+    storage.data['widget_size_ayah_4x2'] = '388x130';
+    storage.data['widget_size_ayah_4x3'] = '388x214';
+    await service.refresh();
+    expect(imageOf('ayah', '4x2'), contains('|388.0x130.0|'));
+    expect(imageOf('ayah', '4x3'), contains('|388.0x214.0|'));
+    // Nothing reported for the hadith widget: design size.
+    expect(imageOf('hadith', '4x2'), contains('|320.0x152.0|'));
+  });
+
+  test('an unreported variant borrows the reported width', () async {
+    storage.data['widget_size_hadith_4x2'] = '392x128';
+    await service.refresh();
+    expect(imageOf('hadith', '4x3'), contains('|392.0x240.0|'));
+  });
+
+  test('junk sizes are ignored and extreme ones are clamped', () async {
+    storage.data['widget_size_ayah_4x2'] = 'abc';
+    storage.data['widget_size_ayah_4x3'] = '5000x20';
+    await service.refresh();
+    expect(imageOf('ayah', '4x2'), contains('|600.0x152.0|'));
+    expect(imageOf('ayah', '4x3'), contains('|600.0x100.0|'));
+  });
+
+  test('the size signature changes when a widget is resized', () async {
+    final before = await service.sizeSignature();
+    storage.data['widget_size_ayah_4x2'] = '388x130';
+    expect(await service.sizeSignature(), isNot(before));
+  });
+
   test('writes 7 dates x 2 kinds x 4 combos with keys and JSON', () async {
     await service.refresh();
     expect(
