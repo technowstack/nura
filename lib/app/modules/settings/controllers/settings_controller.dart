@@ -21,6 +21,7 @@ import '../../../services/daily_refresher.dart';
 import '../../../services/hijri_date_service.dart';
 import '../../../services/online_service.dart';
 import '../../../services/prayer_notifier.dart';
+import '../../../services/prayer_refresh.dart';
 import '../../home/controllers/home_controller.dart';
 import '../../prayer/controllers/prayer_controller.dart';
 import '../../quran_detail/reading_prefs_mixin.dart';
@@ -196,20 +197,7 @@ class SettingsController extends GetxController with ReadingPrefsMixin {
       await _refreshPrayerNote();
       return;
     }
-    try {
-      await _prayer.syncIfNeeded();
-    } on Object catch (e) {
-      debugPrint('SettingsController: sync failed: $e');
-    }
-    try {
-      await _prayerNotifier.reschedule();
-      remindersFailed.value = false;
-    } on PrayerScheduleException catch (e) {
-      remindersFailed.value = true;
-      debugPrint('SettingsController: $e');
-    } on Object catch (e) {
-      debugPrint('SettingsController: reschedule failed: $e');
-    }
+    remindersFailed.value = await syncAndReschedule(_prayer, _prayerNotifier);
     await _refreshPrayerNote();
   }
 

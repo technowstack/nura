@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only user data is backed up (owner decision 2026-11-26): user.db and its SQLite
+     companions (getFilesDir = domain "file") and all shared preferences.
+     Include rules only, so everything else is excluded by omission: content.db,
+     content.version, widget images (files/widget/), caches. Adding an exclude for them
+     would be a lint error (exclude outside any include).
+     Pinned by test/android/backup_rules_test.dart. -->
+<full-backup-content>
+    <include domain="file" path="user.db" />
+    <include domain="file" path="user.db-journal" />
+    <include domain="file" path="user.db-wal" />
+    <include domain="file" path="user.db-shm" />
+    <include domain="sharedpref" path="." />
+</full-backup-content>

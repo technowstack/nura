@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Owner logo background (assets/icon/adaptive/background.svg). No night variant. -->
+<resources>
+    <color name="nura_icon_background">#FF185A4B</color>
+    <!-- The splash artwork is drawn for this green, in light and dark. -->
+    <color name="nura_splash_background">#FF185A4B</color>
+</resources>

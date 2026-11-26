@@ -136,10 +136,10 @@ void main() {
     await tester.pump();
     await reveal(
       tester,
-      find.textContaining('Pengingat bisa terlambat beberapa menit'),
+      find.textContaining('Pengingat bisa terlambat karena'),
     );
     expect(
-      find.textContaining('Pengingat bisa terlambat beberapa menit'),
+      find.textContaining('Pengingat bisa terlambat karena'),
       findsOneWidget,
     );
   });

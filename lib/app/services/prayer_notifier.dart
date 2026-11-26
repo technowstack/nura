@@ -101,23 +101,38 @@ class PrayerNotifier {
   /// Returns false (and leaves the switch off) when turning on is refused
   /// because the notification permission was denied.
   Future<bool> setEnabled(PrayerName p, bool on) async {
-    if (on) {
-      if (!anyEnabled) {
-        if (await _scheduler.notificationPermission() ==
-            PermissionState.denied) {
-          final r = await _scheduler.requestNotificationPermission();
-          if (r == PermissionState.denied) return false;
-        }
-        if (await _scheduler.exactAlarmPermission() == PermissionState.denied) {
-          await _scheduler.requestExactAlarmPermission();
-        }
-      } else if (await _scheduler.notificationPermission() ==
-          PermissionState.denied) {
-        return false;
-      }
-    }
+    if (on && !await _requestPermissions()) return false;
     _store.setNotifyEnabled(p, on);
     await reschedule();
+    return true;
+  }
+
+  /// [setEnabled] for all five switches with a single reschedule.
+  Future<bool> setAll(bool on) async {
+    if (on && !await _requestPermissions()) return false;
+    for (final p in PrayerName.values) {
+      _store.setNotifyEnabled(p, on);
+    }
+    await reschedule();
+    return true;
+  }
+
+  /// Asked whenever missing, not only for the first switch: a restored backup
+  /// has switches on without any grant. False when notifications are refused.
+  Future<bool> _requestPermissions() async {
+    final first = !anyEnabled;
+    final denied =
+        await _scheduler.notificationPermission() == PermissionState.denied;
+    if (denied &&
+        await _scheduler.requestNotificationPermission() ==
+            PermissionState.denied) {
+      return false;
+    }
+    // The exact alarm page opens only with the first switch or a fresh grant.
+    if ((first || denied) &&
+        await _scheduler.exactAlarmPermission() == PermissionState.denied) {
+      await _scheduler.requestExactAlarmPermission();
+    }
     return true;
   }
 

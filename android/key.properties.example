@@ -1,0 +1,5 @@
+# Copy to android/key.properties (ignored by git). See docs/release/signing.md.
+storeFile=/path/absolut/di/luar/repo/nura-upload.jks
+storePassword=GANTI
+keyAlias=upload
+keyPassword=GANTI

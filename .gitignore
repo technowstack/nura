@@ -48,3 +48,8 @@ app.*.map.json
 assets/db/content.db*
 assets/db/content.version
 assets/fonts/*.zip
+
+# Signing secrets, anywhere in the repo
+key.properties
+*.jks
+*.keystore

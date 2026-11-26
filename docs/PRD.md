@@ -60,7 +60,7 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 ### 5.4 Jadwal Sholat
 - Jadwal lima waktu, plus imsak, terbit, dan dhuha, berdasarkan wilayah (provinsi + kabupaten/kota) yang dipilih. Tidak ada GPS di v1.
 - Jadwal diambil dari API per bulan (bulan berjalan dan berikutnya) lalu disimpan di perangkat, sehingga bisa dibuka offline setelah sinkron.
-- Izin sinkron jadwal **terpisah** dari sakelar audio dan ditanyakan saat onboarding.
+- Izin sinkron jadwal **terpisah** dari sakelar audio dan ditanyakan saat onboarding. Di onboarding sakelar "Unduh jadwal sholat" tampil menyala secara bawaan (keputusan 2026-11-26); baru disimpan dan jadwal baru diunduh setelah pengguna mengetuk "Lanjut" pada langkah itu. Tanpa onboarding, bawaannya tetap mati.
 - Jika belum ada jadwal tersimpan dan perangkat offline, tampil "Butuh internet untuk jadwal pertama". Cadangan hitung offline (paket `adhan`, parameter Kemenag, label **"perkiraan"**) disiapkan tetapi baru aktif bila koordinat wilayah tersedia (Q4).
 - Notifikasi pengingat per waktu sholat, bisa diatur masing-masing. Dijadwalkan dalam zona waktu wilayah terpilih (WIB/WITA/WIT), bukan zona waktu perangkat.
 - Keputusan (belum dikerjakan, Fase 5): sumber jadwal = API equran.id v2. Lokasi dipilih sebagai provinsi + kabupaten/kota (nama persis seperti di API), bukan koordinat. Jadwal diambil sekali per bulan per wilayah lalu disimpan.
@@ -79,7 +79,7 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 
 ### 5.6 Umum
 - Tema terang, gelap, dan ikut sistem. Pilihan tersimpan.
-- Onboarding tampil sekali pada peluncuran pertama, tiga langkah: (a) sambutan, (b) jadwal sholat: pilih kota dan beri izin sinkron online yang terpisah, (c) izin notifikasi dengan dua sakelar "Pengingat adzan" dan "Ayat & hadis harian" (langkah ini bisa dilewati). Audio murottal tidak ditanyakan di onboarding karena mati secara default; cukup disebut bahwa audio bisa diaktifkan di Pengaturan.
+- Onboarding tampil sekali pada peluncuran pertama, tiga langkah: (a) sambutan, (b) jadwal sholat: pilih kota dan izin sinkron online yang terpisah (sakelar "Unduh jadwal sholat", menyala secara bawaan dan bisa dimatikan; pilihan wilayah langsung disimpan di perangkat, sedangkan sakelar unduh baru disimpan dan jadwal baru diunduh setelah "Lanjut"), (c) izin notifikasi dengan dua sakelar "Pengingat adzan" dan "Ayat & hadis harian" (langkah ini bisa dilewati). Audio murottal tidak ditanyakan di onboarding karena mati secara default; cukup disebut bahwa audio bisa diaktifkan di Pengaturan.
 - Tampilan mengikuti desain putaran 1 (`docs/design/`): Material 3, tema terang dan gelap, font Latin Plus Jakarta Sans dan font Arab LPMQ Isep Misbah.
 - Halaman "Sumber & Atribusi" yang mencantumkan semua sumber data.
 
