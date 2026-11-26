@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- TEMPORARY PLACEHOLDER (D4): surface background with a centered star. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/nura_splash_background" />
     <item
-        android:width="96dp"
-        android:height="96dp"
-        android:drawable="@drawable/nura_splash_star"
+        android:drawable="@drawable/nura_splash_icon"
         android:gravity="center" />
 </layer-list>

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Values copied from docs/design/tokens.json (TEMPORARY PLACEHOLDER, D4). -->
+<!-- Owner logo background (assets/icon/adaptive/background.svg). No night variant. -->
 <resources>
     <color name="nura_icon_background">#FF185A4B</color>
-    <color name="nura_icon_star">#FFEBCB8B</color>
-    <color name="nura_splash_background">#FFF8F7F3</color>
-    <color name="nura_splash_star">#FF8A6A3E</color>
+    <!-- The splash artwork is drawn for this green, in light and dark. -->
+    <color name="nura_splash_background">#FF185A4B</color>
 </resources>
