@@ -13,6 +13,7 @@ import '../../support/fake_prayer.dart';
 
 class FakePlugin extends Fake implements FlutterLocalNotificationsPlugin {
   int initCalls = 0;
+  String? defaultIcon;
   bool failFirstInit = false;
   List<int> pendingIds = [];
   final cancelled = <int>[];
@@ -25,6 +26,7 @@ class FakePlugin extends Fake implements FlutterLocalNotificationsPlugin {
     onDidReceiveBackgroundNotificationResponse,
   }) async {
     initCalls++;
+    defaultIcon = settings.android?.defaultIcon;
     if (failFirstInit && initCalls == 1) throw StateError('init boom');
     return true;
   }
@@ -58,6 +60,12 @@ void main() {
       ..pendingIds = [1, 202611150, 202611159, 999999999];
     await FlutterLocalNotificationsScheduler(plugin).cancelPrayer();
     expect(plugin.cancelled, [202611150, 202611159]);
+  });
+
+  test('notifications use the monochrome status bar icon', () async {
+    final plugin = FakePlugin();
+    await FlutterLocalNotificationsScheduler(plugin).init();
+    expect(plugin.defaultIcon, 'ic_stat_nura');
   });
 
   test('cancelDaily cancels only daily ids', () async {

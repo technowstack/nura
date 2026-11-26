@@ -37,7 +37,7 @@ class FlutterLocalNotificationsScheduler implements NotificationScheduler {
   Future<void> init() => _init ??= _plugin
       .initialize(
         settings: const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          android: AndroidInitializationSettings('ic_stat_nura'),
         ),
         onDidReceiveNotificationResponse: (r) => onTap?.call(r.payload),
       )
