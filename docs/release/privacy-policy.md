@@ -17,7 +17,7 @@ Cadangan otomatis Android diizinkan, tetapi hanya untuk data pengguna (bookmark,
 
 ## Data yang dikirim lewat internet
 
-Hanya bila Anda mengaktifkan fitur berikut, Nura menghubungi layanan pihak ketiga EQuran.id:
+Hanya saat fitur berikut menyala, Nura menghubungi layanan pihak ketiga EQuran.id:
 
 1. **Unduh jadwal sholat.** Nama provinsi dan kabupaten/kota yang Anda pilih, serta bulan dan tahun, dikirim ke equran.id untuk mengambil jadwal bulanan. Pada pengaturan awal sakelar ini menyala, dan baru berlaku setelah Anda mengetuk "Lanjut" pada langkah jadwal sholat. Anda dapat mematikannya saat itu atau kapan saja di Pengaturan.
 2. **Fitur Online (audio murottal).** Mati secara bawaan. Saat Anda memutar audio, nomor surah dikirim ke equran.id, lalu berkas audio ayat dari qari yang Anda pilih diambil dari cdn.equran.id.

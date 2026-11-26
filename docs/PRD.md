@@ -79,7 +79,7 @@ Aplikasi dibangun ulang dari awal (rebuild bersih) di branch baru. Kode lama tid
 
 ### 5.6 Umum
 - Tema terang, gelap, dan ikut sistem. Pilihan tersimpan.
-- Onboarding tampil sekali pada peluncuran pertama, tiga langkah: (a) sambutan, (b) jadwal sholat: pilih kota dan izin sinkron online yang terpisah (sakelar "Unduh jadwal sholat", menyala secara bawaan dan bisa dimatikan; tidak ada yang disimpan atau diunduh sebelum "Lanjut"), (c) izin notifikasi dengan dua sakelar "Pengingat adzan" dan "Ayat & hadis harian" (langkah ini bisa dilewati). Audio murottal tidak ditanyakan di onboarding karena mati secara default; cukup disebut bahwa audio bisa diaktifkan di Pengaturan.
+- Onboarding tampil sekali pada peluncuran pertama, tiga langkah: (a) sambutan, (b) jadwal sholat: pilih kota dan izin sinkron online yang terpisah (sakelar "Unduh jadwal sholat", menyala secara bawaan dan bisa dimatikan; pilihan wilayah langsung disimpan di perangkat, sedangkan sakelar unduh baru disimpan dan jadwal baru diunduh setelah "Lanjut"), (c) izin notifikasi dengan dua sakelar "Pengingat adzan" dan "Ayat & hadis harian" (langkah ini bisa dilewati). Audio murottal tidak ditanyakan di onboarding karena mati secara default; cukup disebut bahwa audio bisa diaktifkan di Pengaturan.
 - Tampilan mengikuti desain putaran 1 (`docs/design/`): Material 3, tema terang dan gelap, font Latin Plus Jakarta Sans dan font Arab LPMQ Isep Misbah.
 - Halaman "Sumber & Atribusi" yang mencantumkan semua sumber data.
 
