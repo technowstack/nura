@@ -33,3 +33,7 @@ Dihapus dengan `tools:node="remove"`. Periksa ulang sebelum menambah audio latar
 Dengan izin yang sama, notifikasi harian dan pembaruan widget tengah malam juga memakai alarm tepat.
 
 **Bila ditolak:** hapus `SCHEDULE_EXACT_ALARM` dari manifest (perbarui `test/release/android_manifest_test.dart`). Kode sudah memakai alarm tidak tepat bila izin tidak ada, jadi pengingat tetap datang tetapi bisa terlambat; keterangan di aplikasi dan deskripsi Play perlu disesuaikan, dan perilakunya diuji di perangkat.
+
+## Cadangan otomatis (bukan izin)
+
+`android:allowBackup="true"`, dibatasi aturan include ke `user.db` (beserta berkas pendamping SQLite) dan shared preferences, untuk cadangan akun Google dan pemindahan perangkat (`res/xml/data_extraction_rules.xml` Android 12+, `res/xml/backup_rules.xml` Android 11 ke bawah). `content.db`, `content.version`, gambar widget, dan cache tidak ikut. Salinan dikelola Android di akun Google pengguna; pengembang tidak dapat mengaksesnya. Dikunci oleh `test/android/backup_rules_test.dart`.

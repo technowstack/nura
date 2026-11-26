@@ -16,7 +16,7 @@ Status: DRAF, keputusan D9 = B (konservatif). Bukan nasihat hukum. Semua jawaban
 - Tidak ada GPS atau izin lokasi, akun, analitik, iklan, atau pelaporan kerusakan pihak ketiga.
 - Tersimpan di perangkat: bookmark, terakhir dibaca, setelan, wilayah, jadwal sholat. Aplikasi tidak mengunggahnya.
 - Tautan di Sumber & Atribusi membuka browser (di luar aplikasi, tunduk pada kebijakan situs tujuan).
-- Manifest tidak mengatur `allowBackup`, jadi bawaan Android berlaku: sistem dapat menyertakan data aplikasi dalam cadangan akun Google pengguna atau pemindahan perangkat. **[KONFIRMASI]** biarkan atau matikan.
+- Cadangan otomatis Android menyala (`allowBackup`, keputusan pemilik 2026-11-26), dibatasi ke `user.db` dan shared preferences (`res/xml/backup_rules.xml`, `res/xml/data_extraction_rules.xml`). Salinan disimpan Android di akun Google pengguna atau dipindahkan antar perangkat; pengembang tidak dapat mengaksesnya. **[KONFIRMASI]** periksa terhadap definisi Play apakah cadangan sistem ini memengaruhi jawaban di bawah.
 
 ## Usulan jawaban
 

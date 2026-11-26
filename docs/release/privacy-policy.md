@@ -1,8 +1,8 @@
 # Kebijakan Privasi Nura
 
-DRAF. Isi bagian `[...]` sebelum diterbitkan. Tempat hosting (URL publik) diputuskan pemilik. Bukan nasihat hukum.
+DRAF. Isi bagian `[ISI]` dan sesuaikan bagian `[...]` lain sebelum diterbitkan. Tempat hosting (URL publik) diputuskan pemilik. Bukan nasihat hukum.
 
-Berlaku sejak: [TANGGAL BERLAKU]
+Berlaku sejak: [ISI] (tanggal berlaku)
 
 ## Ringkasan
 
@@ -10,7 +10,10 @@ Nura adalah aplikasi Al-Qur'an, hadis, dan jadwal sholat yang bekerja terutama t
 
 ## Data yang tersimpan di perangkat
 
-Bookmark, posisi terakhir dibaca, setelan, wilayah yang dipilih, dan jadwal sholat yang sudah diunduh tersimpan di perangkat Anda. Nura tidak mengunggahnya ke pengembang. Bergantung pada setelan perangkat, Android dapat menyertakan data aplikasi dalam cadangan akun Google Anda atau saat memindahkan data ke perangkat baru; itu diatur oleh Android dan Google.
+Bookmark, posisi terakhir dibaca, setelan, wilayah yang dipilih, dan jadwal sholat yang sudah diunduh tersimpan di perangkat Anda. Nura tidak mengunggahnya ke pengembang.
+## Cadangan Android
+
+Cadangan otomatis Android diizinkan, tetapi hanya untuk data pengguna (bookmark, posisi terakhir dibaca, setelan, wilayah, jadwal sholat tersimpan) dan preferensi teknis aplikasi (data widget dan jadwal notifikasi). Konten Al-Qur'an dan hadis bawaan, gambar widget, dan cache tidak ikut. Bila cadangan aktif di perangkat Anda, Android menyimpan salinan itu di akun Google Anda atau memindahkannya ke perangkat baru. Itu diatur oleh Android dan Google; pengembang tidak dapat mengakses salinan tersebut.
 
 ## Data yang dikirim lewat internet
 
@@ -33,7 +36,7 @@ Pengingat sholat dan ayat/hadis harian dijadwalkan di perangkat. Tidak ada serve
 
 ## Menghapus data
 
-Hapus data aplikasi lewat Pengaturan Android atau copot Nura. Salinan di cadangan akun Google dikelola lewat akun Google Anda.
+Hapus data aplikasi lewat Pengaturan Android atau copot Nura. Salinan di cadangan akun Google tidak ikut terhapus oleh langkah itu; kelola lewat akun Google Anda.
 
 ## Anak-anak
 
@@ -45,4 +48,4 @@ Perubahan kebijakan diterbitkan di halaman ini dengan tanggal berlaku baru.
 
 ## Kontak
 
-[EMAIL KONTAK]
+[ISI] (email kontak)
