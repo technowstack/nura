@@ -121,6 +121,70 @@ void main() {
     }
   });
 
+  // Seen on a Pixel 6a: a 373x202 widget cut the last line of both texts in
+  // half. Every shown text must get a whole number of lines.
+  testWidgets('texts are never cut through the middle of a line', (
+    tester,
+  ) async {
+    final content = DailyContent(
+      kind: DailyKind.ayah,
+      arab: List.filled(40, 'إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ').join(' '),
+      translation: List.filled(40, 'Sesungguhnya amal itu').join(' '),
+      reference: 'QS. Ar-Ra\'d: 28',
+      deepLink: 'nura://ayah/13/28',
+      surahNameArab: 'الرعد',
+    );
+    for (final size in const [
+      Size(373, 202),
+      Size(373, 130),
+      Size(320, 152),
+      Size(320, 240),
+      Size(400, 330),
+      Size(200, 100),
+    ]) {
+      await tester.pumpWidget(
+        _host(
+          DailyWidgetImage(
+            content: content,
+            size: size,
+            brightness: Brightness.light,
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull, reason: '$size');
+      for (final text in [content.arab, content.translation]) {
+        for (final e in find.text(text).evaluate()) {
+          final w = e.widget as Text;
+          final style = w.style!;
+          final line = style.fontSize! * style.height!;
+          expect(
+            (e.size!.height - w.maxLines! * line).abs(),
+            lessThan(1),
+            reason: '$size: $text',
+          );
+        }
+      }
+      expect(find.text(content.reference), findsOneWidget);
+    }
+    // The common sizes still show both texts.
+    expect(
+      find.text(content.arab),
+      findsNothing,
+      reason: '200x100 has no room',
+    );
+    await tester.pumpWidget(
+      _host(
+        DailyWidgetImage(
+          content: content,
+          size: const Size(373, 202),
+          brightness: Brightness.light,
+        ),
+      ),
+    );
+    expect(find.text(content.arab), findsOneWidget);
+    expect(find.text(content.translation), findsOneWidget);
+  });
+
   testWidgets('Arabic surah name only for Ayat, in arabicTitle/iconAccent', (
     tester,
   ) async {

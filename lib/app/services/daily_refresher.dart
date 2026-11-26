@@ -13,14 +13,18 @@ class DailyRefresher with WidgetsBindingObserver {
     required Future<bool> Function() renderWidgets,
     required Future<void> Function() reschedule,
     required DateTime Function() now,
+    Future<String> Function()? widgetState,
     @visibleForTesting Duration Function(DateTime)? utcOffset,
-  }) : _renderWidgets = renderWidgets,
+  }) : _widgetState = widgetState,
+       _renderWidgets = renderWidgets,
        _reschedule = reschedule,
        _now = now,
        _utcOffset = utcOffset ?? ((d) => d.timeZoneOffset);
 
   final Future<bool> Function() _renderWidgets;
   final Future<void> Function() _reschedule;
+  // Anything besides the date that makes the images outdated (widget sizes).
+  final Future<String> Function()? _widgetState;
   final DateTime Function() _now;
   final Duration Function(DateTime) _utcOffset;
 
@@ -49,7 +53,14 @@ class DailyRefresher with WidgetsBindingObserver {
 
   Future<void> _run(bool force) async {
     final n = _now();
-    final today = '${n.year}-${n.month}-${n.day}|${_utcOffset(n).inMinutes}';
+    var state = '';
+    try {
+      state = await _widgetState?.call() ?? '';
+    } on Object catch (e) {
+      debugPrint('DailyRefresher: widget state unreadable: $e');
+    }
+    final today =
+        '${n.year}-${n.month}-${n.day}|${_utcOffset(n).inMinutes}|$state';
     if (!force && _lastOk == today) return;
     final watch = Stopwatch()..start();
     var ok = true;

@@ -204,6 +204,7 @@ Future<BootstrapResult> bootstrap({
     Get.put<DailyRefresher>(
       DailyRefresher(
         renderWidgets: widgets.refresh,
+        widgetState: widgets.sizeSignature,
         reschedule: notifier.reschedule,
         now: DateTime.now,
       ),
