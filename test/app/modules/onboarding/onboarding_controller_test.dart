@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:nura/app/core/ui_state.dart';
@@ -9,6 +11,7 @@ import 'package:nura/app/data/sources/user_database.dart';
 import 'package:nura/app/modules/onboarding/controllers/onboarding_controller.dart';
 import 'package:nura/app/modules/settings/controllers/settings_controller.dart';
 import 'package:nura/app/services/notification_scheduler.dart';
+import 'package:nura/app/services/prayer_notifier.dart';
 
 import '../../../support/fake_prayer.dart';
 import '../../../support/prayer_harness.dart' show jakarta;
@@ -194,6 +197,33 @@ void main() {
     expect(h.prayer.calls, isNot(contains('sync')));
   });
 
+  test('a late step-2 sync cannot clear a step-3 failure', () async {
+    Get.delete<OnboardingController>(force: true);
+    final repo = _SlowSync()
+      ..region = jakarta
+      ..days['2026-11-15'] = DayResult(DayOutcome.api, fullDay('2026-11-15'));
+    Get.replace<PrayerRepository>(repo);
+    Get.replace<PrayerNotifier>(
+      PrayerNotifier(
+        scheduler: h.scheduler,
+        repository: repo,
+        store: h.prayerStore,
+        clock: FakeClock(DateTime.utc(2026, 11, 15)),
+      ),
+    );
+    final x = make();
+    await SettingsHarness.settle();
+    x.next();
+    x.next(); // sync starts and stays pending
+    h.scheduler.failAll = true;
+    await x.setPrayerReminders(true);
+    expect(x.remindersFailed.value, isTrue);
+    h.scheduler.failAll = false;
+    repo.gate.complete();
+    await SettingsHarness.settle();
+    expect(x.remindersFailed.value, isTrue);
+  });
+
   group('notification step', () {
     test('no permission request until a switch is turned on', () {
       expect(h.scheduler.log, isNot(contains('requestNotif')));
@@ -265,6 +295,13 @@ void main() {
       expect(h.db.getSetting('onboarding_done'), isNull);
     },
   );
+}
+
+class _SlowSync extends FakePrayerRepository {
+  final gate = Completer<void>();
+
+  @override
+  Future<void> syncIfNeeded() => gate.future;
 }
 
 class _ThrowingRegion extends FakePrayerRepository {

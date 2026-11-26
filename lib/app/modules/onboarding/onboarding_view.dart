@@ -164,7 +164,7 @@ class OnboardingView extends GetView<OnboardingController> {
         'Jadwal bisa diunduh nanti di Pengaturan.',
       ),
       Obx(
-        () => controller.remindersFailed.value
+        () => controller.remindersFailed.value || controller.syncFailed.value
             ? _note(context, kRemindersFailedNote)
             : const SizedBox.shrink(),
       ),
@@ -217,7 +217,7 @@ class OnboardingView extends GetView<OnboardingController> {
         final c = controller;
         final note = c.denied.value
             ? kNotificationDeniedNote
-            : c.remindersFailed.value
+            : c.remindersFailed.value || c.syncFailed.value
             ? kRemindersFailedNote
             : c.dailyFailed.value
             ? kDailyFailedNote

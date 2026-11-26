@@ -44,6 +44,8 @@ class OnboardingController extends GetxController {
   final dailyTime = '06:00'.obs;
   final denied = false.obs;
   final remindersFailed = false.obs;
+  // Separate: the step-2 sync can finish after a step-3 toggle.
+  final syncFailed = false.obs;
   final dailyFailed = false.obs;
   final exactDenied = false.obs;
 
@@ -128,7 +130,7 @@ class OnboardingController extends GetxController {
     } on Object catch (e) {
       debugPrint('OnboardingController: sync switch failed: $e');
     }
-    remindersFailed.value = await syncAndReschedule(_prayer, _prayerNotifier);
+    syncFailed.value = await syncAndReschedule(_prayer, _prayerNotifier);
   }
 
   // Notifikasi
@@ -145,6 +147,7 @@ class OnboardingController extends GetxController {
         }
       }
       remindersFailed.value = false;
+      syncFailed.value = false;
     } on PrayerScheduleException catch (e) {
       remindersFailed.value = true;
       debugPrint('OnboardingController: $e');
