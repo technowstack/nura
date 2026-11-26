@@ -18,6 +18,8 @@ void main() {
     expect(inPage, inMd);
   });
 
+  // Deliberate tripwire: remove this test when the owner fills the
+  // placeholders.
   test('owner placeholders are still unfilled in both', () {
     for (final text in [md, page.replaceAll(RegExp(r'<\/?mark>'), '')]) {
       expect(text, contains('[ISI] (tanggal berlaku)'));
