@@ -6,3 +6,5 @@ const kNotificationDeniedNote =
     'Aktifkan izin notifikasi Nura di pengaturan sistem.';
 const kDailyFailedNote =
     'Notifikasi harian gagal dijadwalkan. Coba buka ulang Nura.';
+const kExactDeniedNote =
+    'Pengingat bisa terlambat karena izin alarm tepat belum diberikan.';

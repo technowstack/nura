@@ -177,6 +177,8 @@ void main() {
     await tapText(t, 'Lanjut');
     await t.tap(find.widgetWithText(SwitchListTile, 'Pengingat adzan'));
     await pumpSettled(t);
+    await t.ensureVisible(find.text('Ayat & hadis harian'));
+    await t.pump();
     await t.tap(find.widgetWithText(SwitchListTile, 'Ayat & hadis harian'));
     await pumpSettled(t);
     for (final p in PrayerName.values) {
@@ -193,6 +195,22 @@ void main() {
     await pumpSettled(t);
     expect(find.text('HOME'), findsOneWidget);
     expect(h.db.getSetting('onboarding_done'), 'true');
+  });
+
+  testWidgets('step 3 announces the alarm page and notes a denial', (t) async {
+    final h = await open(t);
+    h.scheduler.exactState = PermissionState.denied;
+    await tapText(t, 'Lanjut');
+    await tapText(t, 'Lanjut');
+    expect(find.textContaining('"Alarm & pengingat"'), findsOneWidget);
+    expect(find.textContaining('izin alarm tepat'), findsNothing);
+    await tapText(t, 'Pengingat adzan');
+    expect(
+      find.text(
+        'Pengingat bisa terlambat karena izin alarm tepat belum diberikan.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('system Back steps back inside the flow', (t) async {

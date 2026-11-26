@@ -178,7 +178,8 @@ class OnboardingView extends GetView<OnboardingController> {
       _note(
         context,
         'Izin notifikasi hanya diminta saat Anda menyalakan salah satu '
-        'pengingat. Langkah ini boleh dilewati.',
+        'pengingat. Sistem juga bisa membuka halaman "Alarm & pengingat" '
+        'agar pengingat adzan tepat waktu. Langkah ini boleh dilewati.',
       ),
       NuraCard(
         padding: const EdgeInsets.symmetric(
@@ -220,6 +221,8 @@ class OnboardingView extends GetView<OnboardingController> {
             ? kRemindersFailedNote
             : c.dailyFailed.value
             ? kDailyFailedNote
+            : c.exactDenied.value
+            ? kExactDeniedNote
             : null;
         return note == null ? const SizedBox.shrink() : _note(context, note);
       }),

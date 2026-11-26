@@ -45,6 +45,7 @@ class OnboardingController extends GetxController {
   final denied = false.obs;
   final remindersFailed = false.obs;
   final dailyFailed = false.obs;
+  final exactDenied = false.obs;
 
   bool get isFirst => step.value == 0;
   bool get isLast => step.value == kOnboardingSteps - 1;
@@ -70,6 +71,7 @@ class OnboardingController extends GetxController {
         dailyOn.value = _daily.notifyEnabled;
         dailyTime.value = _daily.notifyTime;
         state.value = const UiData<void>(null);
+        unawaited(_refreshExactNote());
       } on Object catch (e) {
         debugPrint('OnboardingController: load failed: $e');
         state.value = const UiError('Setelan tidak dapat dimuat.');
@@ -150,6 +152,20 @@ class OnboardingController extends GetxController {
       debugPrint('OnboardingController: reminders failed: $e');
     }
     prayerOn.value = PrayerName.values.every(_prayerNotifier.isEnabled);
+    await _refreshExactNote();
+  }
+
+  /// Same condition as the note in Settings.
+  Future<void> _refreshExactNote() async {
+    try {
+      final st = await _prayerNotifier.status();
+      exactDenied.value =
+          _prayerNotifier.anyEnabled &&
+          !st.notificationDenied &&
+          st.exactDenied;
+    } on Object catch (e) {
+      debugPrint('OnboardingController: permission check failed: $e');
+    }
   }
 
   Future<void> setDailyNotify(bool on) async {

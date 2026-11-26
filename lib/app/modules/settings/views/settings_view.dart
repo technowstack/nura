@@ -266,8 +266,7 @@ class SettingsView extends GetView<SettingsController> {
           : controller.notifyDenied.value
           ? kNotificationDeniedNote
           : controller.exactDenied.value
-          ? 'Pengingat bisa terlambat beberapa menit karena izin alarm '
-                'tepat belum diberikan.'
+          ? kExactDeniedNote
           : null;
       return note == null ? const SizedBox.shrink() : _note(context, note);
     }),

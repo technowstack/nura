@@ -2,6 +2,7 @@ import 'package:nura/app/core/nura_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/notification_notes.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/ui_state.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -105,13 +106,11 @@ class PrayerView extends GetView<PrayerController> {
       ),
     Obx(() {
       final note = controller.remindersFailed.value
-          ? 'Pengingat gagal dijadwalkan. Coba buka ulang Nura.'
+          ? kRemindersFailedNote
           : controller.notifyDenied.value
-          ? 'Izin notifikasi ditolak, jadi pengingat tidak dikirim. '
-                'Aktifkan izin notifikasi Nura di pengaturan sistem.'
+          ? kNotificationDeniedNote
           : controller.exactDenied.value
-          ? 'Pengingat bisa terlambat beberapa menit karena izin alarm '
-                'tepat belum diberikan.'
+          ? kExactDeniedNote
           : null;
       if (note == null) return const SizedBox.shrink();
       return Padding(
