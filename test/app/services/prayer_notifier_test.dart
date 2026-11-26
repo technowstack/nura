@@ -181,6 +181,17 @@ void main() {
     expect(r.sched.log, contains('requestExact'));
   });
 
+  test('restored switches: turning one on again asks permission', () async {
+    final r = Rig(now: midnight, dayCount: 2)
+      ..store.on.addAll(PrayerName.values);
+    r.sched
+      ..notif = PermissionState.denied
+      ..exactState = PermissionState.denied;
+    expect(await r.notifier.setEnabled(PrayerName.subuh, true), isTrue);
+    expect(r.sched.log, containsAllInOrder(['requestNotif', 'requestExact']));
+    expect(r.ids, isNotEmpty);
+  });
+
   test('unknown region and no region cancel everything', () async {
     final r = Rig(now: midnight, dayCount: 3)..store.on.add(PrayerName.subuh);
     await r.notifier.reschedule();
