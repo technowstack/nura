@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 import 'package:nura/app/data/models/ayah.dart';
 import 'package:nura/app/data/models/surah.dart';
 import 'package:nura/app/data/repositories/quran_repository.dart';
+import 'package:nura/app/modules/home/controllers/home_controller.dart';
+import 'package:nura/app/data/repositories/daily_settings_store.dart';
+import 'package:nura/app/data/repositories/daily_content_repository.dart';
 import 'package:nura/app/data/repositories/hadith_repository.dart';
 import 'package:nura/app/data/repositories/user_repository.dart';
 import 'package:nura/app/modules/quran_detail/bindings/quran_detail_binding.dart';
@@ -13,6 +16,7 @@ import 'package:nura/app/modules/quran_list/controllers/quran_list_controller.da
 import 'package:nura/app/modules/quran_list/views/quran_list_view.dart';
 import 'package:nura/app/routes/app_routes.dart';
 
+import '../../../support/fake_daily.dart';
 import '../../../support/fake_repositories.dart';
 
 void main() {
@@ -51,9 +55,7 @@ void main() {
   });
   tearDown(Get.reset);
 
-  testWidgets('back within the debounce saves before list refreshes markers', (
-    t,
-  ) async {
+  testWidgets('a mark shows in the surah list after going back', (t) async {
     t.view.physicalSize = const Size(360, 640);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
@@ -69,24 +71,23 @@ void main() {
         ],
       ),
     );
+    Get.put<DailyContentRepository>(FakeDailyContentRepository());
+    Get.put<DailySettingsStore>(FakeDailySettingsStore());
+    final home = Get.put(HomeController());
     await t.pumpAndSettle();
     await t.tap(find.text('L1'));
     await t.pumpAndSettle();
 
-    // Real drag (default 3 s debounce); layout must happen while held.
-    final g = await t.startGesture(const Offset(180, 500));
-    for (var i = 0; i < 4; i++) {
-      await g.moveBy(const Offset(0, -150));
-      await t.pump(const Duration(milliseconds: 16));
-    }
-    await g.up();
-    await t.pumpAndSettle(const Duration(milliseconds: 100));
-    expect(user.lastReadWrites, isEmpty);
+    await t.tap(find.byTooltip('Tandai terakhir dibaca').first);
+    await t.pumpAndSettle();
+    expect(user.lastReadWrites, hasLength(1));
+    // Beranda and the list update at once, not only after navigating back.
+    expect(home.lastRead.value?.ayah, 1);
+    expect(Get.find<QuranListController>().lastReadSurah.value, 1);
 
     Get.back<void>();
-    await t.pump(const Duration(milliseconds: 50));
-    expect(user.lastReadWrites, isNotEmpty);
-    expect(Get.find<QuranListController>().lastReadSurah.value, 1);
     await t.pumpAndSettle();
+    expect(Get.find<QuranListController>().lastReadSurah.value, 1);
+    home.onClose(); // its clock timers must stop before the test ends
   });
 }

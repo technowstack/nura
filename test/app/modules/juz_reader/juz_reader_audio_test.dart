@@ -144,9 +144,7 @@ void main() {
     t.view.physicalSize = const Size(360, 640);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
-    Get.put(
-      JuzReaderController(const JuzArgs(1), lastReadDebounce: Duration.zero),
-    );
+    Get.put(JuzReaderController(const JuzArgs(1)));
     await t.pumpWidget(
       GetMaterialApp(
         builder: (c, child) => MediaQuery(

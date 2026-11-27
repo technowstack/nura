@@ -78,20 +78,13 @@ void main() {
   });
   tearDown(Get.reset);
 
-  JuzReaderController ctl({Duration debounce = Duration.zero}) => Get.put(
-    JuzReaderController(const JuzArgs(1), lastReadDebounce: debounce),
-  );
+  JuzReaderController ctl() => Get.put(JuzReaderController(const JuzArgs(1)));
 
-  Future<void> pump(
-    WidgetTester t, {
-    double scale = 1,
-    Duration debounce = Duration.zero,
-    Widget? home,
-  }) async {
+  Future<void> pump(WidgetTester t, {double scale = 1, Widget? home}) async {
     t.view.physicalSize = const Size(360, 640);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
-    ctl(debounce: debounce);
+    ctl();
     await t.pumpWidget(
       GetMaterialApp(
         builder: (c, child) => MediaQuery(
@@ -243,46 +236,23 @@ void main() {
       await t.pumpAndSettle();
     }
 
-    testWidgets('ayahRefAt maps item index to the real (surah, ayah)', (
-      t,
-    ) async {
+    testWidgets('only the button writes last read, keyed by surah', (t) async {
       await pump(t);
-      final c = Get.find<JuzReaderController>();
-      // 0 H1, 1 1:2, 2 1:3, 3 H2, 4 2:1, 5 2:2, 6 2:3, 7 H3, 8 3:1
-      expect(c.ayahRefAt(0), const AyahRef(1, 2));
-      expect(c.ayahRefAt(3), const AyahRef(2, 1));
-      expect(c.ayahRefAt(5), const AyahRef(2, 2));
-      expect(c.ayahRefAt(7), const AyahRef(3, 1));
-      expect(c.ayahRefAt(8), const AyahRef(3, 1));
-    });
-
-    testWidgets('opening does not overwrite last read', (t) async {
-      user.lastRead = LastRead(
-        ref: const AyahRef(2, 2),
-        updatedAt: DateTime(2000),
-      );
-      await pump(t, debounce: const Duration(seconds: 3));
-      await t.pump(const Duration(seconds: 5));
-      Get.delete<JuzReaderController>();
-      expect(user.lastReadWrites, isEmpty);
-    });
-
-    testWidgets('a real drag saves the visible ayah of its own surah', (
-      t,
-    ) async {
-      await pump(t, debounce: const Duration(seconds: 3));
       await dragUp(t);
-      await t.pump(const Duration(seconds: 3));
-      expect(user.lastReadWrites, hasLength(1));
-      final ref = user.lastReadWrites.single;
-      // 640px of mixed content moves past surah 1; 1:2 would be wrong.
-      expect(ref.surah, greaterThan(1));
-      expect(
-        _all.any((a) => a.surahNumber == ref.surah && a.ayahNumber == ref.ayah),
-        isTrue,
-      );
+      await t.pump(const Duration(seconds: 5));
+      expect(user.lastReadWrites, isEmpty);
       final c = Get.find<JuzReaderController>();
-      expect(c.ayahRefAt(c.listController.visibleRange!.$1), ref);
+      await reveal(t, card(2, 2));
+      final mark = find.descendant(
+        of: card(2, 2),
+        matching: find.byTooltip('Tandai terakhir dibaca'),
+      );
+      await t.ensureVisible(mark);
+      await t.pumpAndSettle();
+      await t.tap(mark);
+      await t.pumpAndSettle();
+      expect(user.lastReadWrites, [const AyahRef(2, 2)]);
+      expect(c.lastRead.value, const AyahRef(2, 2));
     });
 
     testWidgets('stored last read inside the juz is jumped to and marked', (
@@ -318,65 +288,6 @@ void main() {
       await t.pumpAndSettle();
       expect(c.lastRead.value, isNull);
       expect(find.text('Terakhir dibaca'), findsNothing);
-    });
-
-    testWidgets('closing the controller flushes a pending last read', (
-      t,
-    ) async {
-      await pump(t, debounce: const Duration(seconds: 3));
-      await dragUp(t);
-      expect(user.lastReadWrites, isEmpty);
-      Get.delete<JuzReaderController>();
-      expect(user.lastReadWrites, hasLength(1));
-      await t.pumpWidget(const SizedBox.shrink());
-    });
-
-    testWidgets('popping the route disposes the controller and saves', (
-      t,
-    ) async {
-      Get.reset();
-      Get.put<QuranRepository>(
-        FakeQuranRepository(
-          surahs: [_s(1), _s(2), _s(3)],
-          ayahs: _all,
-          juz: const [
-            Juz(
-              number: 1,
-              startSurah: 1,
-              startAyah: 2,
-              endSurah: 3,
-              endAyah: 40,
-            ),
-          ],
-        ),
-      );
-      Get.put<QuranRangeRepository>(FakeQuranRangeRepository(_all));
-      Get.put<UserRepository>(user);
-      Get.put(ThemeController());
-      t.view.physicalSize = const Size(360, 640);
-      t.view.devicePixelRatio = 1;
-      addTearDown(t.view.reset);
-      await t.pumpWidget(
-        GetMaterialApp(
-          home: const Scaffold(body: Text('home')),
-          getPages: [
-            GetPage(
-              name: Routes.juz,
-              page: JuzReaderView.new,
-              binding: JuzReaderBinding(),
-            ),
-          ],
-        ),
-      );
-      unawaited(Get.toNamed<void>(Routes.juz, arguments: const JuzArgs(1)));
-      await t.pumpAndSettle();
-      expect(Get.isRegistered<JuzReaderController>(), isTrue);
-      await dragUp(t);
-      expect(user.lastReadWrites, isEmpty);
-      Get.back<void>();
-      await t.pumpAndSettle();
-      expect(Get.isRegistered<JuzReaderController>(), isFalse);
-      expect(user.lastReadWrites, hasLength(1));
     });
 
     testWidgets('same ayah number in another surah is not marked', (t) async {

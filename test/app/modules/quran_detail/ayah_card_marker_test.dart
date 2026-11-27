@@ -34,6 +34,7 @@ Future<void> _pump(WidgetTester t, String arab, int n, double size) async {
             onBookmark: () {},
             onCopy: () {},
             onTafsir: () {},
+            onMarkLastRead: () {},
           ),
         ),
       ),

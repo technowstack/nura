@@ -110,12 +110,7 @@ void main() {
   testWidgets('surah reader: gear opens Settings, changes apply on return', (
     t,
   ) async {
-    Get.put(
-      QuranDetailController(
-        const SurahArgs(1),
-        lastReadDebounce: Duration.zero,
-      ),
-    );
+    Get.put(QuranDetailController(const SurahArgs(1)));
     await pump(t, const QuranDetailView());
     expect(size(t, 'trans2'), 15);
     expect(t.widget<Text>(ayahFinder('arab2', 2)).style!.fontSize, 28);
@@ -139,9 +134,7 @@ void main() {
   testWidgets('juz reader: gear opens Settings, changes apply on return', (
     t,
   ) async {
-    Get.put(
-      JuzReaderController(const JuzArgs(1), lastReadDebounce: Duration.zero),
-    );
+    Get.put(JuzReaderController(const JuzArgs(1)));
     await pump(t, const JuzReaderView());
     expect(size(t, 'trans2'), 15);
     await openSettings(t);
