@@ -43,6 +43,7 @@ AyahCard _card({
   onBookmark: () {},
   onCopy: () {},
   onTafsir: () {},
+  onMarkLastRead: () {},
   audio: audio,
   onPlayFromHere: onPlay,
 );

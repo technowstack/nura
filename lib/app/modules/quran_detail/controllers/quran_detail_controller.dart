@@ -12,7 +12,6 @@ import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/user_repository.dart';
 import '../../../services/audio_player_service.dart';
 import '../../../services/online_service.dart';
-import '../last_read_tracker.dart';
 import '../reading_prefs_mixin.dart';
 import '../surah_args.dart';
 
@@ -31,19 +30,8 @@ class SurahContent {
 /// Audio control state of one ayah of the open surah.
 enum AyahAudioState { hidden, ready, needsInternet, loading, playing, paused }
 
-class QuranDetailController extends GetxController
-    with WidgetsBindingObserver, ReadingPrefsMixin {
-  QuranDetailController(
-    this.args, {
-    Duration lastReadDebounce = const Duration(seconds: 3),
-  }) {
-    _tracker = LastReadTracker(
-      (ref) => _user.setLastRead(ref),
-      debounce: lastReadDebounce,
-    );
-  }
-
-  late final LastReadTracker _tracker;
+class QuranDetailController extends GetxController with ReadingPrefsMixin {
+  QuranDetailController(this.args);
 
   final SurahArgs args;
   final QuranRepository _quran = Get.find();
@@ -75,15 +63,12 @@ class QuranDetailController extends GetxController
   final ListController listController = ListController();
   final ScrollController scrollController = ScrollController();
 
-  /// Last-read ayah within this surah as stored at load; 0 means none.
-  /// Not updated while reading, so the highlight does not follow the user.
+  /// Ayah of this surah the user marked as last read; 0 means none.
   final lastReadAyah = 0.obs;
 
   @override
   void onInit() {
     super.onInit();
-    WidgetsBinding.instance.addObserver(this);
-    listController.addListener(_onVisibleRange);
     _initAudio();
     load();
   }
@@ -221,30 +206,10 @@ class QuranDetailController extends GetxController
     for (final sub in _subs) {
       unawaited(sub.cancel());
     }
-    flushLastRead();
-    WidgetsBinding.instance.removeObserver(this);
-    listController.removeListener(_onVisibleRange);
     listController.dispose();
     scrollController.dispose();
     super.onClose();
   }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) flushLastRead();
-  }
-
-  // Index 0 is the surah header and counts as ayah 1.
-  void _onVisibleRange() => _tracker.onVisibleRange(
-    listController,
-    scrollController,
-    (i) => AyahRef(args.surah, i < 1 ? 1 : i),
-  );
-
-  void onVisibleAyahChanged(int ayahNumber) =>
-      _tracker.report(AyahRef(args.surah, ayahNumber));
-
-  void flushLastRead() => _tracker.flush();
 
   void _openAtTarget() {
     final target = args.ayah > 0 ? args.ayah : lastReadAyah.value;
@@ -294,10 +259,19 @@ class QuranDetailController extends GetxController
       final ref = _user.getLastRead()?.ref;
       if (ref != null && ref.surah == args.surah) {
         lastReadAyah.value = ref.ayah;
-        _tracker.markSaved(ref);
       }
     } on Object catch (e) {
       debugPrint('QuranDetailController: read last read failed: $e');
+    }
+  }
+
+  void markLastRead(int ayahNumber) {
+    try {
+      _user.setLastRead(AyahRef(args.surah, ayahNumber));
+      lastReadAyah.value = ayahNumber;
+    } on Object catch (e) {
+      debugPrint('QuranDetailController: mark last read failed: $e');
+      notify('Gagal menandai ayat');
     }
   }
 

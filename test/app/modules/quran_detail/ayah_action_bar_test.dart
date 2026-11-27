@@ -179,6 +179,7 @@ void main() {
               onBookmark: () {},
               onCopy: () {},
               onTafsir: () {},
+              onMarkLastRead: () {},
               audio: AyahAudioState.ready,
               onAudio: () {},
               onPlayFromHere: () {},

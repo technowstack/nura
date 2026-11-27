@@ -136,9 +136,7 @@ void main() {
     t.view.physicalSize = const Size(360, 1200);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
-    Get.put(
-      QuranDetailController(SurahArgs(surah), lastReadDebounce: Duration.zero),
-    );
+    Get.put(QuranDetailController(SurahArgs(surah)));
     await t.pumpWidget(
       GetMaterialApp(
         builder: (c, child) => MediaQuery(

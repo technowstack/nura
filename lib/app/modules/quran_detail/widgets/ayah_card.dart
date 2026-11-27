@@ -19,6 +19,7 @@ class AyahCard extends StatelessWidget {
     required this.onBookmark,
     required this.onCopy,
     required this.onTafsir,
+    required this.onMarkLastRead,
     this.audio = AyahAudioState.hidden,
     this.playing = false,
     this.onAudio,
@@ -34,6 +35,7 @@ class AyahCard extends StatelessWidget {
   final VoidCallback onBookmark;
   final VoidCallback onCopy;
   final VoidCallback onTafsir;
+  final VoidCallback onMarkLastRead;
   final AyahAudioState audio;
 
   /// True for the ayah currently playing (or paused) in this surah.
@@ -112,7 +114,25 @@ class AyahCard extends StatelessWidget {
                     context,
                   ).textTheme.labelLarge?.copyWith(color: colors.iconAccent),
                 ),
-                ?menu,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ?menu,
+                    IconButton(
+                      tooltip: 'Tandai terakhir dibaca',
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      isSelected: lastRead,
+                      icon: NuraIcon(
+                        NuraIcons.history,
+                        color: lastRead ? scheme.primary : colors.iconAccent,
+                      ),
+                      onPressed: onMarkLastRead,
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

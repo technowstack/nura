@@ -77,9 +77,7 @@ void main() {
     tester.view.physicalSize = Size(360, height);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    Get.put(
-      QuranDetailController(SurahArgs(surah), lastReadDebounce: Duration.zero),
-    );
+    Get.put(QuranDetailController(SurahArgs(surah)));
     await tester.pumpWidget(
       GetMaterialApp(
         builder: (c, child) => MediaQuery(
@@ -179,6 +177,7 @@ void main() {
         onBookmark: () {},
         onCopy: () {},
         onTafsir: () {},
+        onMarkLastRead: () {},
       ),
     );
     await t.pumpWidget(card(prefs));
@@ -301,12 +300,7 @@ void _robustnessTests() {
       FakeQuranRepository(surahs: [_s(1)], ayahs: [_a(1, 1)]),
     );
     Get.put<UserRepository>(u);
-    Get.put(
-      QuranDetailController(
-        const SurahArgs(1),
-        lastReadDebounce: Duration.zero,
-      ),
-    );
+    Get.put(QuranDetailController(const SurahArgs(1)));
     await tester.pumpWidget(const GetMaterialApp(home: QuranDetailView()));
     await tester.pumpAndSettle();
     u.failure = StateError('db');
@@ -324,12 +318,7 @@ void _robustnessTests() {
       FakeQuranRepository(surahs: [_s(1)], ayahs: [_a(1, 1)]),
     );
     Get.put<UserRepository>(FakeUserRepository());
-    Get.put(
-      QuranDetailController(
-        const SurahArgs(1),
-        lastReadDebounce: Duration.zero,
-      ),
-    );
+    Get.put(QuranDetailController(const SurahArgs(1)));
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,
       (call) async {
@@ -387,12 +376,7 @@ void _robustnessTests() {
       FakeQuranRepository(surahs: [_s(1)], ayahs: [_a(1, 1)]),
     );
     Get.put<UserRepository>(FakeUserRepository()..failure = StateError('x'));
-    Get.put(
-      QuranDetailController(
-        const SurahArgs(1),
-        lastReadDebounce: Duration.zero,
-      ),
-    );
+    Get.put(QuranDetailController(const SurahArgs(1)));
     await tester.pumpWidget(const GetMaterialApp(home: QuranDetailView()));
     await tester.pumpAndSettle();
     expect(find.byType(ErrorState), findsOneWidget);

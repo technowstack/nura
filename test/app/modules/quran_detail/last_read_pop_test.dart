@@ -51,9 +51,7 @@ void main() {
   });
   tearDown(Get.reset);
 
-  testWidgets('back within the debounce saves before list refreshes markers', (
-    t,
-  ) async {
+  testWidgets('a mark shows in the surah list after going back', (t) async {
     t.view.physicalSize = const Size(360, 640);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
@@ -73,20 +71,12 @@ void main() {
     await t.tap(find.text('L1'));
     await t.pumpAndSettle();
 
-    // Real drag (default 3 s debounce); layout must happen while held.
-    final g = await t.startGesture(const Offset(180, 500));
-    for (var i = 0; i < 4; i++) {
-      await g.moveBy(const Offset(0, -150));
-      await t.pump(const Duration(milliseconds: 16));
-    }
-    await g.up();
-    await t.pumpAndSettle(const Duration(milliseconds: 100));
-    expect(user.lastReadWrites, isEmpty);
+    await t.tap(find.byTooltip('Tandai terakhir dibaca').first);
+    await t.pumpAndSettle();
+    expect(user.lastReadWrites, hasLength(1));
 
     Get.back<void>();
-    await t.pump(const Duration(milliseconds: 50));
-    expect(user.lastReadWrites, isNotEmpty);
-    expect(Get.find<QuranListController>().lastReadSurah.value, 1);
     await t.pumpAndSettle();
+    expect(Get.find<QuranListController>().lastReadSurah.value, 1);
   });
 }

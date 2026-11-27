@@ -170,6 +170,7 @@ void main() {
             ),
             onBookmark: () {},
             onCopy: () {},
+            onMarkLastRead: () {},
             onTafsir: () => showTafsirSheet(
               context,
               ayahs: ayahs,

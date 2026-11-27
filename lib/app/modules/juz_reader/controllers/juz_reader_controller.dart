@@ -15,7 +15,6 @@ import '../../../services/audio_player_service.dart';
 import '../../../services/online_service.dart';
 import '../../quran_detail/controllers/quran_detail_controller.dart'
     show AyahAudioState;
-import '../../quran_detail/last_read_tracker.dart';
 import '../../quran_detail/reading_prefs_mixin.dart';
 import '../../quran_list/controllers/quran_list_controller.dart';
 import '../juz_args.dart';
@@ -24,17 +23,8 @@ import '../juz_item.dart';
 /// Ayat of one surah inside the juz, for the tafsir sheet.
 typedef TafsirTarget = ({List<Ayah> ayahs, int index, String surahName});
 
-class JuzReaderController extends GetxController
-    with WidgetsBindingObserver, ReadingPrefsMixin {
-  JuzReaderController(
-    this.args, {
-    Duration lastReadDebounce = const Duration(seconds: 3),
-  }) {
-    _tracker = LastReadTracker(
-      (ref) => _user.setLastRead(ref),
-      debounce: lastReadDebounce,
-    );
-  }
+class JuzReaderController extends GetxController with ReadingPrefsMixin {
+  JuzReaderController(this.args);
 
   final JuzArgs args;
   final QuranRepository _quran = Get.find();
@@ -47,7 +37,6 @@ class JuzReaderController extends GetxController
   final AudioPlayerService? _player = Get.isRegistered<AudioPlayerService>()
       ? Get.find<AudioPlayerService>()
       : null;
-  late final LastReadTracker _tracker;
   final _subs = <StreamSubscription<Object?>>[];
   final _workers = <Worker>[];
 
@@ -59,7 +48,7 @@ class JuzReaderController extends GetxController
   /// Bookmarks of the surahs in this juz, keyed by (surah, ayah).
   final bookmarked = <AyahRef>{}.obs;
 
-  /// Last-read ayah as stored at load; null when none or outside this juz.
+  /// Ayah marked as last read; null when none or outside this juz.
   final lastRead = Rxn<AyahRef>();
 
   /// True when the device looks offline (only matters while [audioVisible]).
@@ -93,8 +82,6 @@ class JuzReaderController extends GetxController
   @override
   void onInit() {
     super.onInit();
-    WidgetsBinding.instance.addObserver(this);
-    listController.addListener(_onVisibleRange);
     _initAudio();
     load();
   }
@@ -115,38 +102,9 @@ class JuzReaderController extends GetxController
     for (final sub in _subs) {
       unawaited(sub.cancel());
     }
-    flushLastRead();
-    WidgetsBinding.instance.removeObserver(this);
-    listController.removeListener(_onVisibleRange);
     listController.dispose();
     scrollController.dispose();
     super.onClose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) flushLastRead();
-  }
-
-  void flushLastRead() => _tracker.flush();
-
-  // A header stands for the first ayah that follows it, like the surah
-  // screen where the header counts as ayah 1.
-  void _onVisibleRange() =>
-      _tracker.onVisibleRange(listController, scrollController, ayahRefAt);
-
-  /// Ayah a visible item index stands for (null: none after it).
-  AyahRef? ayahRefAt(int index) {
-    final s = state.value;
-    if (s is! UiData<List<JuzItem>>) return null;
-    final items = s.value;
-    for (var i = index < 0 ? 0 : index; i < items.length; i++) {
-      final item = items[i];
-      if (item is AyahItem) {
-        return AyahRef(item.ayah.surahNumber, item.ayah.ayahNumber);
-      }
-    }
-    return null;
   }
 
   Future<void> load() async {
@@ -233,7 +191,6 @@ class JuzReaderController extends GetxController
     try {
       final ref = _user.getLastRead()?.ref;
       if (ref == null) return;
-      _tracker.markSaved(ref);
       final inJuz = items.any(
         (i) =>
             i is AyahItem &&
@@ -263,6 +220,16 @@ class JuzReaderController extends GetxController
         alignment: 0.0,
       );
     });
+  }
+
+  void markLastRead(AyahRef ref) {
+    try {
+      _user.setLastRead(ref);
+      lastRead.value = ref;
+    } on Object catch (e) {
+      debugPrint('JuzReaderController: mark last read failed: $e');
+      notify('Gagal menandai ayat');
+    }
   }
 
   void toggleBookmark(Ayah ayah) {

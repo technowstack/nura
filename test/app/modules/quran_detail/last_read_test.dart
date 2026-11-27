@@ -50,75 +50,11 @@ void main() {
   });
   tearDown(Get.reset);
 
-  QuranDetailController ctl() =>
-      Get.put(QuranDetailController(const SurahArgs(1)));
-
-  test('flush without report writes nothing', () {
-    ctl().flushLastRead();
-    expect(user.lastReadWrites, isEmpty);
-  });
-
-  testWidgets('debounce writes once after 3s', (t) async {
-    final c = ctl()..onVisibleAyahChanged(5);
-    await t.pump(const Duration(seconds: 2));
-    expect(user.lastReadWrites, isEmpty);
-    await t.pump(const Duration(seconds: 1));
-    expect(user.lastReadWrites, [const AyahRef(1, 5)]);
-    c.flushLastRead();
-    await t.pump(const Duration(seconds: 5));
-    expect(user.lastReadWrites, [const AyahRef(1, 5)]);
-  });
-
-  testWidgets('new report restarts the debounce', (t) async {
-    final c = ctl()..onVisibleAyahChanged(6);
-    await t.pump(const Duration(seconds: 2));
-    c.onVisibleAyahChanged(7);
-    await t.pump(const Duration(seconds: 2));
-    expect(user.lastReadWrites, isEmpty);
-    await t.pump(const Duration(seconds: 1));
-    expect(user.lastReadWrites, [const AyahRef(1, 7)]);
-  });
-
-  testWidgets('paused lifecycle flushes immediately', (t) async {
-    ctl().onVisibleAyahChanged(4);
-    t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    expect(user.lastReadWrites, [const AyahRef(1, 4)]);
-  });
-
-  testWidgets('closing the controller flushes', (t) async {
-    ctl().onVisibleAyahChanged(4);
-    Get.delete<QuranDetailController>();
-    expect(user.lastReadWrites, [const AyahRef(1, 4)]);
-  });
-
-  testWidgets('save failure is swallowed', (t) async {
-    user.failure = StateError('disk');
-    ctl()
-      ..onVisibleAyahChanged(4)
-      ..flushLastRead();
-    expect(user.lastReadWrites, isEmpty);
-    expect(t.takeException(), isNull);
-  });
-
-  testWidgets('flush writes immediately and cancels timer', (t) async {
-    ctl()
-      ..onVisibleAyahChanged(8)
-      ..flushLastRead();
-    expect(user.lastReadWrites, [const AyahRef(1, 8)]);
-    await t.pump(const Duration(seconds: 5));
-    expect(user.lastReadWrites, [const AyahRef(1, 8)]);
-  });
-
-  Future<void> pump(
-    WidgetTester t,
-    SurahArgs args, {
-    double scale = 1,
-    Duration debounce = Duration.zero,
-  }) async {
+  Future<void> pump(WidgetTester t, SurahArgs args, {double scale = 1}) async {
     t.view.physicalSize = const Size(360, 640);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
-    Get.put(QuranDetailController(args, lastReadDebounce: debounce));
+    Get.put(QuranDetailController(args));
     await t.pumpWidget(
       GetMaterialApp(
         builder: (c, child) => MediaQuery(
@@ -129,7 +65,6 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    await t.pump(Duration.zero); // drain zero-length debounce timer
   }
 
   // tester.drag pumps no frame mid-gesture; a real drag lays out while held.
@@ -170,30 +105,31 @@ void main() {
     expect(t.getTopLeft(ayahFinder('arab1:30', 30)).dy, lessThan(300));
   });
 
-  testWidgets('opening a surah does not overwrite last read', (t) async {
+  testWidgets('opening and scrolling never write last read', (t) async {
     user.lastRead = lr(2, 5);
-    await pump(t, const SurahArgs(1, 3), debounce: const Duration(seconds: 3));
+    await pump(t, const SurahArgs(1));
+    await dragUp(t);
     await t.pump(const Duration(seconds: 5));
     Get.delete<QuranDetailController>();
     expect(user.lastReadWrites, isEmpty);
   });
 
-  testWidgets('a real drag then idle saves the visible ayah', (t) async {
-    await pump(t, const SurahArgs(1), debounce: const Duration(seconds: 3));
-    await dragUp(t);
-    await t.pump(const Duration(seconds: 3));
-    expect(user.lastReadWrites, hasLength(1));
-    expect(user.lastReadWrites.single.surah, 1);
-    expect(user.lastReadWrites.single.ayah, greaterThan(1));
+  testWidgets('the button marks that ayah and moves the label', (t) async {
+    await pump(t, const SurahArgs(1));
+    await t.tap(find.byTooltip('Tandai terakhir dibaca').first);
+    await t.pumpAndSettle();
+    expect(user.lastReadWrites, [const AyahRef(1, 1)]);
+    expect(find.text('Terakhir dibaca'), findsOneWidget);
+    expect(Get.find<QuranDetailController>().lastReadAyah.value, 1);
   });
 
-  testWidgets('highlight stays on stored ayah while reading', (t) async {
-    user.lastRead = lr(1, 30);
-    await pump(t, const SurahArgs(1), debounce: const Duration(seconds: 3));
-    await dragUp(t);
-    await t.pump(const Duration(seconds: 3));
-    expect(user.lastReadWrites, isNotEmpty);
-    expect(Get.find<QuranDetailController>().lastReadAyah.value, 30);
+  testWidgets('a failed save marks nothing', (t) async {
+    await pump(t, const SurahArgs(1));
+    user.failure = StateError('disk');
+    Get.find<QuranDetailController>().markLastRead(1);
+    await t.pumpAndSettle(const Duration(seconds: 5));
+    expect(Get.find<QuranDetailController>().lastReadAyah.value, 0);
+    expect(t.takeException(), isNull);
   });
 
   testWidgets('last read in another surah marks nothing', (t) async {
