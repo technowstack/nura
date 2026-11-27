@@ -15,6 +15,7 @@ import '../../../services/audio_player_service.dart';
 import '../../../services/online_service.dart';
 import '../../quran_detail/controllers/quran_detail_controller.dart'
     show AyahAudioState;
+import '../../quran_detail/notify_last_read_changed.dart';
 import '../../quran_detail/reading_prefs_mixin.dart';
 import '../../quran_list/controllers/quran_list_controller.dart';
 import '../juz_args.dart';
@@ -226,6 +227,7 @@ class JuzReaderController extends GetxController with ReadingPrefsMixin {
     try {
       _user.setLastRead(ref);
       lastRead.value = ref;
+      notifyLastReadChanged();
     } on Object catch (e) {
       debugPrint('JuzReaderController: mark last read failed: $e');
       notify('Gagal menandai ayat');

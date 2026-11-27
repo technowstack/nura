@@ -12,6 +12,7 @@ import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/user_repository.dart';
 import '../../../services/audio_player_service.dart';
 import '../../../services/online_service.dart';
+import '../notify_last_read_changed.dart';
 import '../reading_prefs_mixin.dart';
 import '../surah_args.dart';
 
@@ -269,6 +270,7 @@ class QuranDetailController extends GetxController with ReadingPrefsMixin {
     try {
       _user.setLastRead(AyahRef(args.surah, ayahNumber));
       lastReadAyah.value = ayahNumber;
+      notifyLastReadChanged();
     } on Object catch (e) {
       debugPrint('QuranDetailController: mark last read failed: $e');
       notify('Gagal menandai ayat');
